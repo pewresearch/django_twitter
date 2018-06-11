@@ -14,3 +14,19 @@ class TwitterProfile(AbstractTwitterProfile):
 class Tweet(AbstractTweet):
 
     pass
+
+class BotometerScore(AbstractBotometerScore):
+
+    pass
+
+class TwitterRelationship(AbstractTwitterRelationship):
+
+    pass
+
+class TwitterHashtag(AbstractTwitterHashtag):
+
+    pass
+
+class TwitterPlace(AbstractTwitterPlace):
+
+    pass
