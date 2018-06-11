@@ -6,7 +6,6 @@ from django.utils import timezone
 from picklefield.fields import PickledObjectField
 from simple_history.models import HistoricalRecords
 from dateutil.parser import parse as date_parse
-from datetime import datetime
 
 from pewtils import decode_text, is_not_null, is_null
 
