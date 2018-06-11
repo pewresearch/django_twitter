@@ -2,6 +2,7 @@ import re
 
 from django.db import models
 from django.contrib.postgres.fields import ArrayField, JSONField
+from django.utils import timezone
 from picklefield.fields import PickledObjectField
 from simple_history.models import HistoricalRecords
 from dateutil.parser import parse as date_parse
@@ -23,30 +24,36 @@ class AbstractTwitterBase(models.base.ModelBase):
             if base.__module__.startswith("django_twitter"):
                 setattr(cls, model_name, model)
 
+            throughs = ["TwitterRelationshipModel"]
             for relationship_type, owner_model, related_model, field_name, related_name, through, symmetrical in [
                 (models.ForeignKey, "TweetModel", "TwitterProfileModel", "profile", "tweets", None, True),
                 (models.ForeignKey, "BotometerScoreModel", "TwitterProfileModel", "profile", "botometer_scores", None, True),
-                (models.ForeignKey, "TweetModel", "FacebookUserModel", "author_user", "authored_posts", None, True),
                 (models.ManyToManyField, "TweetModel", "TwitterHashtagModel", "tweets", "hashtags", None, True),
                 (models.ForeignKey, "TweetModel", "TwitterPlaceModel", "place", "tweets", None, True),
                 (models.ManyToManyField, "TweetModel", "TwitterProfileModel", "tweet_mentions", "user_mentions", None, True),
-                (models.ManyToManyField, "TwitterProfileModel", "TwitterProfileModel", "followers", "friends", "TwitterRelationship", False)
-                (models.ForeignKey, "TwitterRelationship", "TwitterProfileModel", "friend", "follower_details", None, True),
-                (models.ForeignKey, "TwitterRelationship", "TwitterProfileModel", "follower", "friend_details", None, True)
+                (models.ForeignKey, "TwitterRelationshipModel", "TwitterProfileModel", "friend", "follower_details", None, True),
+                (models.ForeignKey, "TwitterRelationshipModel", "TwitterProfileModel", "follower", "friend_details", None, True),
+                (models.ManyToManyField, "TwitterProfileModel", "TwitterProfileModel", "followers", "friends", "TwitterRelationshipModel", False),
+
             ]:
+                # if owner_model == "TwitterRelationshipModel" and hasattr(cls, owner_model):
+                #     import pdb
+                #     pdb.set_trace()
+
                 if hasattr(cls, owner_model) and hasattr(cls, related_model) \
-                        and getattr(cls, owner_model) and getattr(cls, related_model):
+                        and getattr(cls, owner_model) and getattr(cls, related_model) and \
+                        (not through or (hasattr(cls, through) and getattr(cls, through))):
                     try:
                         getattr(cls, owner_model)._meta.get_field(field_name)
-
                     except models.fields.FieldDoesNotExist:
                         field_params = {"related_name": related_name}
                         if through:
                             field_params["through"] = getattr(cls, through)
                         if not symmetrical:
                             field_params["symmetrical"] = symmetrical
-                        if relationship_type != models.ManyToManyField:
+                        if relationship_type != models.ManyToManyField and owner_model not in throughs:
                             field_params["null"] = True
+                        print field_params
                         getattr(cls, owner_model).add_to_class(
                             field_name,
                             relationship_type(
@@ -271,7 +278,6 @@ class AbstractTwitterRelationship(models.Model):
 
     class Meta:
         abstract = True
-        unique_together = ("friend", "follower")
 
     __metaclass__ = AbstractTwitterBase
 
