@@ -3,7 +3,7 @@ from django.core.management.base import BaseCommand
 
 from pewtils.django import get_model
 
-from pewhooks import TwitterAPIHandler
+from pewhooks.twitter import TwitterAPIHandler
 
 class Command(BaseCommand):
 
@@ -18,7 +18,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        twitter_json = self.twitter.get_user_tweets(options["twitter_id"])
+        twitter_json = self.twitter.get_user(options["twitter_id"])
 
         user_model = get_model(settings.getattr('TWITTER_USER_MODEL'))
         try: twitter_user = user_model.objects.get(twitter_id=options["twitter_id"])
