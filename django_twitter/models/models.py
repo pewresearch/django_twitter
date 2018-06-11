@@ -16,7 +16,7 @@ class AbstractTwitterBase(models.base.ModelBase):
 
     def __new__(cls, name, bases, attrs):
 
-        model = super(AbstractFacebookBase, cls).__new__(cls, name, bases, attrs)
+        model = super(AbstractTwitterBase, cls).__new__(cls, name, bases, attrs)
 
         for base in bases:
             model_name = re.sub('Abstract', '', base.__name__) + 'Model'
