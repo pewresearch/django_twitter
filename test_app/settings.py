@@ -3,7 +3,8 @@ from contextlib import closing
 from django.db import models
 
 
-sys.path.append("/Users/pvankessel/workspace/devops/docker/2-pewthon/pewhooks")
+#sys.path.append("/Users/pvankessel/workspace/devops/docker/2-pewthon/pewhooks")
+sys.path.append("/opt/repos/api_hooks/pewhooks")
 
 ##### FILE PATHS
 
