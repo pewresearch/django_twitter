@@ -3,6 +3,7 @@ from django.contrib.postgres.fields import ArrayField, JSONField
 from picklefield.fields import PickledObjectField
 from simple_history.models import HistoricalRecords
 from dateutil.parser import parse as date_parse
+from datetime import datetime
 
 from django_commander.models import LoggedExtendedModel
 from pewtils import decode_text, is_not_null, is_null
@@ -78,14 +79,13 @@ class AbstractTwitterProfile(AbstractTwitterObject):
 
     __metaclass__ = AbstractTwitterBase
 
-    tweet_backfill = models.BooleanField(default=False,
+    tweet_backfilled = models.BooleanField(default=False,
                                          help_text="An indicator used in the sync_tweets management function; True indicates that the user's \
         tweet history has been backfilled as far as possible, so the sync function will stop after it hits an existing \
         tweet the next time it runs.")
 
     screen_name = models.CharField(max_length=100, db_index=True, null=True, help_text="Twitter screen name")
     name = models.CharField(max_length=200, null=True)
-    location = models.TextField(null=True)
     description = models.TextField(null=True)
     status = models.TextField(null=True)
     urls = ArrayField(models.CharField(max_length=300), default=[])
@@ -135,10 +135,9 @@ class AbstractTwitterProfile(AbstractTwitterObject):
             self.followers_count = profile_data['followers_count']
             self.friends_count = profile_data['friends_count']
             self.listed_count = profile_data['listed_count']
-            self.location = profile_data['location']
-            self.name = profile_data['name']
-            self.profile_image_url = profile_data['profile_image_url']
+            self.language = profile_data['language']
             self.statuses_count = profile_data['statuses_count']
+            self.profile_image_url = profile_data['profile_image_url']
             self.status = profile_data['status']['text'] if 'status' in profile_data.keys() else None
             self.is_verified = profile_data['verified']
             self.contributors_enabled = profile_data['contributors_enabled']
@@ -158,7 +157,7 @@ class AbstractTweet(AbstractTwitterObject):
     __metaclass__ = AbstractTwitterBase
 
     # Rookery calls this created_at - I think that would be good for consistency
-    timestamp = models.DateTimeField(null=True, help_text="The time/date that the tweet was published")
+    created_at = models.DateTimeField(null=True, help_text="The time/date that the tweet was published")
     links = ArrayField(models.CharField(max_length=400), default=[], null=True,
                        help_text="Links contained in the tweet")
 
@@ -166,11 +165,12 @@ class AbstractTweet(AbstractTwitterObject):
     in_reply_to_screen_name = models.CharField(max_length=255, null=True)
     in_reply_to_status_id = models.CharField(max_length=255, null=True)
     in_reply_to_user_id = models.CharField(max_length=255, null=True)
-    lang = models.CharField(max_length=255, null=True)
-    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True)
+    language = models.CharField(max_length=255, null=True)
+    # latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True)
+    # longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True)
     quoted_status_id = models.CharField(max_length=255, null=True)
-    source = models.CharField(max_length=255, null=True)
+    # source = type of device. Removing this because it seems like it would be rarely used (will be in the json)
+    #source = models.CharField(max_length=255, null=True)
     text = models.CharField(max_length = 1024, null = True) # Could change to 280 - no need to be so long
 
     retweeted = models.NullBooleanField(null=True)
@@ -216,7 +216,7 @@ class AbstractTweet(AbstractTwitterObject):
 
                 user_mentions = []
                 for user_mention in tweet_data["entities"]["user_mentions"]:
-                    existing_profiles = TwitterProfile.objects.filter(twitter_id=user_mention["id_str"])
+                    existing_profiles = AbstractTwitterProfile.objects.filter(twitter_id=user_mention["id_str"])
                     if existing_profiles.count() > 1:
                         # print "This tweet mentioned an ID that belongs to multiple profiles"
                         # # TODO: you probably want to just try filtering on historical=False at this point
@@ -229,7 +229,7 @@ class AbstractTweet(AbstractTwitterObject):
                         user_mentions.append(existing_profiles[0])
                     else:
                         user_mentions.append(
-                            TwitterProfile.objects.create(
+                            AbstractTwitterProfile.objects.create(
                                 twitter_id=user_mention["id_str"],
                                 historical=False
                             )
@@ -238,7 +238,7 @@ class AbstractTweet(AbstractTwitterObject):
 
                 hashtags = []
                 for hashtag in tweet_data["entities"]["hashtags"]:
-                    hashtags.append(TwitterHashtag.objects.create_or_update({"name": hashtag["text"].lower()}))
+                    hashtags.append(AbstractTwitterHashtag.objects.create_or_update({"name": hashtag["text"].lower()}))
                 self.hashtags = hashtags
 
             self.save()
@@ -295,7 +295,7 @@ class AbstractTwitterHashtag(models.Model):
 
     def save(self, *args, **kwargs):
         self.name = self.name.lower()
-        super(TwitterHashtag, self).save(*args, **kwargs)
+        super(AbstractTwitterHashtag, self).save(*args, **kwargs)
 
 ####
 # Additional classes that are in Rookery that I don't think we need
