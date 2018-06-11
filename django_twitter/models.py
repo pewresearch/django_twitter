@@ -1,11 +1,11 @@
+import re
+
 from django.db import models
 from django.contrib.postgres.fields import ArrayField, JSONField
 from picklefield.fields import PickledObjectField
 from simple_history.models import HistoricalRecords
 from dateutil.parser import parse as date_parse
-from datetime import datetime
 
-from django_commander.models import LoggedExtendedModel
 from pewtils import decode_text, is_not_null, is_null
 
 
