@@ -53,7 +53,6 @@ class AbstractTwitterBase(models.base.ModelBase):
                             field_params["symmetrical"] = symmetrical
                         if relationship_type != models.ManyToManyField and owner_model not in throughs:
                             field_params["null"] = True
-                        print field_params
                         getattr(cls, owner_model).add_to_class(
                             field_name,
                             relationship_type(
