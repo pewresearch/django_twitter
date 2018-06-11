@@ -2,8 +2,8 @@ import os, pwd, sys
 from contextlib import closing
 from django.db import models
 
-sys.path.append("/opt/repos/django_commander")
-sys.path.append("/opt/repos/pewtils")
+
+sys.path.append("/Users/pvankessel/workspace/devops/docker/2-pewthon/pewhooks")
 
 ##### FILE PATHS
 
@@ -18,7 +18,6 @@ CACHE_ROOT = os.path.abspath(os.path.join(FILE_ROOT, "cache").decode('utf-8')).r
 OUTPUT_ROOT = os.path.abspath(os.path.join(FILE_ROOT, "output").decode('utf-8')).replace('\\', '/')
 STATIC_ROOT = os.path.abspath(os.path.join(APP_ROOT, "static").decode('utf-8')).replace('\\', '/')
 
-TWITTER_USER_MODEL = "TwitterProfile"
 
 ##### BASIC SITE CONFIG
 
@@ -32,6 +31,7 @@ USE_L10N = True
 USE_TZ = False
 ADMINS = (
     ('Galen Stocking', 'gstocking@pewresearch.org'),
+    ('Patrick van Kessel', 'pvankessel@pewresearch.org'),
 )
 MANAGERS = ADMINS
 WSGI_APPLICATION = 'test_app.wsgi.application'
@@ -58,7 +58,6 @@ INSTALLED_APPS = (
     'django.contrib.sitemaps',
     'django.contrib.admin',
     'django.contrib.admindocs',
-    "django_commander",
     "django_twitter",
     'test_app',
 )
@@ -81,9 +80,9 @@ SITE_READ_ONLY = False
 
 ##### DJANGO_COMMANDER SETTINGS
 
-DJANGO_COMMANDER_COMMAND_FOLDERS = [
-    os.path.abspath(os.path.join(APP_ROOT, "commands").decode('utf-8')).replace('\\', '/')
-]
+# DJANGO_COMMANDER_COMMAND_FOLDERS = [
+#     os.path.abspath(os.path.join(APP_ROOT, "commands").decode('utf-8')).replace('\\', '/')
+# ]
 
 ##### URL AND TEMPLATE SETTINGS
 
@@ -159,3 +158,8 @@ LOGGING = {
     },
 }
 LOGGING_CONFIG = None
+
+##### DJANGO_FACEBOOK SETTINGS
+
+TWITTER_PROFILE_MODEL = "test_app.TwitterProfile"
+TWEET_MODEL = "test_app.Tweet"
