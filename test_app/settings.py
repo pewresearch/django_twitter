@@ -162,9 +162,9 @@ LOGGING_CONFIG = None
 
 ##### DJANGO_FACEBOOK SETTINGS
 
-TWITTER_PROFILE_MODEL = "test_app.TwitterProfile"
-TWEET_MODEL = "test_app.Tweet"
-BOTOMETER_SCORE_MODEL = "test_app.BotometerScore"
-TWITTER_RELATIONSHIP_MODEL = "test_app.TwitterRelationship"
-TWITTER_HASHTAG_MODEL = "test_app.TwitterHashtag"
-TWITTER_PLACE_MODEL = "test_app.TwitterPlace"
+TWITTER_PROFILE_MODEL = "TwitterProfile"
+TWEET_MODEL = "Tweet"
+BOTOMETER_SCORE_MODEL = "BotometerScore"
+TWITTER_RELATIONSHIP_MODEL = "TwitterRelationship"
+TWITTER_HASHTAG_MODEL = "TwitterHashtag"
+TWITTER_PLACE_MODEL = "TwitterPlace"

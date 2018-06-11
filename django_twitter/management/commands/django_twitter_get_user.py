@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.apps import apps
 
-from pewtils.django import get_model
 
 from pewhooks.twitter import TwitterAPIHandler
 
@@ -20,7 +20,9 @@ class Command(BaseCommand):
 
         twitter_json = self.twitter.get_user(options["twitter_id"])
 
-        user_model = get_model(settings.getattr('TWITTER_USER_MODEL'))
+        user_model = apps.get_model(app_label="test_app", model_name=settings.TWITTER_PROFILE_MODEL)
+        import pdb
+        pdb.set_trace()
         try: twitter_user = user_model.objects.get(twitter_id=options["twitter_id"])
         except user_model.DoesNotExist: twitter_user = user_model.objects.create(twitter_id=options["twitter_id"])
 
