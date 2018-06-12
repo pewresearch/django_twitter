@@ -1,11 +1,12 @@
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.apps import apps
 
 from pewtils.django import get_model
 
 from tqdm import tqdm
 
-from pewhooks import TwitterAPIHandler
+from pewhooks.twitter import TwitterAPIHandler
 
 
 class Command(BaseCommand):
@@ -24,7 +25,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         scanned_count, updated_count = 0, 0
-        user_model = get_model(settings.getattr('TWITTER_USER_MODEL'))
+        user_model = apps.get_model(app_label="test_app", model_name=settings.TWITTER_PROFILE_MODEL)
         try: twitter_user = user_model.objects.get(twitter_id=options["twitter_id"])
         except user_model.DoesNotExist: twitter_user = user_model.objects.create(twitter_id=options["twitter_id"])
 
@@ -35,14 +36,16 @@ class Command(BaseCommand):
 
 
         # Iterate through all tweets in timeline
-        for tweet_json in tqdm(self.twitter.iterate_user_followers(options['twitter_id']),
+        import pdb
+        pdb.set_trace()
+        for tweet_json in tqdm(self.twitter.iterate_user_timeline(options['twitter_id']),
                                 desc = "Retrieving tweets for user {}".format(twitter_user.screen_name)):
             if not twitter_user.tweet_backfilled or \
                     options["ignore_backfill"] or options["overwrite"] or \
-                    tweet_json['id_str'] not in existing_tweets:
+                    tweet_json.id_str not in existing_tweets:
 
-                if options['overwrite'] or tweet['id_str'] not in existing_tweets:
-                    tweet = get_model(settings.getattr('TWITTER_TWEET_MODEL')).objects.create_or_update(
+                if options['overwrite'] or tweet_json.id_str not in existing_tweets:
+                    tweet = apps.get_model(app_label="test_app", model_name=settings.TWITTER_PROFILE_MODEL).objects.get_or_create(
                         {'twitter_id': options['twitter_id']},
                         return_object=True
                     )
