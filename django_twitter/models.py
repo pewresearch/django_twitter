@@ -3,8 +3,11 @@ import re
 from django.db import models
 from django.contrib.postgres.fields import ArrayField, JSONField
 from django.utils import timezone
+from django.db.models.signals import class_prepared
+
 from picklefield.fields import PickledObjectField
 from simple_history.models import HistoricalRecords
+from simple_history import register
 from dateutil.parser import parse as date_parse
 
 from pewtils import decode_text, is_not_null, is_null
@@ -36,9 +39,6 @@ class AbstractTwitterBase(models.base.ModelBase):
                 (models.ManyToManyField, "TwitterProfileModel", "TwitterProfileModel", "followers", "friends", "TwitterRelationshipModel", False),
 
             ]:
-                # if owner_model == "TwitterRelationshipModel" and hasattr(cls, owner_model):
-                #     import pdb
-                #     pdb.set_trace()
 
                 if hasattr(cls, owner_model) and hasattr(cls, related_model) \
                         and getattr(cls, owner_model) and getattr(cls, related_model) and \
@@ -66,10 +66,13 @@ class AbstractTwitterBase(models.base.ModelBase):
 
 class AbstractTwitterObject(models.Model):
 
+    class Meta:
+        abstract = True
+
     twitter_id = models.CharField(max_length=150, db_index=True)
     last_update_time = models.DateTimeField(auto_now=True)
     historical = models.BooleanField(default=False)
-    history = HistoricalRecords()
+    # history = HistoricalRecords()
     # TODO: add historical_twitter_ids
 
     def save(self, *args, **kwargs):
@@ -325,3 +328,16 @@ class AbstractTwitterPlace(AbstractTwitterObject):
             self.name = self.json["name"]
             self.full_name = self.json["full_name"]
         super(AbstractTwitterPlace, self).save(*args, **kwargs)
+
+
+
+
+def add_historical_records(sender, **kwargs):
+    try: base = sender.__base__.__base__
+    except: base = None
+    if base and base.__module__.startswith("django_twitter") and base.__name__ == "AbstractTwitterObject":
+        history = HistoricalRecords()
+        history.contribute_to_class(sender, "history")
+        register(sender)
+
+class_prepared.connect(add_historical_records)
