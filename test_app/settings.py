@@ -68,11 +68,11 @@ INSTALLED_APPS = (
 
 DATABASES = {
     'default': {
-        'ENGINE':   'django.db.backends.sqlite3',
-        'HOST':     '',
-        'NAME':     'test_app.db',
-        'USER':     '',
-        'PASSWORD': '',
+        'ENGINE':   'django.db.backends.postgresql',
+        'HOST':     'localhost',
+        'NAME':     'test_db',
+        'USER':     'postgres',
+        'PASSWORD': 'test',
         'PORT':     ''
     }
 }
