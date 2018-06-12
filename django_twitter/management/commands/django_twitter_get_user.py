@@ -21,9 +21,8 @@ class Command(BaseCommand):
         twitter_json = self.twitter.get_user(options["twitter_id"])
 
         user_model = apps.get_model(app_label="test_app", model_name=settings.TWITTER_PROFILE_MODEL)
-        import pdb
-        pdb.set_trace()
         try: twitter_user = user_model.objects.get(twitter_id=options["twitter_id"])
         except user_model.DoesNotExist: twitter_user = user_model.objects.create(twitter_id=options["twitter_id"])
-
-        twitter_user.update_from_json(twitter_json)
+        import pdb
+        pdb.set_trace()
+        twitter_user.update_from_json(twitter_json._json)

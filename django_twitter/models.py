@@ -141,7 +141,7 @@ class AbstractTwitterProfile(AbstractTwitterObject):
             self.followers_count = profile_data['followers_count']
             self.friends_count = profile_data['friends_count']
             self.listed_count = profile_data['listed_count']
-            self.language = profile_data['language']
+            self.language = profile_data['lang']
             self.statuses_count = profile_data['statuses_count']
             self.profile_image_url = profile_data['profile_image_url']
             self.status = profile_data['status']['text'] if 'status' in profile_data.keys() else None
