@@ -66,6 +66,9 @@ class AbstractTwitterBase(models.base.ModelBase):
 
 class AbstractTwitterObject(models.Model):
 
+    class Meta:
+        abstract = True
+
     twitter_id = models.CharField(max_length=150, db_index=True)
     last_update_time = models.DateTimeField(auto_now=True)
     historical = models.BooleanField(default=False)
