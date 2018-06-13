@@ -1,14 +1,17 @@
 import re
+import simple_history
 
 from django.db import models
 from django.contrib.postgres.fields import ArrayField, JSONField
 from django.utils import timezone
-from django.db.models.signals import class_prepared
+from django.conf import settings
+from django.apps import apps
 
 from picklefield.fields import PickledObjectField
-from simple_history.models import HistoricalRecords
 from simple_history import register
+from simple_history.models import HistoricalRecords
 from dateutil.parser import parse as date_parse
+from collections import defaultdict
 
 from pewtils import decode_text, is_not_null, is_null
 
@@ -21,24 +24,33 @@ class AbstractTwitterBase(models.base.ModelBase):
     def __new__(cls, name, bases, attrs):
 
         model = super(AbstractTwitterBase, cls).__new__(cls, name, bases, attrs)
-
         for base in bases:
             model_name = re.sub('Abstract', '', base.__name__) + 'Model'
             if base.__module__.startswith("django_twitter"):
                 setattr(cls, model_name, model)
 
-            throughs = ["TwitterRelationshipModel"]
-            for relationship_type, owner_model, related_model, field_name, related_name, through, symmetrical in [
-                (models.ForeignKey, "TweetModel", "TwitterProfileModel", "profile", "tweets", None, True),
-                (models.ForeignKey, "BotometerScoreModel", "TwitterProfileModel", "profile", "botometer_scores", None, True),
-                (models.ManyToManyField, "TweetModel", "TwitterHashtagModel", "tweets", "hashtags", None, True),
-                (models.ForeignKey, "TweetModel", "TwitterPlaceModel", "place", "tweets", None, True),
-                (models.ManyToManyField, "TweetModel", "TwitterProfileModel", "tweet_mentions", "user_mentions", None, True),
-                (models.ForeignKey, "TwitterRelationshipModel", "TwitterProfileModel", "friend", "follower_details", None, True),
-                (models.ForeignKey, "TwitterRelationshipModel", "TwitterProfileModel", "follower", "friend_details", None, True),
-                (models.ManyToManyField, "TwitterProfileModel", "TwitterProfileModel", "followers", "friends", "TwitterRelationshipModel", False),
-
-            ]:
+        counts = defaultdict(int)
+        fields_to_add = {
+            "TweetModel": [
+                (models.ForeignKey, "TwitterProfileModel", "profile", "tweets", None, True),
+                (models.ManyToManyField, "TwitterHashtagModel", "tweets", "hashtags", None, True),
+                (models.ForeignKey, "TwitterPlaceModel", "place", "tweets", None, True),
+                (models.ManyToManyField, "TwitterProfileModel", "tweet_mentions", "user_mentions", None, True)
+            ],
+            "BotometerScoreModel": [
+                (models.ForeignKey, "TwitterProfileModel", "profile", "botometer_scores", None, True)
+            ],
+            "TwitterRelationshipModel": [
+                (models.ForeignKey, "TwitterProfileModel", "friend", "follower_details", None, True),
+                (models.ForeignKey, "TwitterProfileModel", "follower", "friend_details", None, True)
+            ],
+            "TwitterProfileModel": [
+                (models.ManyToManyField, "TwitterProfileModel", "followers", "friends", "TwitterRelationshipModel", False)
+            ]
+        }
+        throughs = ["TwitterRelationshipModel"]
+        for owner_model in fields_to_add.keys():
+            for relationship_type, related_model, field_name, related_name, through, symmetrical in fields_to_add[owner_model]:
 
                 if hasattr(cls, owner_model) and hasattr(cls, related_model) \
                         and getattr(cls, owner_model) and getattr(cls, related_model) and \
@@ -60,8 +72,17 @@ class AbstractTwitterBase(models.base.ModelBase):
                                 **field_params
                             )
                         )
+                    counts[owner_model] += 1
+                    if counts[owner_model] == len(fields_to_add[owner_model]):
+                        if getattr(cls, owner_model).__base__.__base__.__name__ == "AbstractTwitterObject":
+                            try:
+                                history = HistoricalRecords()
+                                history.contribute_to_class(getattr(cls, owner_model), "history")
+                                register(getattr(cls, owner_model))
+                            except simple_history.exceptions.MultipleRegistrationsError:
+                                pass
 
-            return model
+        return model
 
 
 class AbstractTwitterObject(models.Model):
@@ -72,7 +93,6 @@ class AbstractTwitterObject(models.Model):
     twitter_id = models.CharField(max_length=150, db_index=True)
     last_update_time = models.DateTimeField(auto_now=True)
     historical = models.BooleanField(default=False)
-    # history = HistoricalRecords()
     # TODO: add historical_twitter_ids
 
     def save(self, *args, **kwargs):
@@ -123,12 +143,6 @@ class AbstractTwitterProfile(AbstractTwitterObject):
     def __str__(self):
         
         return self.screen_name # Can this include some more info? I've in the past included the constructed the URL
-
-    def save(self, *args, **kwargs):
-
-        if self.twitter_id:
-            self.twitter_id = str(self.twitter_id).lower()
-        super(AbstractTwitterProfile, self).save(*args, **kwargs)
 
     def update_from_json(self, profile_data=None):
 
@@ -225,7 +239,8 @@ class AbstractTweet(AbstractTwitterObject):
 
                 user_mentions = []
                 for user_mention in tweet_data["entities"]["user_mentions"]:
-                    existing_profiles = AbstractTwitterProfile.objects.filter(twitter_id=user_mention["id_str"])
+                    existing_profiles = apps.get_model(app_label="test_app", model_name=settings.TWITTER_PROFILE_MODEL)\
+                        .objects.filter(twitter_id=user_mention["id_str"])
                     if existing_profiles.count() > 1:
                         # print "This tweet mentioned an ID that belongs to multiple profiles"
                         # # TODO: you probably want to just try filtering on historical=False at this point
@@ -237,17 +252,16 @@ class AbstractTweet(AbstractTwitterObject):
                     elif existing_profiles.count() == 1:
                         user_mentions.append(existing_profiles[0])
                     else:
-                        user_mentions.append(
-                            AbstractTwitterProfile.objects.create(
-                                twitter_id=user_mention["id_str"],
-                                historical=False
-                            )
-                        )
+                        mentioned_profile, created = apps.get_model(app_label="test_app", model_name=settings.TWITTER_PROFILE_MODEL) \
+                            .objects.get_or_create(twitter_id=user_mention["id_str"])
+                        user_mentions.append(mentioned_profile)
                 self.user_mentions = user_mentions
 
                 hashtags = []
                 for hashtag in tweet_data["entities"]["hashtags"]:
-                    hashtags.append(AbstractTwitterHashtag.objects.create_or_update({"name": hashtag["text"].lower()}))
+                    hashtag_obj, created = apps.get_model(app_label="test_app", model_name=settings.TWITTER_HASHTAG_MODEL) \
+                        .objects.get_or_create(name=hashtag['text'].lower())
+                    hashtags.append(hashtag_obj)
                 self.hashtags = hashtags
 
             self.save()
@@ -332,12 +346,12 @@ class AbstractTwitterPlace(AbstractTwitterObject):
 
 
 
-def add_historical_records(sender, **kwargs):
-    try: base = sender.__base__.__base__
-    except: base = None
-    if base and base.__module__.startswith("django_twitter") and base.__name__ == "AbstractTwitterObject":
-        history = HistoricalRecords()
-        history.contribute_to_class(sender, "history")
-        register(sender)
-
-class_prepared.connect(add_historical_records)
+# def add_historical_records(sender, **kwargs):
+#     try: base = sender.__base__.__base__
+#     except: base = None
+#     if base and base.__module__.startswith("django_twitter") and base.__name__ == "AbstractTwitterObject":
+#         history = HistoricalRecords()
+#         history.contribute_to_class(sender, "history")
+#         register(sender)
+#
+# class_prepared.connect(add_historical_records)
