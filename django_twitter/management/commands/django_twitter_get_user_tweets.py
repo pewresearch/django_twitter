@@ -36,8 +36,6 @@ class Command(BaseCommand):
 
 
         # Iterate through all tweets in timeline
-        import pdb
-        pdb.set_trace()
         for tweet_json in tqdm(self.twitter.iterate_user_timeline(options['twitter_id']),
                                 desc = "Retrieving tweets for user {}".format(twitter_user.screen_name)):
             if not twitter_user.tweet_backfilled or \
@@ -45,11 +43,10 @@ class Command(BaseCommand):
                     tweet_json.id_str not in existing_tweets:
 
                 if options['overwrite'] or tweet_json.id_str not in existing_tweets:
-                    tweet = apps.get_model(app_label="test_app", model_name=settings.TWITTER_PROFILE_MODEL).objects.get_or_create(
-                        {'twitter_id': options['twitter_id']},
-                        return_object=True
+                    tweet, created = apps.get_model(app_label="test_app", model_name=settings.TWEET_MODEL).objects.get_or_create(
+                        twitter_id=options['twitter_id']
                     )
-                    tweet.update_from_json(tweet_json)
+                    tweet.update_from_json(tweet_json._json)
                     updated_count += 1
                 elif twitter_user.tweet_backfill and not options['ignore_backfill']:
                     print("Encountered existing tweet, stopping now")
