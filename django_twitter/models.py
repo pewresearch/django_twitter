@@ -142,7 +142,7 @@ class AbstractTwitterProfile(AbstractTwitterObject):
 
     def __str__(self):
         
-        return self.screen_name # Can this include some more info? I've in the past included the constructed the URL
+        return str(self.screen_name if self.screen_name else self.twitter_id) # Can this include some more info? I've in the past included the constructed the URL
 
     def update_from_json(self, profile_data=None):
 
@@ -208,7 +208,7 @@ class AbstractTweet(AbstractTwitterObject):
         return "{0}, {1}: {2}".format(
             self.profile,
             self.timestamp,
-            decode_text(self.document.text) if self.document and self.document.text else None # I don't understand this business
+            decode_text(self.text)
         )
 
     def update_from_json(self, tweet_data=None):
@@ -313,7 +313,7 @@ class AbstractTwitterHashtag(models.Model):
     name = models.CharField(max_length=150, unique=True, db_index=True)
 
     def __str__(self):
-        return self.name
+        return str(self.name)
 
     def save(self, *args, **kwargs):
         self.name = self.name.lower()
