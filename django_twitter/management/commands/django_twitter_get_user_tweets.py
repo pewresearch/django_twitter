@@ -26,15 +26,11 @@ class Command(BaseCommand):
 
         scanned_count, updated_count = 0, 0
         user_model = apps.get_model(app_label="test_app", model_name=settings.TWITTER_PROFILE_MODEL)
-        try: twitter_user = user_model.objects.get(twitter_id=options["twitter_id"])
-        except user_model.DoesNotExist: twitter_user = user_model.objects.create(twitter_id=options["twitter_id"])
+        twitter_user, created = user_model.objects.get_or_create(twitter_id=options["twitter_id"])
 
-        # get list of current tweets
+        tweet_model = apps.get_model(app_label="test_app", model_name=settings.TWEET_MODEL)
+        # Get list of current tweets
         existing_tweets = list(twitter_user.tweets.values_list('twitter_id', flat=True))
-        # Next line was in the original - I don't think we need it here but leaving it in (commented) in case things break
-        #existing_tweets.extend(flatten_list(list(profile.tweets.values_list("duplicate_twitter_ids", flat=True))))
-
-
         # Iterate through all tweets in timeline
         for tweet_json in tqdm(self.twitter.iterate_user_timeline(options['twitter_id']),
                                 desc = "Retrieving tweets for user {}".format(twitter_user.screen_name)):
@@ -43,7 +39,7 @@ class Command(BaseCommand):
                     tweet_json.id_str not in existing_tweets:
 
                 if options['overwrite'] or tweet_json.id_str not in existing_tweets:
-                    tweet, created = apps.get_model(app_label="test_app", model_name=settings.TWEET_MODEL).objects.get_or_create(
+                    tweet, created = tweet_model.objects.get_or_create(
                         twitter_id=options['twitter_id']
                     )
                     tweet.update_from_json(tweet_json._json)
