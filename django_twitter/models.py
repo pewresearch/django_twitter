@@ -210,7 +210,7 @@ class AbstractTweet(AbstractTwitterObject):
 
         return "{0}, {1}: {2}".format(
             self.profile,
-            self.timestamp,
+            self.created_at,
             decode_text(self.text)
         )
 
