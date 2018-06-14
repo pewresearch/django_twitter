@@ -16,16 +16,14 @@ class Command(BaseCommand):
         parser.add_argument('--access_token', type=str)
         parser.add_argument('--access_secret', type=str)
 
-    def __init__(self, **options):
-        super(Command, self).__init__(**options)
+    def handle(self, *args, **options):
+
         self.twitter = TwitterAPIHandler(
             api_key=options["api_key"],
             api_secret=options["api_secret"],
             access_token=options["access_token"],
             access_secret=options["access_secret"]
         )
-
-    def handle(self, *args, **options):
 
         twitter_json = self.twitter.get_user(options["twitter_id"])
         user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
