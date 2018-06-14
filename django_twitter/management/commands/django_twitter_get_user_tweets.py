@@ -16,6 +16,7 @@ class Command(BaseCommand):
         parser.add_argument("twitter_id", type = str)
         parser.add_argument("--ignore_backfill", action="store_true", default=False)
         parser.add_argument("--overwrite", action="store_true", default=False)
+        parser.add_argument("--tweet_set", type = str)
 
     def __init__(self, **options):
 
@@ -23,6 +24,11 @@ class Command(BaseCommand):
         self.twitter = TwitterAPIHandler()
 
     def handle(self, *args, **options):
+
+        tweet_set = None
+        if options["tweet_set"]:
+            tweet_set_model = apps.get_model(app_label="test_app", model_name=settings.TWEET_SET_MODEL)
+            tweet_set, created = tweet_set_model.objects.get_or_create(name=options["tweet_set"])
 
         scanned_count, updated_count = 0, 0
         user_model = apps.get_model(app_label="test_app", model_name=settings.TWITTER_PROFILE_MODEL)
@@ -43,6 +49,8 @@ class Command(BaseCommand):
                         twitter_id=options['twitter_id']
                     )
                     tweet.update_from_json(tweet_json._json)
+                    if tweet_set:
+                        tweet_set.tweets.add(tweet)
                     updated_count += 1
                 elif twitter_user.tweet_backfill and not options['ignore_backfill']:
                     print("Encountered existing tweet, stopping now")
