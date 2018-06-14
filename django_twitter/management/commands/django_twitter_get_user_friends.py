@@ -26,8 +26,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         scanned_count, updated_count = 0, 0
-        user_model = apps.get_model(app_label="test_app", model_name=settings.TWITTER_PROFILE_MODEL)
-        relationship_model = apps.get_model(app_label="test_app", model_name=settings.TWITTER_RELATIONSHIP_MODEL)
+        user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
+        relationship_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_RELATIONSHIP_MODEL)
         follower, created = user_model.objects.get_or_create(twitter_id=options["twitter_id"])
 
         # Iterate through all tweets in timeline

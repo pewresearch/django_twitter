@@ -27,14 +27,14 @@ class Command(BaseCommand):
 
         tweet_set = None
         if options["tweet_set"]:
-            tweet_set_model = apps.get_model(app_label="test_app", model_name=settings.TWEET_SET_MODEL)
+            tweet_set_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_SET_MODEL)
             tweet_set, created = tweet_set_model.objects.get_or_create(name=options["tweet_set"])
 
         scanned_count, updated_count = 0, 0
-        user_model = apps.get_model(app_label="test_app", model_name=settings.TWITTER_PROFILE_MODEL)
+        user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
         twitter_user, created = user_model.objects.get_or_create(twitter_id=options["twitter_id"])
 
-        tweet_model = apps.get_model(app_label="test_app", model_name=settings.TWEET_MODEL)
+        tweet_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL)
         # Get list of current tweets
         existing_tweets = list(twitter_user.tweets.values_list('twitter_id', flat=True))
         # Iterate through all tweets in timeline
