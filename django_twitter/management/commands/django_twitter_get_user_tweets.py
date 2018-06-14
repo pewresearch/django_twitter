@@ -46,8 +46,7 @@ class Command(BaseCommand):
 
                 if options['overwrite'] or tweet_json.id_str not in existing_tweets:
                     tweet = apps.get_model(app_label="test_app", model_name=settings.TWITTER_PROFILE_MODEL).objects.get_or_create(
-                        {'twitter_id': options['twitter_id']},
-                        return_object=True
+                        {'twitter_id': options['twitter_id']}
                     )
                     tweet.update_from_json(tweet_json)
                     updated_count += 1
