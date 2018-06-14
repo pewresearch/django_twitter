@@ -11,10 +11,19 @@ class Command(BaseCommand):
 
         parser.add_argument("twitter_id", type = str)
 
-    def __init__(self, **options):
+        parser.add_argument('--api_key', type=str)
+        parser.add_argument('--api_secret', type=str)
+        parser.add_argument('--access_token', type=str)
+        parser.add_argument('--access_secret', type=str)
 
+    def __init__(self, **options):
         super(Command, self).__init__(**options)
-        self.twitter = TwitterAPIHandler()
+        self.twitter = TwitterAPIHandler(
+            api_key=options["api_key"],
+            api_secret=options["api_secret"],
+            access_token=options["access_token"],
+            access_secret=options["access_secret"]
+        )
 
     def handle(self, *args, **options):
 
