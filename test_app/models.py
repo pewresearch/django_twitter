@@ -30,3 +30,7 @@ class TwitterHashtag(AbstractTwitterHashtag):
 class TwitterPlace(AbstractTwitterPlace):
 
     pass
+
+class TweetSet(AbstractTweetSet):
+
+    pass

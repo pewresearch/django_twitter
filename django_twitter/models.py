@@ -46,6 +46,9 @@ class AbstractTwitterBase(models.base.ModelBase):
             ],
             "TwitterProfileModel": [
                 (models.ManyToManyField, "TwitterProfileModel", "followers", "friends", "TwitterRelationshipModel", False)
+            ],
+            "TweetSetModel": [
+                (models.ManyToManyField, "TweetModel", "tweets", "tweet_sets", None, True)
             ]
         }
         throughs = ["TwitterRelationshipModel"]
@@ -355,3 +358,17 @@ class AbstractTwitterPlace(AbstractTwitterObject):
 #         register(sender)
 #
 # class_prepared.connect(add_historical_records)
+
+
+class AbstractTweetSet(models.Model):
+
+    class Meta:
+        abstract = True
+
+    __metaclass__ = AbstractTwitterBase
+
+    name = models.CharField(max_length=256, unique=True)
+
+    def __str__(self):
+
+        return self.name
