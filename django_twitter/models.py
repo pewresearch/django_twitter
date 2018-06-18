@@ -49,6 +49,9 @@ class AbstractTwitterBase(models.base.ModelBase):
             ],
             "TweetSetModel": [
                 (models.ManyToManyField, "TweetModel", "tweets", "tweet_sets", None, True)
+            ],
+            "TwitterProfileSetModel": [
+                (models.ManyToManyField, "TwitterProfileModel", "profiles", "twitter_profile_sets", None, True)
             ]
         }
         throughs = ["TwitterRelationshipModel"]
@@ -391,3 +394,19 @@ class AbstractTweetSet(models.Model):
     def __str__(self):
 
         return self.name
+
+
+
+class AbstractTwitterProfileSet(models.Model):
+
+    class Meta:
+        abstract = True
+
+    __metaclass__ = AbstractTwitterBase
+
+    name = models.CharField(max_length=256, unique=True)
+
+    def __str__(self):
+
+        return self.name
+
