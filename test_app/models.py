@@ -34,3 +34,7 @@ class TwitterPlace(AbstractTwitterPlace):
 class TweetSet(AbstractTweetSet):
 
     pass
+
+class TwitterProfileSet(AbstractTwitterProfileSet):
+
+    pass
