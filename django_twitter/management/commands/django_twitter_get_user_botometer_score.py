@@ -15,6 +15,7 @@ class Command(BaseCommand):
         parser.add_argument('--api_secret', type=str)
         parser.add_argument('--access_token', type=str)
         parser.add_argument('--access_secret', type=str)
+        parser.add_argument('--botometer_key', type=str)
 
     def handle(self, *args, **options):
 
@@ -22,10 +23,14 @@ class Command(BaseCommand):
             api_key=options["api_key"],
             api_secret=options["api_secret"],
             access_token=options["access_token"],
-            access_secret=options["access_secret"]
+            access_secret=options["access_secret"],
+            botometer_key=options["botometer_key"]
         )
 
-        twitter_json = self.twitter.get_user(options["twitter_id"])
         user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
         twitter_user, created = user_model.objects.get_or_create(twitter_id=options["twitter_id"])
-        twitter_user.update_from_json(twitter_json._json)
+
+        botometer_scores = self.twitter.get_user_botometer_score(options["twitter_id"])
+        botometer_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.BOTOMETER_SCORE_MODEL)
+        score = botometer_model.objects.create(profile=twitter_user)
+        score.update_from_json(botometer_scores)

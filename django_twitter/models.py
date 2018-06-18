@@ -169,6 +169,7 @@ class AbstractTwitterProfile(AbstractTwitterObject):
             self.contributors_enabled = profile_data['contributors_enabled']
             self.urls = [url['expanded_url'] for url in profile_data['entities']['url']['urls'] if
                          url['expanded_url']] if "url" in profile_data['entities'].keys() else []
+            self.json = profile_data
             self.save()
 
     def url(self):
@@ -204,7 +205,7 @@ class AbstractTweet(AbstractTwitterObject):
     retweet_count = models.IntegerField(null=True)
     favorite_count = models.IntegerField(null=True)
 
-    json = PickledObjectField(null=True)
+    json = JSONField(null=True, default=dict)
 
     def __str__(self):
 
@@ -267,6 +268,7 @@ class AbstractTweet(AbstractTwitterObject):
                     hashtags.append(hashtag_obj)
                 self.hashtags = hashtags
 
+            self.json = tweet_data
             self.save()
 
     def url(self):
@@ -283,15 +285,32 @@ class AbstractBotometerScore(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     api_version = models.FloatField(null=True)
-    botometer_content = models.FloatField(null=True)
-    botometer_friend = models.FloatField(null=True)
-    botometer_network = models.FloatField(null=True)
-    botometer_sentiment = models.FloatField(null=True)
-    botometer_temporal = models.FloatField(null=True)
-    botometer_user = models.FloatField(null=True)
-    botometer_scores_english = models.FloatField(null=True)
-    botometer_scores_universal = models.FloatField(null=True)
+    content_score = models.FloatField(null=True)
+    friend_score = models.FloatField(null=True)
+    network_score = models.FloatField(null=True)
+    sentiment_score = models.FloatField(null=True)
+    temporal_score = models.FloatField(null=True)
+    user_score = models.FloatField(null=True)
+    overall_score_english = models.FloatField(null=True)
+    overall_score_universal = models.FloatField(null=True)
 
+    json = JSONField(null=True, default=dict)
+
+    def update_from_json(self, score_json=None):
+
+        if not score_json:
+            score_json = self.json
+        if score_json:
+            self.content_score = score_json["categories"]["content"]
+            self.friend_score = score_json["categories"]["friend"]
+            self.network_score = score_json["categories"]["network"]
+            self.sentiment_score = score_json["categories"]["sentiment"]
+            self.temporal_score = score_json["categories"]["temporal"]
+            self.user_score = score_json["categories"]["user"]
+            self.overall_score_english = score_json["scores"]["english"]
+            self.overall_score_universal = score_json["scores"]["universal"]
+            self.json = score_json
+            self.save()
 
 class AbstractTwitterRelationship(models.Model):
 
