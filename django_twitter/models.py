@@ -144,8 +144,8 @@ class AbstractTwitterProfile(AbstractTwitterObject):
     json = JSONField(null=True, default=dict)
 
     def __str__(self):
-        
-        return str(self.screen_name if self.screen_name else self.twitter_id) # Can this include some more info? I've in the past included the constructed the URL
+
+        return str("{0}: http://twitter.com/{0}".format(self.screen_name) if self.screen_name else self.twitter_id)
 
     def update_from_json(self, profile_data=None):
 
