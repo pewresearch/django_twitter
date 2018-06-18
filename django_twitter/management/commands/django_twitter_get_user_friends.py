@@ -16,8 +16,9 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
 
         parser.add_argument("twitter_id", type = str)
-        parser.add_argument("--hydrate", action="store_true", default=False)
 
+        parser.add_argument("--hydrate", action="store_true", default=False)
+        parser.add_argument("--twitter_profile_set", type=str)
         parser.add_argument('--api_key', type=str)
         parser.add_argument('--api_secret', type=str)
         parser.add_argument('--access_token', type=str)
@@ -37,6 +38,11 @@ class Command(BaseCommand):
         relationship_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_RELATIONSHIP_MODEL)
         follower, created = user_model.objects.get_or_create(twitter_id=options["twitter_id"])
 
+        twitter_profile_set = None
+        if options["twitter_profile_set"]:
+            twitter_profile_set_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_SET_MODEL)
+            twitter_profile_set, created = twitter_profile_set_model.objects.get_or_create(name=options["twitter_profile_set"])
+
         # Iterate through all tweets in timeline
         for friend_data in tqdm(self.twitter.iterate_user_friends(options['twitter_id'], hydrate_users=options['hydrate']),
                                 desc = "Retrieving friends for user {}".format(follower.screen_name)):
@@ -50,5 +56,7 @@ class Command(BaseCommand):
             if date not in relationship.dates:
                 relationship.dates.append(date)
                 relationship.save()
+            if twitter_profile_set:
+                twitter_profile_set.profiles.add(friend)
 
 
