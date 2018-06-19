@@ -2,7 +2,7 @@ version: '2.3'
 services:
   pewthon:
     container_name: pewthon
-    image: 458280294434.dkr.ecr.us-east-1.amazonaws.com/pewthon:2018-05-21
+    image: 458280294434.dkr.ecr.us-east-1.amazonaws.com/pewthon:2018-06-16
     ports:
       - "8080:8080/tcp"
     volumes:
