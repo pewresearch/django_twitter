@@ -29,9 +29,6 @@ class Command(BaseCommand):
         )
 
         # setup
-        if options["debug"]:
-            import pdb
-            pdb.set_trace()
         if options["long"]:
             max_users=500
         else:
@@ -41,8 +38,14 @@ class Command(BaseCommand):
         lst_test_users = []
         all_users = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL).objects.all()
         for user in all_users[:max_users]:
-            if not user.screen_name: lst_test_users.append(user.id)
+            if (user.screen_name==None) and not user.twitter_id=='galenstocking': # temp test
+                lst_test_users.append(user.twitter_id)
+
+        if options["debug"]:
+            import pdb
+            pdb.set_trace()
 
         # start testing
         print("Testing {} users".format(len(lst_test_users)))
-        call_command('django_twitter_get_user_tweets', lst_test_users)
+        lst_test_users.append('-V')
+        call_command('django_twitter_get_users', *lst_test_users)
