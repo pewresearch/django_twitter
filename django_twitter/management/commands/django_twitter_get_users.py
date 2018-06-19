@@ -40,6 +40,7 @@ class Command(BaseCommand):
         print("{} users found".format(cnt))
 
     def process_users(self, lst_user_ids, twitter_profile_set, verbose, cnt=0):
+        # TODO: handle if chunk has weird ids (special characters, spelling errors)
         lst_json = self.twitter.get_users(lst_user_ids)
         for user_json in lst_json:
             if verbose:
