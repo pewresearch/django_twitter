@@ -2,6 +2,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.apps import apps
 
+from tqdm import tqdm
 
 from pewhooks.twitter import TwitterAPIHandler
 
@@ -11,7 +12,7 @@ class Command(BaseCommand):
 
         parser.add_argument("twitter_ids", nargs="+")
 
-        parser.add_argument("-v", "--verbose", action="store_true")
+        parser.add_argument("-V", "--verbose", action="store_true") # cannot be lower case to work with call_command
         parser.add_argument("--twitter_profile_set", type=str)
 
         parser.add_argument('--api_key', type=str)
@@ -27,7 +28,6 @@ class Command(BaseCommand):
             access_token=options["access_token"],
             access_secret=options["access_secret"]
         )
-
         twitter_profile_set = None
         if options["twitter_profile_set"]:
             twitter_profile_set_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_SET_MODEL)
@@ -35,18 +35,25 @@ class Command(BaseCommand):
 
         print("Collecting profile data for {} users".format(len(options["twitter_ids"])))
         cnt = 0
-        if len(options["twitter_ids"]) > 100: # API endpoint can only take 100 users at a time
-            for user_block in range((len(options["twitter_ids"]) / 100) + 1):
-                lst_json = self.twitter.get_users(options["twitter_ids"])
-                for user_json in user_block:
-                    if options["verbose"]:
-                        print("Collecting user {}".format(user_json.screen_name))
-                    user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
-                    twitter_user, created = user_model.objects.get_or_create(twitter_id=user_json.screen_name) # TODO: Verify this is screen name and not id
-                    twitter_user.update_from_json(user_json._json)
-                    if twitter_profile_set:
-                        twitter_profile_set.profiles.add(twitter_user)
-                    if options["verbose"]:
-                        print("Successfully saved profile data for {}".format(str(twitter_user)))
-                    cnt += 1
+        for user_id_block in tqdm(chunker(options['twitter_ids'], 100), total=len(options['twitter_ids'])/100):
+            cnt += self.process_users(user_id_block, twitter_profile_set, options['verbose'], cnt)
         print("{} users found".format(cnt))
+
+    def process_users(self, lst_user_ids, twitter_profile_set, verbose, cnt=0):
+        lst_json = self.twitter.get_users(lst_user_ids)
+        for user_json in lst_json:
+            if verbose:
+                print("Collecting user {}".format(user_json.screen_name))
+            user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
+            twitter_user, created = user_model.objects.get_or_create(
+                twitter_id=user_json.id)
+            twitter_user.update_from_json(user_json._json)
+            if twitter_profile_set:
+                twitter_profile_set.profiles.add(twitter_user)
+            if verbose:
+                print("Successfully saved profile data for {}".format(str(twitter_user)))
+            cnt += 1
+        return cnt
+
+def chunker(seq, size):
+    return (seq[pos:pos + size] for pos in xrange(0, len(seq), size))
