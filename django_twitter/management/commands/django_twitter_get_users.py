@@ -42,6 +42,9 @@ class Command(BaseCommand):
     def process_users(self, lst_user_ids, twitter_profile_set, verbose, cnt=0):
         # TODO: handle if chunk has weird ids (special characters, spelling errors)
         lst_json = self.twitter.get_users(lst_user_ids)
+        if lst_json is None:
+            return cnt
+
         for user_json in lst_json:
             if verbose:
                 print("Collecting user {}".format(user_json.screen_name))
