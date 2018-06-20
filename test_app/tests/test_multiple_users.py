@@ -1,4 +1,5 @@
 # TODO unable to find and populate all_users (line 15)
+# TODO Current error: "CommandError: Error: too few arguments" originating at line 27
 
 import sys
 from django.conf import settings
