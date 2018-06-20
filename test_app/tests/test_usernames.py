@@ -5,12 +5,11 @@ from django.core.management import call_command
 import sys
 
 
-# Tests for weird usernames with special characters for single users and multiple users
 class UsernameTestCase(TestCase):
     def setUp(self):
         self.lst_special_users = [['kum@r_pankhur!', "u'code': 50"],
                                   [3248746387, "Successfully saved profile data for kumar_pankhuri"],
-                                  ['emma&f', "u'code': 50"]]  # testing
+                                  ['emma&f', "u'code': 50"]]
         self.lst_suspended_users = [('GarryLissette', "u'code': 63"),
                                     ('trebortwo', "u'code': 63"),
                                     ('howellatme__', "u'code': 63")]
@@ -25,9 +24,10 @@ class UsernameTestCase(TestCase):
         self.lst_longscreenname = [['CJSWomeninMedia', "Successfully saved profile data for cjswomeninmedia"]]
         # Tweepy doesn't search by username, so this will always return a 'Not Found' error
         self.lst_longusername = [['Budget Low-Price Elainovision', "u'code': 50"]]
-        # TODO: Need to find more
         # Empty users are still found by get_user, will be required for tweet-testing
-        self.lst_empty_users = [['ChiragY34928202', "Successfully saved profile data for chiragy34928202"]]
+        self.lst_empty_users = [['ChiragY34928202', "Successfully saved profile data for chiragy34928202"],
+                                ['shubhir45767777', "Successfully saved profile data for shubhir45767777"],
+                                ['g3hbee', "Successfully saved profile data for g3hbee"]]
         # TODO: run these usernames from test suite
         # Tweepy doesn't search by username, so this will always return a 'Not Found' error
         self.lst_special_usernames = ['Gökçe Özcan', 'Nureen • Social Edit', '💫Shanon Lee 💫']
@@ -61,9 +61,11 @@ class UsernameTestCase(TestCase):
         lst_multi_users.extend(lst_interim)
         lst_interim = [item[0] for item in self.lst_longusername]
         lst_multi_users.extend(lst_interim)
+        lst_interim = [item[0] for item in self.lst_empty_users]
+        lst_multi_users.extend(lst_interim)
 
         call_command('django_twitter_get_users', *lst_multi_users, stdout=out)
-        self.assertIn("Collecting profile data for 14 users\n1 users found", out.getvalue())
+        self.assertIn("Collecting profile data for 17 users\n1 users found", out.getvalue())
         sys.stdout = saved_stdout
         out.close()
 
