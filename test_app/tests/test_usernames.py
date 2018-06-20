@@ -1,5 +1,7 @@
 # coding=utf-8
 from django.test import TestCase
+from django.conf import settings
+from django.apps import apps
 from StringIO import StringIO
 from django.core.management import call_command
 import sys
@@ -7,6 +9,9 @@ import sys
 
 class UsernameTestCase(TestCase):
     def setUp(self):
+        # 50: user not found/inactive
+        # 63: user suspended
+        # private and users with no tweets are found by get_user
         self.lst_special_users = [['kum@r_pankhur!', "u'code': 50"],
                                   [3248746387, "Successfully saved profile data for kumar_pankhuri"],
                                   ['emma&f', "u'code': 50"]]
@@ -16,21 +21,21 @@ class UsernameTestCase(TestCase):
         self.lst_inactive_users = [['makwechel', "u'code': 50"],
                                    ['DaraStern', "u'code': 50"],
                                    ['RdblancoDavid', "u'code': 50"]]
-        # Private Users are still found by get_user, will be required for tweet-testing
         self.lst_private_users = [['Brandontaylr', "Successfully saved profile data for brandontaylr"],
                                   ['lexieroe', "Successfully saved profile data for lexieroe"],
                                   ['Fabsagalicious', "Successfully saved profile data for fabsagalicious"]]
-
         self.lst_longscreenname = [['CJSWomeninMedia', "Successfully saved profile data for cjswomeninmedia"]]
-        # Tweepy doesn't search by username, so this will always return a 'Not Found' error
-        self.lst_longusername = [['Budget Low-Price Elainovision', "u'code': 50"]]
-        # Empty users are still found by get_user, will be required for tweet-testing
         self.lst_empty_users = [['ChiragY34928202', "Successfully saved profile data for chiragy34928202"],
                                 ['shubhir45767777', "Successfully saved profile data for shubhir45767777"],
                                 ['g3hbee', "Successfully saved profile data for g3hbee"]]
-        # TODO: run these usernames from test suite
-        # Tweepy doesn't search by username, so this will always return a 'Not Found' error
+        # Tweepy doesn't search by username, will always return a 'Not Found' error
+        self.lst_longusername = [['Budget Low-Price Elainovision', "u'code': 50"]]
+        # TODO: solve encoding errors
+        # Tweepy doesn't search by username, will always return a 'Not Found' error
         self.lst_special_usernames = ['Gökçe Özcan', 'Nureen • Social Edit', '💫Shanon Lee 💫']
+
+        all_users = apps.get_model(app_label=settings.TWITTER_APP,
+                                   model_name=settings.TWITTER_PROFILE_MODEL).objects.all()
 
     def test_user(self):
         saved_stdout = sys.stdout
@@ -41,8 +46,8 @@ class UsernameTestCase(TestCase):
         self.push_assert(self.lst_inactive_users)
         self.push_assert(self.lst_private_users)
         self.push_assert(self.lst_longscreenname)
-        self.push_assert(self.lst_longusername)
         self.push_assert(self.lst_empty_users)
+        self.push_assert(self.lst_longusername)
 
         sys.stdout = saved_stdout
         self.out.close()
@@ -75,6 +80,3 @@ class UsernameTestCase(TestCase):
             self.out.seek(0)
             self.assertIn(expected_output, self.out.getvalue())
             self.out.truncate(0)
-
-if __name__ == '__main__':
-    TestCase.main()
