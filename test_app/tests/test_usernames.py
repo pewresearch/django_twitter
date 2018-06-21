@@ -33,24 +33,33 @@ class UsernameTestCase(TestCase):
         # TODO: solve encoding errors
         # Tweepy doesn't search by username, will always return a 'Not Found' error
         self.lst_special_usernames = ['Gökçe Özcan', 'Nureen • Social Edit', '💫Shanon Lee 💫']
-
-        all_users = apps.get_model(app_label=settings.TWITTER_APP,
-                                   model_name=settings.TWITTER_PROFILE_MODEL).objects.all()
+        # Testing the permanent fields of the profile
+        self.fields = [["screen_name", "kumar_pankhuri"],
+                  ["name", "Pankhuri Kumar"],
+                  ["created_at", "Thu Jun 18 12:49:49 +0000 2015"],
+                  ["lang", "en"]]
 
     def test_user(self):
         saved_stdout = sys.stdout
         sys.stdout = self.out = StringIO()
 
-        self.push_assert(self.lst_special_users)
-        self.push_assert(self.lst_suspended_users)
-        self.push_assert(self.lst_inactive_users)
-        self.push_assert(self.lst_private_users)
-        self.push_assert(self.lst_longscreenname)
-        self.push_assert(self.lst_empty_users)
-        self.push_assert(self.lst_longusername)
+        self.lst_assert(self.lst_special_users)
+        self.lst_assert(self.lst_suspended_users)
+        self.lst_assert(self.lst_inactive_users)
+        self.lst_assert(self.lst_private_users)
+        self.lst_assert(self.lst_longscreenname)
+        self.lst_assert(self.lst_empty_users)
+        self.lst_assert(self.lst_longusername)
 
         sys.stdout = saved_stdout
         self.out.close()
+
+    def lst_assert(self, lst):
+        for user, expected_output in lst:
+            call_command('django_twitter_get_user', user, stdout=self.out)
+            self.out.seek(0)
+            self.assertIn(expected_output, self.out.getvalue())
+            self.out.truncate(0)
 
     def test_users(self):
         saved_stdout = sys.stdout
@@ -74,9 +83,18 @@ class UsernameTestCase(TestCase):
         sys.stdout = saved_stdout
         out.close()
 
-    def push_assert(self, lst):
-        for user, expected_output in lst:
-            call_command('django_twitter_get_user', user, stdout=self.out)
-            self.out.seek(0)
-            self.assertIn(expected_output, self.out.getvalue())
-            self.out.truncate(0)
+    def test_storage(self):
+        call_command("django_twitter_get_user", "kumar_pankhuri")
+        saved_stdout = sys.stdout
+        sys.stdout = out = StringIO()
+        out.seek(0)
+        self.field_assert(self.fields)
+        sys.stdout = saved_stdout
+        out.close()
+
+    def field_assert(self, lst_fields):
+        user = apps.get_model(app_label=settings.TWITTER_APP,
+                                   model_name=settings.TWITTER_PROFILE_MODEL).objects.filter(
+            screen_name="kumar_pankhuri")
+        for field, expected_output in lst_fields:
+            self.assertIn(expected_output, user[0].json[field])
