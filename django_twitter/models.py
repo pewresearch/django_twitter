@@ -45,7 +45,7 @@ class AbstractTwitterBase(models.base.ModelBase):
                 (models.ForeignKey, "TwitterProfileModel", "follower", "follower_details", None, True)
             ],
             "TwitterProfileModel": [
-                (models.ManyToManyField, "TwitterProfileModel", "followers", "friends", "TwitterRelationshipModel", False)
+                (models.ManyToManyField, "TwitterProfileModel", "followers", "followings", "TwitterRelationshipModel", False)
             ],
             "TweetSetModel": [
                 (models.ManyToManyField, "TweetModel", "tweets", "tweet_sets", None, True)
@@ -140,7 +140,7 @@ class AbstractTwitterProfile(AbstractTwitterObject):
 
     favorites_count = models.IntegerField(null=True)
     followers_count = models.IntegerField(null=True)
-    friends_count = models.IntegerField(null=True)
+    followings_count = models.IntegerField(null=True)
     listed_count = models.IntegerField(null=True)
     statuses_count = models.IntegerField(null=True)
 
@@ -162,7 +162,7 @@ class AbstractTwitterProfile(AbstractTwitterObject):
             self.favorites_count = profile_data['favorites_count'] if "favorites_count" in profile_data.keys() else \
                 profile_data['favourites_count']
             self.followers_count = profile_data['followers_count']
-            self.friends_count = profile_data['friends_count']
+            self.followings_count = profile_data['friends_count']
             self.listed_count = profile_data['listed_count']
             self.language = profile_data['lang']
             self.statuses_count = profile_data['statuses_count']
@@ -185,12 +185,12 @@ class AbstractTwitterProfile(AbstractTwitterObject):
         follower_ids = self.follower_details.filter(run_id=max_run).values_list("follower_id", flat=True)
         return self.followers.filter(pk__in=follower_ids)
 
-    def current_friends(self):
+    def current_followings(self):
 
         try: max_run = self.friend_details.order_by("-run_id")[0].run_id
         except IndexError: max_run = None
-        friend_ids = self.friend_details.filter(run_id=max_run).values_list("friend_id", flat=True)
-        return self.friends.filter(pk__in=friend_ids)
+        following_ids = self.following_details.filter(run_id=max_run).values_list("friend_id", flat=True)
+        return self.followings.filter(pk__in=following_ids)
 
 
 class AbstractTweet(AbstractTwitterObject):

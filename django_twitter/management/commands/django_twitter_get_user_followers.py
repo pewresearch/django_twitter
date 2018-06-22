@@ -36,9 +36,9 @@ class Command(BaseCommand):
         scanned_count, updated_count = 0, 0
         user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
         relationship_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_RELATIONSHIP_MODEL)
-        friend, created = user_model.objects.get_or_create(twitter_id=options["twitter_id"])
+        following, created = user_model.objects.get_or_create(twitter_id=options["twitter_id"])
 
-        try: run_id = relationship_model.objects.filter(friend=friend).order_by("-run_id")[0].run_id + 1
+        try: run_id = relationship_model.objects.filter(follower=following).order_by("-run_id")[0].run_id + 1
         except IndexError: run_id = 1
 
         twitter_profile_set = None
@@ -48,13 +48,13 @@ class Command(BaseCommand):
 
         # Iterate through all tweets in timeline
         for follower_data in tqdm(self.twitter.iterate_user_followers(options['twitter_id'], hydrate_users=options['hydrate']),
-                                desc = "Retrieving followers for user {}".format(friend.screen_name)):
+                                desc = "Retrieving followers for user {}".format(following.screen_name)):
             if not options["hydrate"]:
                 follower, created = user_model.objects.get_or_create(twitter_id=follower_data)
             else:
                 follower, created = user_model.objects.get_or_create(twitter_id=follower_data._json['id_str'])
                 follower.update_from_json(follower_data._json)
-            relationship = relationship_model.objects.create(friend=friend, follower=follower, run_id=run_id)
+            relationship = relationship_model.objects.create(following=following, follower=follower, run_id=run_id)
             # relationship, created = relationship_model.objects.get_or_create(friend=friend, follower=follower)
             # date = datetime.datetime.now()
             # if date not in relationship.dates:
