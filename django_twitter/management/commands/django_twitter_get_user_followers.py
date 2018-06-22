@@ -1,4 +1,4 @@
-import datetime
+import datetime, hashlib
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -38,6 +38,9 @@ class Command(BaseCommand):
         relationship_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_RELATIONSHIP_MODEL)
         friend, created = user_model.objects.get_or_create(twitter_id=options["twitter_id"])
 
+        try: run_id = relationship_model.objects.filter(friend=friend).order_by("-run_id")[0].run_id + 1
+        except IndexError: run_id = 1
+
         twitter_profile_set = None
         if options["twitter_profile_set"]:
             twitter_profile_set_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_SET_MODEL)
@@ -51,11 +54,12 @@ class Command(BaseCommand):
             else:
                 follower, created = user_model.objects.get_or_create(twitter_id=follower_data._json['id_str'])
                 follower.update_from_json(follower_data._json)
-            relationship, created = relationship_model.objects.get_or_create(friend=friend, follower=follower)
-            date = datetime.datetime.now()
-            if date not in relationship.dates:
-                relationship.dates.append(date)
-                relationship.save()
+            relationship = relationship_model.objects.create(friend=friend, follower=follower, run_id=run_id)
+            # relationship, created = relationship_model.objects.get_or_create(friend=friend, follower=follower)
+            # date = datetime.datetime.now()
+            # if date not in relationship.dates:
+            #     relationship.dates.append(date)
+            #     relationship.save()
             if twitter_profile_set:
                 twitter_profile_set.profiles.add(follower)
 
