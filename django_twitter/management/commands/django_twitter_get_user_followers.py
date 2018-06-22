@@ -36,7 +36,8 @@ class Command(BaseCommand):
         scanned_count, updated_count = 0, 0
         user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
         relationship_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_RELATIONSHIP_MODEL)
-        following, created = user_model.objects.get_or_create(twitter_id=options["twitter_id"])
+        twitter_json = self.twitter.get_user(options["twitter_id"])
+        following, created = user_model.objects.get_or_create(twitter_id=twitter_json.id_str)
 
         try: run_id = relationship_model.objects.filter(follower=following).order_by("-run_id")[0].run_id + 1
         except IndexError: run_id = 1
