@@ -41,8 +41,8 @@ class AbstractTwitterBase(models.base.ModelBase):
                 (models.ForeignKey, "TwitterProfileModel", "profile", "botometer_scores", None, True)
             ],
             "TwitterRelationshipModel": [
-                (models.ForeignKey, "TwitterProfileModel", "friend", "follower_details", None, True),
-                (models.ForeignKey, "TwitterProfileModel", "follower", "friend_details", None, True)
+                (models.ForeignKey, "TwitterProfileModel", "following", "following_details", None, True),
+                (models.ForeignKey, "TwitterProfileModel", "follower", "follower_details", None, True)
             ],
             "TwitterProfileModel": [
                 (models.ManyToManyField, "TwitterProfileModel", "followers", "friends", "TwitterRelationshipModel", False)
