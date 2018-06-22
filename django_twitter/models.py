@@ -178,6 +178,20 @@ class AbstractTwitterProfile(AbstractTwitterObject):
     def url(self):
         return "http://www.twitter.com/intent/user?user_id={0}".format(self.twitter_id) # Can we verify this? Never seen it
 
+    def current_followers(self):
+
+        try: max_run = self.follower_details.order_by("-run_id")[0].run_id
+        except IndexError: max_run = None
+        follower_ids = self.follower_details.filter(run_id=max_run).values_list("follower_id", flat=True)
+        return self.followers.filter(pk__in=follower_ids)
+
+    def current_friends(self):
+
+        try: max_run = self.friend_details.order_by("-run_id")[0].run_id
+        except IndexError: max_run = None
+        friend_ids = self.friend_details.filter(run_id=max_run).values_list("friend_id", flat=True)
+        return self.friends.filter(pk__in=friend_ids)
+
 
 class AbstractTweet(AbstractTwitterObject):
 
@@ -322,7 +336,8 @@ class AbstractTwitterRelationship(models.Model):
 
     __metaclass__ = AbstractTwitterBase
 
-    dates = ArrayField(models.DateField(), default=[])
+    date = models.DateField(auto_now=True)
+    run_id = models.IntegerField(null=True)
 
     def __str__(self):
         return "{} following {}".format(self.follower, self.friend)
