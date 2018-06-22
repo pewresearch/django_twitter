@@ -30,9 +30,8 @@ class UsernameTestCase(TestCase):
                                 ['g3hbee', "Successfully saved profile data for g3hbee"]]
         # Tweepy doesn't search by username, will always return a 'Not Found' error
         self.lst_longusername = [['Budget Low-Price Elainovision', "u'code': 50"]]
-        # TODO: solve encoding errors
         # Tweepy doesn't search by username, will always return a 'Not Found' error
-        self.lst_special_usernames = ['Gökçe Özcan', 'Nureen • Social Edit', '💫Shanon Lee 💫']
+        self.lst_special_usernames = [u'Gökçe Özcan', u'Nureen • Social Edit', u'💫Shanon Lee 💫']
         # Testing the permanent fields of the profile
         self.fields = [["screen_name", "kumar_pankhuri"],
                   ["name", "Pankhuri Kumar"],
@@ -50,12 +49,15 @@ class UsernameTestCase(TestCase):
         self.lst_assert(self.lst_longscreenname)
         self.lst_assert(self.lst_empty_users)
         self.lst_assert(self.lst_longusername)
+        # self.lst_assert(self.lst_special_usernames)
 
         sys.stdout = saved_stdout
         self.out.close()
 
     def lst_assert(self, lst):
-        for user, expected_output in lst:
+        for test_pair in lst:
+            user = test_pair[0]
+            expected_output = test_pair[1]
             call_command('django_twitter_get_user', user, stdout=self.out)
             self.out.seek(0)
             self.assertIn(expected_output, self.out.getvalue())
