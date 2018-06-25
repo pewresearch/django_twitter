@@ -54,7 +54,7 @@ class Command(BaseCommand):
 
                 if options['overwrite'] or tweet_json.id_str not in existing_tweets:
                     tweet, created = tweet_model.objects.get_or_create(
-                        twitter_id=options['twitter_id']
+                        twitter_id=tweet_json.id_str
                     )
                     tweet.update_from_json(tweet_json._json)
                     if tweet_set:
