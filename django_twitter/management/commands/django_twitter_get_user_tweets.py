@@ -39,7 +39,8 @@ class Command(BaseCommand):
 
         scanned_count, updated_count = 0, 0
         user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
-        twitter_user, created = user_model.objects.get_or_create(twitter_id=options["twitter_id"])
+        twitter_json = self.twitter.get_user(options["twitter_id"])
+        twitter_user, created = user_model.objects.get_or_create(twitter_id=twitter_json.id_str)
 
         tweet_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL)
         # Get list of current tweets
