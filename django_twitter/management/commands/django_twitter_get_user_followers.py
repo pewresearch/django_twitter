@@ -39,7 +39,7 @@ class Command(BaseCommand):
         twitter_json = self.twitter.get_user(options["twitter_id"])
         following, created = user_model.objects.get_or_create(twitter_id=twitter_json.id_str)
 
-        try: run_id = relationship_model.objects.filter(follower=following).order_by("-run_id")[0].run_id + 1
+        try: run_id = relationship_model.objects.filter(following=following).order_by("-run_id")[0].run_id + 1
         except IndexError: run_id = 1
 
         twitter_profile_set = None
