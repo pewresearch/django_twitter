@@ -16,7 +16,6 @@ class FollowersTest(TestCase):
             call_command("django_twitter_get_user", user)
 
     def test_followers(self):
-        print("FOLLOWERS")
         for user in self.users:
             orig_users = apps.get_model(app_label=settings.TWITTER_APP,
                                         model_name=settings.TWITTER_PROFILE_MODEL).objects.all()
@@ -30,7 +29,6 @@ class FollowersTest(TestCase):
             self.assertEqual(len(all_users) - orig, current_user[0].json['followers_count'])
 
     def test_following(self):
-        print("FOLLOWING")
         for user in self.users:
             orig_users = apps.get_model(app_label=settings.TWITTER_APP,
                                        model_name=settings.TWITTER_PROFILE_MODEL).objects.all()
