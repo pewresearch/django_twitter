@@ -31,7 +31,9 @@ class UsernameTestCase(TestCase):
         # Tweepy doesn't search by username, will always return a 'Not Found' error
         self.lst_longusername = [['Budget Low-Price Elainovision', "u'code': 50"]]
         # Tweepy doesn't search by username, will always return a 'Not Found' error
-        self.lst_special_usernames = [u'Gökçe Özcan', u'Nureen • Social Edit', u'💫Shanon Lee 💫']
+        self.lst_special_usernames = [[u"Gökçe Özcan".decode('utf-8'), "Successfully saved profile data for"],
+                                      [u'Nureen • Social Edit', "xx"],
+                                      [u'💫Shanon Lee 💫',"xx"]]
         # Testing the permanent fields of the profile
         self.fields = [["screen_name", "kumar_pankhuri"],
                   ["name", "Pankhuri Kumar"],
