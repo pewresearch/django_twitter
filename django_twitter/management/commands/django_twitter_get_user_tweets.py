@@ -60,7 +60,7 @@ class Command(BaseCommand):
                     if tweet_set:
                         tweet_set.tweets.add(tweet)
                     updated_count += 1
-                elif twitter_user.tweet_backfill    ed and not options['ignore_backfill']:
+                elif twitter_user.tweet_backfilled and not options['ignore_backfill']:
                     print("Encountered existing tweet, stopping now")
                     break
                 scanned_count += 1
