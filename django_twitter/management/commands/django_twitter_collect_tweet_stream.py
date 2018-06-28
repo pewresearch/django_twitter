@@ -148,7 +148,7 @@ class StreamListener(tweepy.StreamListener):
 
 def save_tweets(tweets, tweet_set_id):
 
-    reset_django_connection("dippybird")
+    #reset_django_connection("dippybird")
 
     tweet_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL)
     tweet_set = None
