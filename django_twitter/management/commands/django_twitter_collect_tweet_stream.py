@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand
 from django.apps import apps
 from multiprocessing import Pool
 
-from pewtils.django import reset_django_connection
+from pewtils.django import reset_django_connection, reset_django_connection_wrapper
 from pewhooks.twitter import TwitterAPIHandler
 
 
@@ -146,9 +146,10 @@ class StreamListener(tweepy.StreamListener):
         # print("ERROR: {}".format(status))
         # return False
 
+
 def save_tweets(tweets, tweet_set_id):
 
-    #reset_django_connection("dippybird")
+    reset_django_connection(settings.TWITTER_APP)
 
     tweet_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL)
     tweet_set = None
