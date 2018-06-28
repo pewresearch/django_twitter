@@ -237,25 +237,17 @@ class AbstractTweet(AbstractTwitterObject):
         if not tweet_data:
             tweet_data = self.json
         if tweet_data:
-            # TODO: Update with any new fields
 
-            # TODO: Why is this hard coding test_app?
-            print('first')
-            profile_model = apps.get_model(app_label="test_app", model_name=settings.TWITTER_PROFILE_MODEL)
+            profile_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
             author, created = profile_model.objects.get_or_create(twitter_id=tweet_data['user']['id_str'])
             author.update_from_json(tweet_data['user'])
             self.profile = author
-
-            print('in here')
 
             self.timestamp = date_parse(tweet_data['created_at'])
             self.retweet_count = tweet_data.get("retweet_count", None)
             self.favorite_count = tweet_data.get("favorite_count", None)
             self.retweeted = tweet_data.get("retweeted", None)
             self.favorited = tweet_data.get("favorited", None)
-
-            print('in here x2')
-
 
             try:
                 links = set(self.links)
@@ -268,7 +260,6 @@ class AbstractTweet(AbstractTwitterObject):
                     links.add(link)
             self.links = list(links)
 
-            print('in here x3')
             if self.pk:
 
                 user_mentions = []
@@ -290,7 +281,6 @@ class AbstractTweet(AbstractTwitterObject):
                             .objects.get_or_create(twitter_id=user_mention["id_str"])
                         user_mentions.append(mentioned_profile)
                 self.user_mentions = user_mentions
-                print('in here x4')
 
                 hashtags = []
                 for hashtag in tweet_data.get("entities", {}).get("hashtags", []):
@@ -300,11 +290,8 @@ class AbstractTweet(AbstractTwitterObject):
                 self.hashtags = hashtags
 
             self.json = tweet_data
-            print('in here x5')
 
             self.save()
-
-            print('saved')
 
     def url(self):
         return "http://www.twitter.com/statuses/{0}".format(self.twitter_id)
