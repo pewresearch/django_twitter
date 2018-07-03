@@ -92,7 +92,7 @@ class Command(BaseCommand):
             limit = self.limit
         )
 
-        self.twitter.capture_stream_sample(listener, async=False, keywords=options['keyword_query'])
+        self.twitter.capture_stream_sample(listener, async=False, keywords=[options['keyword_query']])
 
 
 class StreamListener(tweepy.StreamListener):
