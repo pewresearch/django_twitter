@@ -204,6 +204,10 @@ class AbstractTweet(AbstractTwitterObject):
     created_at = models.DateTimeField(null=True, help_text="The time/date that the tweet was published")
     links = ArrayField(models.CharField(max_length=400), default=[], null=True,
                        help_text="Links contained in the tweet")
+    text = models.CharField(max_length = 1024, null = True) # Could change to 280 - no need to be so long
+    hashtags = ArrayField(models.CharField(max_length=280), default = [], null=True)
+    # TODO: Change below to a relationship
+    user_mentions = ArrayField(models.CharField(max_length=280), default=[], null=True)
 
     # Added from Rookery
     in_reply_to_screen_name = models.CharField(max_length=255, null=True)
@@ -215,7 +219,6 @@ class AbstractTweet(AbstractTwitterObject):
     quoted_status_id = models.CharField(max_length=255, null=True)
     # source = type of device. Removing this because it seems like it would be rarely used (will be in the json)
     #source = models.CharField(max_length=255, null=True)
-    text = models.CharField(max_length = 1024, null = True) # Could change to 280 - no need to be so long
 
     retweeted = models.NullBooleanField(null=True)
     favorited = models.NullBooleanField(null=True)
@@ -226,13 +229,15 @@ class AbstractTweet(AbstractTwitterObject):
 
     def __str__(self):
 
-        return "{0}, {1}: {2}".format(
+        return "{0}, {1}:\nhttps://twitter.com/{2}/status/{3}/:\n {4}".format(
             self.profile,
             self.created_at,
+            self.profile.screen_name,
+            self.twitter_id,
             decode_text(self.text)
         )
 
-    def update_from_json(self, tweet_data=None):
+    def update_from_json(self, tweet_data=None, get_retweeted_or_quoted_text=True):
 
         if not tweet_data:
             tweet_data = self.json
@@ -243,11 +248,40 @@ class AbstractTweet(AbstractTwitterObject):
             author.update_from_json(tweet_data['user'])
             self.profile = author
 
-            self.timestamp = date_parse(tweet_data['created_at'])
+            self.created_at = date_parse(tweet_data['created_at'])
             self.retweet_count = tweet_data.get("retweet_count", None)
             self.favorite_count = tweet_data.get("favorite_count", None)
             self.retweeted = tweet_data.get("retweeted", None)
             self.favorited = tweet_data.get("favorited", None)
+
+            #Discovered full_text areas
+            #['extended_tweet/full_text/', 'retweeted_status/extended_tweet/full_text/',
+            # 'quoted_status/extended_tweet/full_text/,  '
+            # retweeted_status / quoted_status / extended_tweet / full_text / ']
+
+            if tweet_data.get('extended_tweet', {}).get('full_text', None):
+                full_text = tweet_data.get('extended_tweet', {}).get('full_text', '')
+            elif get_retweeted_or_quoted_text:
+                if tweet_data.get('retweeted_status', {}).get('extended_tweet', {}).get('full_text', None):
+                    full_text = tweet_data.get('retweeted_status', {}).get('extended_tweet', {}).get('full_text', '')
+                elif tweet_data.get('quoted_status', {}).get('extended_tweet', {}).get('full_text', None):
+                    full_text = tweet_data.get('quoted_status', {}).get('extended_tweet', {}).get('full_text', '')
+                elif tweet_data.get('retweeted_status', {}).get(
+                        'quoted_status', {}).get('extended_tweet', {}).get('full_text', None):
+                    full_text = tweet_data.get('retweeted_status', {}).get(
+                        'quoted_status', {}).get('extended_tweet', {}).get('full_text', None)
+                else:
+                    full_text = None
+            else:
+                full_text = None
+
+
+            if full_text: self.text = full_text
+            else: self.text = tweet_data.get('text', '')
+
+            self.in_reply_to_screen_name = tweet_data.get('in_reply_to_screen_name', None)
+            self.in_reply_to_status_id = tweet_data.get('in_reply_to_status_id', None)
+            self.in_reply_to_user_id = tweet_data.get('in_reply_to_user_id', None)
 
             try:
                 links = set(self.links)
