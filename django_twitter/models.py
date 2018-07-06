@@ -253,6 +253,7 @@ class AbstractTweet(AbstractTwitterObject):
             self.favorite_count = tweet_data.get("favorite_count", None)
             self.retweeted = tweet_data.get("retweeted", None)
             self.favorited = tweet_data.get("favorited", None)
+            self.language = tweet_data.get('lang', None)
 
             #Discovered full_text areas
             #['extended_tweet/full_text/', 'retweeted_status/extended_tweet/full_text/',
