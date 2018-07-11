@@ -192,6 +192,14 @@ class AbstractTwitterProfile(AbstractTwitterObject):
         following_ids = self.following_details.filter(run_id=max_run).values_list("friend_id", flat=True)
         return self.followings.filter(pk__in=following_ids)
 
+    def most_recent_botometer_score(self):
+
+        scores = self.botometer_scores.order_by("-timestamp")
+        if scores.count() > 0:
+            return scores[0]
+        else:
+            return None
+
 
 class AbstractTweet(AbstractTwitterObject):
 
