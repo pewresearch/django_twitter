@@ -11,6 +11,7 @@ from picklefield.fields import PickledObjectField
 from simple_history import register
 from simple_history.models import HistoricalRecords
 from dateutil.parser import parse as date_parse
+from datetime import datetime
 from collections import defaultdict
 
 from pewtils import decode_text, is_not_null, is_null
@@ -350,6 +351,8 @@ class AbstractBotometerScore(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     api_version = models.FloatField(null=True)
+    automation_probability_english = models.FloatField(null=True)
+    automation_probability_universal = models.FloatField(null=True)
     content_score = models.FloatField(null=True)
     friend_score = models.FloatField(null=True)
     network_score = models.FloatField(null=True)
@@ -361,20 +364,24 @@ class AbstractBotometerScore(models.Model):
 
     json = JSONField(null=True, default=dict)
 
-    def update_from_json(self, score_json=None):
+    def update_from_dict(self, d_scores=None, api_version=None):
 
-        if not score_json:
-            score_json = self.json
-        if score_json:
-            self.content_score = score_json["categories"]["content"]
-            self.friend_score = score_json["categories"]["friend"]
-            self.network_score = score_json["categories"]["network"]
-            self.sentiment_score = score_json["categories"]["sentiment"]
-            self.temporal_score = score_json["categories"]["temporal"]
-            self.user_score = score_json["categories"]["user"]
-            self.overall_score_english = score_json["scores"]["english"]
-            self.overall_score_universal = score_json["scores"]["universal"]
-            self.json = score_json
+        if not d_scores or not isinstance(d_scores, dict):
+            d_scores = None
+        if d_scores:
+            self.automation_probability_english = d_scores['cap.english']
+            self.automation_probability_universal = d_scores['cap.universal']
+            self.content_score = d_scores['display_scores.content']
+            self.friend_score = d_scores['display_scores.friend']
+            self.network_score = d_scores['display_scores.network']
+            self.sentiment_score = d_scores['display_scores.sentiment']
+            self.temporal_score = d_scores['display_scores.temporal']
+            self.user_score = d_scores['display_scores.user']
+            self.overall_score_english = d_scores['display_scores.english']
+            self.overall_score_universal = d_scores['display_scores.content']
+            self.json = d_scores
+            if api_version:
+                self.api_version = api_version
             self.save()
 
 class AbstractTwitterRelationship(models.Model):
