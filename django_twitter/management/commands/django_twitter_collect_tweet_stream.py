@@ -115,6 +115,8 @@ class StreamListener(tweepy.StreamListener):
         self.scanned_counter = 0
         self.processed_counter = 0
 
+        self.stop = False
+
         # self.old_count = Tweet.objects.count()
 
         super(StreamListener, self).__init__(self)
@@ -122,13 +124,9 @@ class StreamListener(tweepy.StreamListener):
 
     def on_data(self, data):
 
-        if self.limit_exceeded():
+        if self.limit_exceeded() and not self.stop:
             print("Limit exceeded, stopping...")
-            # wait for db connections
-            time.sleep(30)
-            db.connections.close_all()
-            print("stopped")
-            return False
+            self.stop = True
         else:
 
             try:
@@ -151,7 +149,7 @@ class StreamListener(tweepy.StreamListener):
 
                     self.scanned_counter += 1
                     self.tweet_queue.append(tweet_json)
-                    if len(self.tweet_queue) >= self.queue_size:
+                    if len(self.tweet_queue) >= self.queue_size or self.stop:
                         if self.num_cores > 1:
                             self.pool.apply_async(save_tweets, args=[
                                 list(self.tweet_queue),
@@ -166,6 +164,12 @@ class StreamListener(tweepy.StreamListener):
                         self.processed_counter += self.queue_size
                         print "{} tweets scanned, {} sent for processing".format(self.scanned_counter,
                                                                                  self.processed_counter)
+                        if self.stop:
+                            # wait for db connections
+                            self.pool.join()
+                            db.connections.close_all()
+                            print("stopped")
+                            return False
                         # new_count = Tweet.objects.count()
                         # processed = new_count - self.old_count
                         # print "100 new tweets queued, {} processed since last time".format(processed)
