@@ -351,6 +351,7 @@ class AbstractBotometerScore(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     api_version = models.FloatField(null=True)
+    error = models.CharField(max_length=100, null=True)
     automation_probability_english = models.FloatField(null=True)
     automation_probability_universal = models.FloatField(null=True)
     content_score = models.FloatField(null=True)
@@ -364,22 +365,22 @@ class AbstractBotometerScore(models.Model):
 
     json = JSONField(null=True, default=dict)
 
-    def update_from_dict(self, d_scores=None, api_version=None):
+    def update_from_json(self, score_data=None, api_version=None):
 
-        if not d_scores or not isinstance(d_scores, dict):
-            d_scores = None
-        if d_scores:
-            self.automation_probability_english = d_scores['cap.english']
-            self.automation_probability_universal = d_scores['cap.universal']
-            self.content_score = d_scores['display_scores.content']
-            self.friend_score = d_scores['display_scores.friend']
-            self.network_score = d_scores['display_scores.network']
-            self.sentiment_score = d_scores['display_scores.sentiment']
-            self.temporal_score = d_scores['display_scores.temporal']
-            self.user_score = d_scores['display_scores.user']
-            self.overall_score_english = d_scores['display_scores.english']
-            self.overall_score_universal = d_scores['display_scores.content']
-            self.json = d_scores
+        if not score_data:
+            self.error = 'No data'
+        if score_data:
+            self.automation_probability_english = score_data.get('cap', {}).get('english', 0)
+            self.automation_probability_universal = score_data.get('cap', {}).get('universal', 0)
+            self.content_score = score_data.get('display_scores', {}).get('content', 0)
+            self.friend_score = score_data.get('display_scores', {}).get('friend', 0)
+            self.network_score = score_data.get('display_scores', {}).get('network', 0)
+            self.sentiment_score = score_data.get('display_scores', {}).get('sentiment', 0)
+            self.temporal_score = score_data.get('display_scores', {}).get('temporal', 0)
+            self.user_score = score_data.get('display_scores', {}).get('user', 0)
+            self.overall_score_english = score_data.get('display_scores', {}).get('english', 0)
+            self.overall_score_universal = score_data.get('display_scores', {}).get('universal', 0)
+            self.json = score_data
             if api_version:
                 self.api_version = api_version
             self.save()
