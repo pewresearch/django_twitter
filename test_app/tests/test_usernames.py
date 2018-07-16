@@ -35,10 +35,11 @@ class UsernameTestCase(TestCase):
                                       [u'Nureen • Social Edit', "xx"],
                                       [u'💫Shanon Lee 💫',"xx"]]
         # Testing the permanent fields of the profile
-        self.fields = [["screen_name", "kumar_pankhuri"],
+        self.fields = [["screen_name", "pankhurikumar23"],
                   ["name", "Pankhuri Kumar"],
                   ["created_at", "Thu Jun 18 12:49:49 +0000 2015"],
                   ["lang", "en"]]
+        self.lst_working = ["pankhurikumar23", "galenstocking", "pvankessel"]
 
     def test_user(self):
         saved_stdout = sys.stdout
