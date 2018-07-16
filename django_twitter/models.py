@@ -308,7 +308,7 @@ class AbstractTweet(AbstractTwitterObject):
 
                 user_mentions = []
                 for user_mention in tweet_data.get("entities", {}).get("user_mentions", []):
-                    existing_profiles = apps.get_model(app_label="test_app", model_name=settings.TWITTER_PROFILE_MODEL)\
+                    existing_profiles = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)\
                         .objects.filter(twitter_id=user_mention["id_str"])
                     if existing_profiles.count() > 1:
                         # print "This tweet mentioned an ID that belongs to multiple profiles"
@@ -321,14 +321,14 @@ class AbstractTweet(AbstractTwitterObject):
                     elif existing_profiles.count() == 1:
                         user_mentions.append(existing_profiles[0])
                     else:
-                        mentioned_profile, created = apps.get_model(app_label="test_app", model_name=settings.TWITTER_PROFILE_MODEL) \
+                        mentioned_profile, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL) \
                             .objects.get_or_create(twitter_id=user_mention["id_str"])
                         user_mentions.append(mentioned_profile)
                 self.user_mentions = user_mentions
 
                 hashtags = []
                 for hashtag in tweet_data.get("entities", {}).get("hashtags", []):
-                    hashtag_obj, created = apps.get_model(app_label="test_app", model_name=settings.TWITTER_HASHTAG_MODEL) \
+                    hashtag_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_HASHTAG_MODEL) \
                         .objects.get_or_create(name=hashtag['text'].lower())
                     hashtags.append(hashtag_obj)
                 self.hashtags = hashtags
