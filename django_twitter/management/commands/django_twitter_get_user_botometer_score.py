@@ -35,15 +35,16 @@ class Command(BaseCommand):
 
         user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
         twitter_json = self.twitter.get_user(options["twitter_id"])
-        twitter_user, created = user_model.objects.get_or_create(twitter_id=twitter_json.id_str)
+        if twitter_json:
+            twitter_user, created = user_model.objects.get_or_create(twitter_id=twitter_json.id_str)
 
-        botometer_scores = self.twitter.get_user_botometer_score(options["twitter_id"])
-        botometer_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.BOTOMETER_SCORE_MODEL)
-        score = botometer_model.objects.create(profile=twitter_user)
-        score.update_from_json(botometer_scores)
+            botometer_scores = self.twitter.get_user_botometer_score(options["twitter_id"])
+            botometer_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.BOTOMETER_SCORE_MODEL)
+            score = botometer_model.objects.create(profile=twitter_user)
+            score.update_from_json(botometer_scores)
 
-        if twitter_profile_set:
-            twitter_profile_set.profiles.add(twitter_user)
+            if twitter_profile_set:
+                twitter_profile_set.profiles.add(twitter_user)
 
 
 
