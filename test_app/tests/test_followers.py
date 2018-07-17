@@ -21,10 +21,18 @@ class FollowersTest(TestCase):
             current_user = apps.get_model(app_label=settings.TWITTER_APP,
                                           model_name=settings.TWITTER_PROFILE_MODEL).objects.filter(
                 twitter_id=user)
-            call_command("django_twitter_get_user_followers", user)
+            call_command("django_twitter_get_user_followers", user, hydrate=True)
             all_users = apps.get_model(app_label=settings.TWITTER_APP,
                                             model_name=settings.TWITTER_PROFILE_MODEL).objects.all()
             self.assertEqual(len(all_users) - orig, current_user[0].json['followers_count'])
+            for user in all_users:
+                self.assertIsNotNone(user.twitter_id)
+                self.assertIsNotNone(user.created_at)
+                self.assertIsNotNone(user.followers_count)
+                self.assertIsNotNone(user.description)
+                self.assertIsNotNone(user.favorites_count)
+                self.assertIsNotNone(user.screen_name)
+
 
     def test_following(self):
         for user in self.users:
