@@ -214,7 +214,7 @@ class AbstractTweet(AbstractTwitterObject):
     links = ArrayField(models.CharField(max_length=400), default=[], null=True,
                        help_text="Links contained in the tweet")
     text = models.CharField(max_length = 1024, null = True) # Could change to 280 - no need to be so long
-    hashtags = ArrayField(models.CharField(max_length=280), default = [], null=True)
+    # hashtags = ArrayField(models.CharField(max_length=280), default = [], null=True)
     # TODO: Change below to a relationship
     user_mentions = ArrayField(models.CharField(max_length=280), default=[], null=True)
 
@@ -288,6 +288,7 @@ class AbstractTweet(AbstractTwitterObject):
 
             if full_text: self.text = full_text
             else: self.text = tweet_data.get('text', '')
+            self.text = u"{}".format(self.text)
 
             self.in_reply_to_screen_name = tweet_data.get('in_reply_to_screen_name', None)
             self.in_reply_to_status_id = tweet_data.get('in_reply_to_status_id', None)
@@ -331,7 +332,7 @@ class AbstractTweet(AbstractTwitterObject):
                     hashtag_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_HASHTAG_MODEL) \
                         .objects.get_or_create(name=hashtag['text'].lower())
                     hashtags.append(hashtag_obj)
-                self.hashtags = hashtags
+                self.hashtags = [u"{}".format(h) for h in hashtags]
 
             self.json = tweet_data
 
@@ -409,7 +410,7 @@ class AbstractTwitterHashtag(models.Model):
     name = models.CharField(max_length=150, unique=True, db_index=True)
 
     def __str__(self):
-        return str(self.name)
+        return self.name
 
     def save(self, *args, **kwargs):
         self.name = self.name.lower()
