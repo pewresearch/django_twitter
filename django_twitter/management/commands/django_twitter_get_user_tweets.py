@@ -44,9 +44,13 @@ class Command(BaseCommand):
 
         tweet_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL)
         # Get list of current tweets
-        existing_tweets = list(twitter_user.tweets.values_list('twitter_id', flat=True))
+        existing_tweets = list(twitter_user.tweets.values_list('twitter_id', flat=True).order_by('-created_at'))
+        last_tweet = None
+        # store last retrieved tweet for faster iteration
+        if existing_tweets != []:
+            last_tweet = existing_tweets[0]
         # Iterate through all tweets in timeline
-        for tweet_json in tqdm(self.twitter.iterate_user_timeline(options['twitter_id']),
+        for tweet_json in tqdm(self.twitter.iterate_user_timeline(options['twitter_id'], last_tweet),
                                 desc = "Retrieving tweets for user {}".format(twitter_user.screen_name)):
             if not twitter_user.tweet_backfilled or \
                     options["ignore_backfill"] or options["overwrite"] or \
