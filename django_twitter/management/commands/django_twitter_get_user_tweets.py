@@ -76,6 +76,7 @@ class Command(BaseCommand):
                 break
 
         twitter_user.tweet_backfilled = True
+        twitter_user.save()
         print "{}: {} tweets scanned, {} updated".format(str(twitter_user), scanned_count, updated_count)
 
 
