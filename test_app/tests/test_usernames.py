@@ -13,7 +13,7 @@ class UsernameTestCase(TestCase):
         # 63: user suspended
         # private and users with no tweets are found by get_user
         self.lst_special_users = [['kum@r_pankhur!', "u'code': 50"],
-                                  [3248746387, "Successfully saved profile data for kumar_pankhuri"],
+                                  [3248746387, "Successfully saved profile data for pankhurikumar23"],
                                   ['emma&f', "u'code': 50"]]
         self.lst_suspended_users = [('GarryLissette', "u'code': 63"),
                                     ('trebortwo', "u'code': 63"),
@@ -89,7 +89,7 @@ class UsernameTestCase(TestCase):
         out.close()
 
     def test_storage(self):
-        call_command("django_twitter_get_user", "kumar_pankhuri")
+        call_command("django_twitter_get_user", "pankhurikumar23")
         saved_stdout = sys.stdout
         sys.stdout = out = StringIO()
         out.seek(0)
@@ -100,6 +100,23 @@ class UsernameTestCase(TestCase):
     def field_assert(self, lst_fields):
         user = apps.get_model(app_label=settings.TWITTER_APP,
                                    model_name=settings.TWITTER_PROFILE_MODEL).objects.filter(
-            screen_name="kumar_pankhuri")
+            screen_name="pankhurikumar23")
         for field, expected_output in lst_fields:
             self.assertIn(expected_output, user[0].json[field])
+
+    def test_random(self):
+        names = ["TanaHillman1", "steventodd214", "lisettevoytko", "Lizalis54491902", "GarryLissette", "3248746387", "earthquakesSF"]
+        for user in names:
+            call_command('django_twitter_get_user', user)
+
+        users = apps.get_model(app_label=settings.TWITTER_APP,
+                              model_name=settings.TWITTER_PROFILE_MODEL).objects.all()
+        print(len(users))
+
+        for user in users:
+            self.assertIsNotNone(user.twitter_id)
+            self.assertIsNotNone(user.created_at)
+            self.assertIsNotNone(user.followers_count)
+            self.assertIsNotNone(user.description)
+            self.assertIsNotNone(user.favorites_count)
+            self.assertIsNotNone(user.screen_name)
