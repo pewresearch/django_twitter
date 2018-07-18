@@ -166,6 +166,7 @@ class StreamListener(tweepy.StreamListener):
                                                                                  self.processed_counter)
                         if self.stop:
                             # wait for db connections
+                            self.pool.close()
                             self.pool.join()
                             db.connections.close_all()
                             print("stopped")
