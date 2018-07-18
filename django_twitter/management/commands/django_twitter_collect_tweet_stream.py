@@ -215,7 +215,7 @@ class StreamListener(tweepy.StreamListener):
         elif self.limit['limit_type'] == "tweet":
             return (self.processed_counter >= self.limit['limit_count'])
         else:
-            return (datetime.now() >= self.limit['limit_date'])
+            return (datetime.now() >= self.limit['limit_time'])
 
 
 
