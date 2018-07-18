@@ -55,22 +55,22 @@ class Command(BaseCommand):
         # Iterate through all tweets in timeline
         for tweet_json in tqdm(self.twitter.iterate_user_timeline(options['twitter_id'], last_tweet),
                                 desc = "Retrieving tweets for user {}".format(twitter_user.screen_name)):
-            if not twitter_user.tweet_backfilled or \
-                    options["ignore_backfill"] or options["overwrite"] or \
-                    tweet_json.id_str not in existing_tweets:
+            if (options['overwrite'] or options['ignore_backfill']) or \
+                (tweet_json.id_str not in existing_tweets):
 
-                if options['overwrite'] or tweet_json.id_str not in existing_tweets:
-                    tweet, created = tweet_model.objects.get_or_create(
-                        twitter_id=tweet_json.id_str
-                    )
-                    tweet.update_from_json(tweet_json._json)
-                    if tweet_set:
-                        tweet_set.tweets.add(tweet)
-                    updated_count += 1
-                elif twitter_user.tweet_backfilled and not options['ignore_backfill']:
-                    print("Encountered existing tweet, stopping now")
-                    break
+                tweet, created = tweet_model.objects.get_or_create(
+                    twitter_id=tweet_json.id_str
+                )
+                tweet.update_from_json(tweet_json._json)
+                if tweet_set:
+                    tweet_set.tweets.add(tweet)
+                updated_count += 1
                 scanned_count += 1
+            elif twitter_user.tweet_backfilled and \
+                    ((not options['ignore_backfill']) or \
+                    (tweet_json.id_str in existing_tweets)):
+                print("Encountered existing tweet, stopping now")
+                break
             else:
                 print("Reached end of tweets, stopping")
                 break
