@@ -16,6 +16,7 @@ class Command(BaseCommand):
         parser.add_argument("twitter_id", type = str)
         parser.add_argument("--ignore_backfill", action="store_true", default=False)
         parser.add_argument("--overwrite", action="store_true", default=False)
+        parser.add_argument("--optimize", action="store_true", default=False)
         parser.add_argument("--tweet_set", type = str)
 
         parser.add_argument('--api_key', type=str)
@@ -45,8 +46,14 @@ class Command(BaseCommand):
         tweet_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL)
         # Get list of current tweets
         existing_tweets = list(twitter_user.tweets.values_list('twitter_id', flat=True))
+        last_tweet = None
+        if options["optimize"]:
+            created_list = list(twitter_user.tweets.values_list('created_at', flat=True).order_by('-created_at'))
+            # store last retrieved tweet for faster iteration
+            if existing_tweets:
+                last_tweet = created_list[0]
         # Iterate through all tweets in timeline
-        for tweet_json in tqdm(self.twitter.iterate_user_timeline(options['twitter_id']),
+        for tweet_json in tqdm(self.twitter.iterate_user_timeline(options['twitter_id'], last_tweet),
                                 desc = "Retrieving tweets for user {}".format(twitter_user.screen_name)):
             if not twitter_user.tweet_backfilled or \
                     options["ignore_backfill"] or options["overwrite"] or \
@@ -69,6 +76,7 @@ class Command(BaseCommand):
                 break
 
         twitter_user.tweet_backfilled = True
+        twitter_user.save()
         print "{}: {} tweets scanned, {} updated".format(str(twitter_user), scanned_count, updated_count)
 
 
