@@ -8,7 +8,7 @@ from find_path import get_recursively
 # TODO: Figure out how to test this - statuses_count in TwitterProfile is inaccurate
 # class TweetTest(TestCase):
 #     def setUp(self):
-#         self.users = ['pvankessel']#, 'kumar_pankhuri']
+#         self.users = ['pvankessel']#, 'pankhurikumar23']
 #         for user in self.users:
 #             call_command("django_twitter_get_user_tweets", user)
 #
