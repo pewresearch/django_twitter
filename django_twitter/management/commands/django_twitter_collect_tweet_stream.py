@@ -270,7 +270,8 @@ def save_profileset(tweets, profile_set_id):
         if user not in all_users:
             all_users.add(user)
             twitter_user, created = user_model.objects.get_or_create(twitter_id=user)
+            twitter_user.update_from_json(tweet_json['user'])
             if profile_set:
                 profile_set.profiles.add(twitter_user)
-        success += 1
+            success += 1
     print("{} users saved, {} errored".format(success, error))
