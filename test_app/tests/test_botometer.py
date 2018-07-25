@@ -40,10 +40,19 @@ class TestBotometer(TransactionTestCase):
         self.push_assert(len(user_model))
 
     def test_stream(self):
-        call_command("django_twitter_collect_tweet_stream", limit="500 tweets", queue_size=100)
+        call_command("django_twitter_collect_tweet_stream", limit="10 tweets", queue_size=5)
 
         tweets = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL).objects.all()
         print("Total tweets: " + str(len(tweets)))
+
+        # user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL).objects.all()
+        # print("Total users: " + str(len(user_model)))
+        #
+        # for user in user_model:
+        #     print("{}: ".format(user.twitter_id))
+        #     for tweet in tweets:
+        #         if user.twitter_id in str(tweet.json):
+        #             print(str(tweet.id) + "  " + str(tweet.profile.twitter_id))
 
         id_list = []
         for tweet in tweets:
