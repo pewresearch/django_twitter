@@ -34,13 +34,8 @@ class Command(BaseCommand):
         else:
             twitter_ids = options['twitter_ids']
 
-        error_count = 0
         for twitter_id in tqdm(twitter_ids, total=len(twitter_ids)):
-            try:
-                user = twitter_profile_model.objects.get(twitter_id=twitter_id)
-            except twitter_profile_model.MultipleObjectsReturned:
-                error_count += 1
-                continue
+            user = twitter_profile_model.objects.get(twitter_id=twitter_id)
             last_score = user.most_recent_botometer_score()
             if not last_score:
                 run_command = True
@@ -55,7 +50,6 @@ class Command(BaseCommand):
 
             if run_command:
                 _get_score(twitter_id, options['botometer_key'], options['num_cores'])
-        print("Scores for {} users could not be calculated".format(error_count))
 
 
 def _get_score(twitter_id, key, num_cores):
