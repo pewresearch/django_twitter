@@ -40,26 +40,27 @@ class TestBotometer(TransactionTestCase):
         self.push_assert(len(user_model))
 
     def test_stream(self):
-        call_command("django_twitter_collect_tweet_stream", limit="10 tweets", queue_size=5)
+        call_command("django_twitter_collect_tweet_stream", limit="50 tweets", queue_size=10)
 
         tweets = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL).objects.all()
         print("Total tweets: " + str(len(tweets)))
 
-        # user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL).objects.all()
+        # user_model = apps.get_model(app_label=settings.TWITTER_APP,
+        #                             model_name=settings.TWITTER_PROFILE_MODEL).objects.all()
         # print("Total users: " + str(len(user_model)))
         #
-        # for user in user_model:
-        #     print("{}: ".format(user.twitter_id))
-        #     for tweet in tweets:
+        # for tweet in tweets:
+        #     print("{}: {}". format(tweet.id, tweet.profile.twitter_id))
+        #     for user in user_model:
         #         if user.twitter_id in str(tweet.json):
-        #             print(str(tweet.id) + "  " + str(tweet.profile.twitter_id))
+        #             print(user.twitter_id)
 
         id_list = []
         for tweet in tweets:
             if tweet.profile.twitter_id not in id_list:
                 id_list.append(str(tweet.profile.twitter_id))
 
-        call_command("django_twitter_get_users_botometer_scores", twitter_ids=id_list, num_cores=4,
+        call_command("django_twitter_get_users_botometer_scores", twitter_ids=id_list, num_cores=8,
                      botometer_key="UjEfOgEaNVmsht9y9cXjHYYQFmpPp1Dpk6ojsnPxPEwluSQFMp")
 
         self.push_assert(len(tweets))
