@@ -1,5 +1,3 @@
 # django_twitter
 
-any django-twitter app depends on: \n
--pewtils \n
--pewhooks n
+any django-twitter app depends on pewtils and pewhooks 
