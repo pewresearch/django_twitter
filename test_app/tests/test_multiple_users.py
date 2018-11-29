@@ -11,7 +11,7 @@ class MultipleUser(TestCase):
         self.lst_test_users = []
 
     def test_multiple_users(self):
-        call_command("django_twitter_get_user_following", "kumar_pankhuri")
+        call_command("django_twitter_get_user_following", "pankhurikumar23")
         all_users = apps.get_model(app_label=settings.TWITTER_APP,
                                         model_name=settings.TWITTER_PROFILE_MODEL).objects.all()
 
