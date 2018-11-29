@@ -26,7 +26,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        print("WOOT")
         self.twitter = TwitterAPIHandler(
             api_key=options["api_key"],
             api_secret=options["api_secret"],
