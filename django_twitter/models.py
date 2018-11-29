@@ -252,11 +252,6 @@ class AbstractTweet(AbstractTwitterObject):
             tweet_data = self.json
         if tweet_data:
 
-            profile_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
-            author, created = profile_model.objects.get_or_create(twitter_id=tweet_data['user']['id_str'])
-            author.update_from_json(tweet_data['user'])
-            self.profile = author
-
             self.created_at = date_parse(tweet_data['created_at'])
             self.retweet_count = tweet_data.get("retweet_count", None)
             self.favorite_count = tweet_data.get("favorite_count", None)
@@ -305,8 +300,20 @@ class AbstractTweet(AbstractTwitterObject):
                     links.add(link)
             self.links = list(links)
 
-            if self.pk:
+            self.json = tweet_data
 
+            self.save()
+
+    def update_users_from_json(self, tweet_data=None):
+        if not tweet_data:
+            tweet_data = self.json
+        if tweet_data:
+            profile_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
+            author, created = profile_model.objects.get_or_create(twitter_id=tweet_data['user']['id_str'])
+            author.update_from_json(tweet_data['user'])
+            self.profile = author
+
+            if self.pk:
                 user_mentions = []
                 for user_mention in tweet_data.get("entities", {}).get("user_mentions", []):
                     existing_profiles = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)\
@@ -335,7 +342,6 @@ class AbstractTweet(AbstractTwitterObject):
                 self.hashtags = [u"{}".format(h) for h in hashtags]
 
             self.json = tweet_data
-
             self.save()
 
     def url(self):
