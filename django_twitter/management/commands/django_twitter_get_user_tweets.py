@@ -49,25 +49,18 @@ class Command(BaseCommand):
 
         # Iterate through all tweets in timeline
 
-        if options['no_progress_bar']:
-            print("Retrieving tweets for user {}".format(twitter_user.screen_name))
-            for tweet_json in self.twitter.iterate_user_timeline(options['twitter_id']):
-                keep_pulling, updated_count, scanned_count = \
-                    self.save_tweet(tweet_model, tweet_json, tweet_set, existing_tweets,
-                                    options['overwrite'], options['ignore_backfill'],
-                                    twitter_user.tweet_backfilled, updated_count, scanned_count)
+        if options['no_progress_bar']: iterator = self.twitter.iterate_user_timeline(options['twitter_id'])
+        else: iterator = tqdm(self.twitter.iterate_user_timeline(options['twitter_id']),
+                                    desc = "Retrieving tweets for user {}".format(twitter_user.screen_name))
+        print("Retrieving tweets for user {}".format(twitter_user.screen_name))
+        for tweet_json in iterator:
+            keep_pulling, updated_count, scanned_count = \
+                self.save_tweet(tweet_model, tweet_json, tweet_set, existing_tweets,
+                                options['overwrite'], options['ignore_backfill'],
+                                twitter_user.tweet_backfilled, updated_count, scanned_count)
 
-                if not keep_pulling:
-                    break
-        else:
-            for tweet_json in tqdm(self.twitter.iterate_user_timeline(options['twitter_id']),
-                                    desc = "Retrieving tweets for user {}".format(twitter_user.screen_name)):
-                keep_pulling, updated_count, scanned_count = \
-                    self.save_tweet(tweet_model, tweet_json, tweet_set, existing_tweets,
-                                    options['overwrite'], options['ignore_backfill'],
-                                    twitter_user.tweet_backfilled, updated_count, scanned_count)
-                if not keep_pulling:
-                    break
+            if not keep_pulling:
+                break
 
             # if (options['overwrite'] or options['ignore_backfill']) or \
             #     (tweet_json.id_str not in existing_tweets):
@@ -95,9 +88,9 @@ class Command(BaseCommand):
 
     def save_tweet(self, tweet_model, tweet_json, tweet_set, existing_tweets, overwrite, ignore_backfill, backfilled,
                         updated_count, scanned_count):
-        if (overwrite or ignore_backfill) or \
-            (tweet_json.id_str not in existing_tweets):
 
+        if overwrite or (tweet_json.id_str not in existing_tweets):
+            # Only write a tweet if you're overwriting, or it doesn't already exist
             tweet, created = tweet_model.objects.get_or_create(
                 twitter_id=tweet_json.id_str
             )
@@ -106,12 +99,10 @@ class Command(BaseCommand):
                 tweet_set.tweets.add(tweet)
             updated_count += 1
             scanned_count += 1
-            return (True, updated_count, scanned_count)
-        elif backfilled and \
-                ((not ignore_backfill) or \
-                (tweet_json.id_str in existing_tweets)):
+
+        if backfilled and tweet_json.id_str in existing_tweets and not ignore_backfill:
+            # Only stop if the account has been backfilled and you encounter an existing tweet
             print("Encountered existing tweet, stopping now")
             return (False, updated_count, scanned_count)
         else:
-            print("Reached end of tweets, stopping")
-            return (False, updated_count, scanned_count)
+            return (True, updated_count, scanned_count)
