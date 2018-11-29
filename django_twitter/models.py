@@ -334,6 +334,10 @@ class AbstractTweet(AbstractTwitterObject):
                         user_mentions.append(mentioned_profile)
                 self.user_mentions = user_mentions
 
+                # TODO: this part of the saving functionality was broken into its own separate function by someone
+                # TODO: for the purpose of multiprocessing in django_twitter_collect_tweet_stream
+                # TODO: it updates the relations rather than the main fields
+                # TODO: but it's not a super satisfying solution because there are now two save functions to invoke in django_twitter_get_users_tweets
                 hashtags = []
                 for hashtag in tweet_data.get("entities", {}).get("hashtags", []):
                     hashtag_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_HASHTAG_MODEL) \
