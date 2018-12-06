@@ -87,7 +87,7 @@ class Command(BaseCommand):
 
             twitter_user.tweet_backfilled = True
             twitter_user.save()
-            print "{}: {} tweets scanned, {} updated".format(str(twitter_user), scanned_count, updated_count)
+            print("{}: {} tweets scanned, {} updated".format(str(twitter_user), scanned_count, updated_count))
 
     def save_tweet(self, tweet_model, tweet_json, tweet_set, existing_tweets, overwrite, ignore_backfill, backfilled,
                         updated_count, scanned_count):
