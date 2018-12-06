@@ -257,7 +257,7 @@ def save_users(tweets):
     for tweet_json in tweets:
         try:
             tweet, created = tweet_model.objects.get_or_create(twitter_id=tweet_json['id_str'])
-            tweet.update_users_from_json(tweet_json)
+            tweet.update_relations_from_json(tweet_json)
             success += 1
         except django.db.utils.IntegrityError:
             error += 1
