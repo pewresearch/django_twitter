@@ -67,6 +67,6 @@ class Command(BaseCommand):
                     twitter_profile_set.profiles.add(friend)
 
         except Exception as e:
-            print "Encountered an error: {}".format(e)
+            print("Encountered an error: {}".format(e))
             relationship_model.objects.filter(follower=follower, run_id=run_id).delete()
 
