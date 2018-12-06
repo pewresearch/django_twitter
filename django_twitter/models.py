@@ -34,9 +34,12 @@ class AbstractTwitterBase(models.base.ModelBase):
         fields_to_add = {
             "TweetModel": [
                 (models.ForeignKey, "TwitterProfileModel", "profile", "tweets", None, True),
-                (models.ManyToManyField, "TwitterHashtagModel", "tweets", "hashtags", None, True),
+                (models.ManyToManyField, "TwitterHashtagModel", "hashtags", "tweets", None, True),
                 (models.ForeignKey, "TwitterPlaceModel", "place", "tweets", None, True),
-                (models.ManyToManyField, "TwitterProfileModel", "tweet_mentions", "user_mentions", None, True)
+                (models.ManyToManyField, "TwitterProfileModel", "user_mentions", "tweet_mentions", None, True),
+                (models.ForeignKey, "TweetModel", "retweeted_status", "retweets", None, True),
+                (models.ForeignKey, "TweetModel", "in_reply_to_status", "replies", None, True),
+                (models.ForeignKey, "TweetModel", "quoted_status", "quotes", None, True)
             ],
             "BotometerScoreModel": [
                 (models.ForeignKey, "TwitterProfileModel", "profile", "botometer_scores", None, True)
@@ -171,8 +174,8 @@ class AbstractTwitterProfile(AbstractTwitterObject):
             self.status = profile_data['status']['text'] if 'status' in profile_data.keys() else None
             self.is_verified = profile_data['verified']
             self.contributors_enabled = profile_data['contributors_enabled']
-            # self.urls = [url['expanded_url'] for url in profile_data.get('entities', {}).get('url', {}).get('urls', []) if
-            #              url['expanded_url']] if "url" in profile_data.get('entities', {}).keys() else profile_data.get('url', '')
+            self.urls = [url['expanded_url'] for url in profile_data.get('entities', {}).get('url', {}).get('urls', []) if
+                         url['expanded_url']] if "url" in profile_data.get('entities', {}).keys() else profile_data.get('url', '')
             self.json = profile_data
             self.save()
 
@@ -216,25 +219,21 @@ class AbstractTweet(AbstractTwitterObject):
     text = models.CharField(max_length = 1024, null = True) # Could change to 280 - no need to be so long
     # hashtags = ArrayField(models.CharField(max_length=280), default = [], null=True)
     # TODO: Change below to a relationship
-    user_mentions = ArrayField(models.CharField(max_length=280), default=[], null=True)
+    # user_mentions = models.ManyToManyField("")
+    user_mentions_raw = ArrayField(models.CharField(max_length=280), default=[], null=True)
 
-    # Added from Rookery
-    in_reply_to_screen_name = models.CharField(max_length=255, null=True)
-    in_reply_to_status_id = models.CharField(max_length=255, null=True)
-    in_reply_to_user_id = models.CharField(max_length=255, null=True)
     language = models.CharField(max_length=255, null=True)
-    # latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True)
-    # longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True)
-    quoted_status_id = models.CharField(max_length=255, null=True)
-    # source = type of device. Removing this because it seems like it would be rarely used (will be in the json)
-    #source = models.CharField(max_length=255, null=True)
 
-    retweeted = models.NullBooleanField(null=True)
-    favorited = models.NullBooleanField(null=True)
     retweet_count = models.IntegerField(null=True)
     favorite_count = models.IntegerField(null=True)
 
     json = JSONField(null=True, default=dict)
+
+    # latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True)
+    # longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True)
+
+    # source = type of device. Removing this because it seems like it would be rarely used (will be in the json)
+    # source = models.CharField(max_length=255, null=True)
 
     def __str__(self):
 
@@ -255,8 +254,6 @@ class AbstractTweet(AbstractTwitterObject):
             self.created_at = date_parse(tweet_data['created_at'])
             self.retweet_count = tweet_data.get("retweet_count", None)
             self.favorite_count = tweet_data.get("favorite_count", None)
-            self.retweeted = tweet_data.get("retweeted", None)
-            self.favorited = tweet_data.get("favorited", None)
             self.language = tweet_data.get('lang', None)
 
             #Discovered full_text areas
@@ -280,14 +277,9 @@ class AbstractTweet(AbstractTwitterObject):
             else:
                 full_text = None
 
-
             if full_text: self.text = full_text
             else: self.text = tweet_data.get('text', '')
             self.text = u"{}".format(self.text)
-
-            self.in_reply_to_screen_name = tweet_data.get('in_reply_to_screen_name', None)
-            self.in_reply_to_status_id = tweet_data.get('in_reply_to_status_id', None)
-            self.in_reply_to_user_id = tweet_data.get('in_reply_to_user_id', None)
 
             try:
                 links = set(self.links)
@@ -304,46 +296,77 @@ class AbstractTweet(AbstractTwitterObject):
 
             self.save()
 
-    def update_users_from_json(self, tweet_data=None):
+    def update_relations_from_json(self, tweet_data=None): # TODO: rename
+
         if not tweet_data:
             tweet_data = self.json
         if tweet_data:
+
+            if not self.pk:
+                self.save()
+                self.refresh_from_db()
+
+            # PROFILE
             profile_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
             author, created = profile_model.objects.get_or_create(twitter_id=tweet_data['user']['id_str'])
             author.update_from_json(tweet_data['user'])
             self.profile = author
 
-            if self.pk:
-                user_mentions = []
-                for user_mention in tweet_data.get("entities", {}).get("user_mentions", []):
-                    existing_profiles = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)\
-                        .objects.filter(twitter_id=user_mention["id_str"])
-                    if existing_profiles.count() > 1:
-                        # print "This tweet mentioned an ID that belongs to multiple profiles"
-                        # # TODO: you probably want to just try filtering on historical=False at this point
-                        # # for now, since this is so rare, we'll just add all the possibilities
-                        # import pdb
-                        # pdb.set_trace()
-                        for existing in existing_profiles:
-                            user_mentions.append(existing)
-                    elif existing_profiles.count() == 1:
-                        user_mentions.append(existing_profiles[0])
-                    else:
-                        mentioned_profile, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL) \
-                            .objects.get_or_create(twitter_id=user_mention["id_str"])
-                        user_mentions.append(mentioned_profile)
-                self.user_mentions = user_mentions
+            # USER MENTIONS
+            user_mentions = []
+            for user_mention in tweet_data.get("entities", {}).get("user_mentions", []):
+                existing_profiles = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)\
+                    .objects.filter(twitter_id=user_mention["id_str"])
+                if existing_profiles.count() > 1:
+                    # print "This tweet mentioned an ID that belongs to multiple profiles"
+                    # # TODO: you probably want to just try filtering on historical=False at this point
+                    # # for now, since this is so rare, we'll just add all the possibilities
+                    # import pdb
+                    # pdb.set_trace()
+                    for existing in existing_profiles:
+                        user_mentions.append(existing)
+                elif existing_profiles.count() == 1:
+                    user_mentions.append(existing_profiles[0])
+                else:
+                    mentioned_profile, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL) \
+                        .objects.get_or_create(twitter_id=user_mention["id_str"])
+                    user_mentions.append(mentioned_profile)
+            self.user_mentions = user_mentions
 
-                # TODO: this part of the saving functionality was broken into its own separate function by someone
-                # TODO: for the purpose of multiprocessing in django_twitter_collect_tweet_stream
-                # TODO: it updates the relations rather than the main fields
-                # TODO: but it's not a super satisfying solution because there are now two save functions to invoke in django_twitter_get_users_tweets
-                hashtags = []
-                for hashtag in tweet_data.get("entities", {}).get("hashtags", []):
-                    hashtag_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_HASHTAG_MODEL) \
-                        .objects.get_or_create(name=hashtag['text'].lower())
-                    hashtags.append(hashtag_obj)
-                self.hashtags = [u"{}".format(h) for h in hashtags]
+            # HASHTAGS
+            hashtags = []
+            for hashtag in tweet_data.get("entities", {}).get("hashtags", []):
+                hashtag_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_HASHTAG_MODEL) \
+                    .objects.get_or_create(name=hashtag['text'].lower())
+                hashtags.append(hashtag_obj)
+            self.hashtags = hashtags # [u"{}".format(h) for h in hashtags]
+
+            # REPLY TO STATUS
+            if tweet_data.get('in_reply_to_status_id', None):
+                tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
+                    .objects.get_or_create(twitter_id=tweet_data['in_reply_to_status_id'].lower())
+                if not tweet_obj.profile and tweet_data.get('in_reply_to_user_id', None):
+                    reply_author_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL) \
+                        .objects.get_or_create(twitter_id=tweet_data['in_reply_to_user_id'].lower())
+                    tweet_obj.profile = reply_author_obj
+                    tweet_obj.save()
+                self.in_reply_to_status = tweet_obj
+
+            # QUOTE STATUS
+            if tweet_data.get('quoted_status', None):
+                tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
+                    .objects.get_or_create(twitter_id=tweet_data['quoted_status']['id_str'].lower())
+                tweet_obj.update_from_json(tweet_data['quoted_status'])
+                tweet_obj.update_relations_from_json(tweet_data['quoted_status'])
+                self.quoted_status = tweet_obj
+
+            # RETWEETED STATUS
+            if tweet_data.get('retweeted_status', None):
+                tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
+                    .objects.get_or_create(twitter_id=tweet_data['retweeted_status']['id_str'].lower())
+                tweet_obj.update_from_json(tweet_data['retweeted_status'])
+                tweet_obj.update_relations_from_json(tweet_data['retweeted_status'])
+                self.retweeted_status = tweet_obj
 
             self.json = tweet_data
             self.save()
