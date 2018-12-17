@@ -19,6 +19,14 @@ from pewtils import decode_text, is_not_null, is_null
 
 class AbstractTwitterBase(models.base.ModelBase):
 
+    """
+    All django_twitter models inherit from this base class. When a model in your own app, in turn, inherits from a
+    django_twitter model (like AbstractTweet), the code below will intercept the model when it's initialized, and
+    then look other django_twitter-based models in your own app that should have relationships between each other.
+    django_twitter doesn't know anything about your app but if you configure your settings.py model correctly,
+    it will be able to connect all your models together at runtime.
+
+    """
     class Meta:
         abstract = True
 
@@ -150,6 +158,11 @@ class AbstractTwitterProfile(AbstractTwitterObject):
 
     json = JSONField(null=True, default=dict)
 
+    """
+    AUTO-CREATED RELATIONSHIPS:
+    followers = models.ManyToManyField(your_app.TwitterProfileModel, related_name="followings") 
+    """
+
     def __str__(self):
 
         return str("{0}: http://twitter.com/{0}".format(self.screen_name) if self.screen_name else self.twitter_id)
@@ -234,6 +247,17 @@ class AbstractTweet(AbstractTwitterObject):
 
     # source = type of device. Removing this because it seems like it would be rarely used (will be in the json)
     # source = models.CharField(max_length=255, null=True)
+
+    """
+    AUTO-CREATED RELATIONSHIPS:
+    profile = models.ForeignKey(your_app.TwitterProfileModel, related_name="tweets") 
+    hashtags = models.ManyToManyField(your_app.TwitterHashtagModel, related_name="tweets")
+    place = models.ForeignKey(your_app.TwitterPlaceModel, related_name="tweets")
+    user_mentions = models.ManyToManyField(your_app.TwitterProfileModel, related_name="tweet_mentions")
+    retweeted_status = models.ForeignKey(your_app.TweetModel, related_name="retweets")
+    in_reply_to_status = models.ForeignKey(your_app.TweetModel, related_name="replies")
+    quoted_status = models.ForeignKey(your_app.TweetModel, related_name="quotes")
+    """
 
     def __str__(self):
 
@@ -399,6 +423,11 @@ class AbstractBotometerScore(models.Model):
 
     json = JSONField(null=True, default=dict)
 
+    """
+    AUTO-CREATED RELATIONSHIPS:
+    profile = models.ForeignKey(your_app.TwitterProfileModel, related_name="botometer_scores") 
+    """
+
     def update_from_json(self, score_data=None, api_version=None):
 
         if not score_data:
@@ -428,6 +457,12 @@ class AbstractTwitterRelationship(models.Model):
 
     date = models.DateField(auto_now=True)
     run_id = models.IntegerField(null=True)
+
+    """
+    AUTO-CREATED RELATIONSHIPS:
+    follower = models.ForeignKey(your_app.TwitterProfileModel, related_name="following_details")
+    following = models.ForeignKey(your_app.TwitterProfileModel, related_name="follower_details")
+    """
 
     def __str__(self):
         return "{} following {}".format(self.follower, self.friend)
@@ -496,6 +531,11 @@ class AbstractTweetSet(models.Model):
 
     name = models.CharField(max_length=256, unique=True)
 
+    """
+    AUTO-CREATED RELATIONSHIPS:
+    tweets = models.ManyToManyField(your_app.TweetModel, related_name="tweet_sets")
+    """
+
     def __str__(self):
 
         return self.name
@@ -510,6 +550,11 @@ class AbstractTwitterProfileSet(models.Model):
     __metaclass__ = AbstractTwitterBase
 
     name = models.CharField(max_length=256, unique=True)
+
+    """
+    AUTO-CREATED RELATIONSHIPS:
+    profiles = models.ManyToManyField(your_app.TwitterProfileModel, related_name="twitter_profile_sets")
+    """
 
     def __str__(self):
 
