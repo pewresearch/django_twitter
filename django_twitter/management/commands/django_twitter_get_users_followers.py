@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand
 from django.apps import apps
 from django.core.management import call_command
 
-from pewtils.django import get_model
+from django_pewtils import get_model
 
 from tqdm import tqdm
 
@@ -44,4 +44,3 @@ class Command(BaseCommand):
                          access_token=self.twitter.access_token,
                          access_secret=self.twitter.access_secret)
             # by passing along the current active api key, any cycling between multiple keys will be propagated to the subcommands
-

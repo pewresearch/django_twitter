@@ -5,5 +5,3 @@ django-simple-history
 django<2.0
 git+ssh://labsdeploy/pewresearch/pewhooks#egg=pewhooks
 git+ssh://labsdeploy/pewresearch/django_pewtils#egg=django_pewtils
-git+ssh://labsdeploy/pewresearch/pewtils#egg=pewtils
-
