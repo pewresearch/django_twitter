@@ -4,7 +4,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.apps import apps
 
-from pewtils.django import get_model
+from django_pewtils import get_model
 
 from tqdm import tqdm
 
@@ -69,4 +69,3 @@ class Command(BaseCommand):
         except Exception as e:
             print "Encountered an error: {}".format(e)
             relationship_model.objects.filter(following=following, run_id=run_id).delete()
-

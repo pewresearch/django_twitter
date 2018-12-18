@@ -8,7 +8,7 @@ from multiprocessing import Pool
 from datetime import datetime, timedelta
 from tqdm import tqdm
 
-from pewtils.django import reset_django_connection, reset_django_connection_wrapper
+from django_pewtils import reset_django_connection, reset_django_connection_wrapper
 from pewhooks.twitter import TwitterAPIHandler
 
 allowable_limit_types = {

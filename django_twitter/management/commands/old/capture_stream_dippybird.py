@@ -15,7 +15,7 @@ from django.conf import settings
 
 from pewtils.twitter import TwitterAPIHandler
 from pewtils.io import FileHandler
-from pewtils.django import reset_django_connection
+from django_pewtils import reset_django_connection
 
 from dippybird.models import Tweet, Link, KeywordQuery
 

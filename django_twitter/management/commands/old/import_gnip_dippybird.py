@@ -6,7 +6,7 @@ from django.db.utils import IntegrityError
 
 from dippybird.models import Tweet, Link, KeywordQuery
 from pewtils import decode_text
-from pewtils.django import reset_django_connection, consolidate_objects
+from django_pewtils import reset_django_connection, consolidate_objects
 
 import os, json, glob, re
 from tqdm import tqdm
@@ -112,7 +112,7 @@ def load_tweet_file(file, rt_match, options, kwquery=None):
 #     curr_tweet_text_match = rt_match.match(text)
 #     if curr_tweet_text_match and payload.get('object', {}).get('body'):
 #         text = u"{}".format(payload['object']['body'])
-# 
+#
 #     # Now check if there's a longer version and if so automatically add that
 #     if payload['object'].get('long_object'):
 #         # still checking retweet here
@@ -128,11 +128,11 @@ def load_tweet_file(file, rt_match, options, kwquery=None):
 #     '''
 #     # start with current text
 #     text = tweet.text
-# 
+#
 #     # extract text from a quoted tweet
 #     if tweet_payload.get('twitter_quoted_status'):
 #         text += u"\n{}".format(get_body_text(tweet_payload['twitter_quoted_status'], rt_match))
-# 
+#
 #     # if tweet_payload.get('gnip') and tweet_payload['gnip'].get('urls'):
 #     #     for url_object in tweet_payload['gnip']['urls']:
 #     #         if url_object.get('expanded_url'):
@@ -146,7 +146,7 @@ def load_tweet_file(file, rt_match, options, kwquery=None):
 #     #     # might have a link as a retweet?
 #     #     url = tweet_payload['object']['link']
 #     #     text += u"\n{}".format(url)
-# 
+#
 #     # grab links any text associated with them
 #     for link in tweet.links.all():
 #         if "twitter.com" not in link.expanded_url:
@@ -161,8 +161,8 @@ def load_tweet_file(file, rt_match, options, kwquery=None):
 #                 except:
 #                     # we tried, it's just not happening
 #                     pass
-# 
-# 
+#
+#
 #     return text
 
 
