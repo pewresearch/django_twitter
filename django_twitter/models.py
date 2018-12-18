@@ -204,9 +204,9 @@ class AbstractTwitterProfile(AbstractTwitterObject):
 
     def current_followings(self):
 
-        try: max_run = self.friend_details.order_by("-run_id")[0].run_id
+        try: max_run = self.following_details.order_by("-run_id")[0].run_id
         except IndexError: max_run = None
-        following_ids = self.following_details.filter(run_id=max_run).values_list("friend_id", flat=True)
+        following_ids = self.following_details.filter(run_id=max_run).values_list("following_id", flat=True)
         return self.followings.filter(pk__in=following_ids)
 
     def most_recent_botometer_score(self):
@@ -465,7 +465,7 @@ class AbstractTwitterRelationship(models.Model):
     """
 
     def __str__(self):
-        return "{} following {}".format(self.follower, self.friend)
+        return "{} following {}".format(self.follower, self.following)
 
 
 class AbstractTwitterHashtag(models.Model):
