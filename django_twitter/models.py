@@ -200,14 +200,14 @@ class AbstractTwitterProfile(AbstractTwitterObject):
         try: max_run = self.follower_details.order_by("-run_id")[0].run_id
         except IndexError: max_run = None
         follower_ids = self.follower_details.filter(run_id=max_run).values_list("follower_id", flat=True)
-        return self.followers.filter(pk__in=follower_ids)
+        return self.followers.filter(pk__in=follower_ids).distinct()
 
     def current_followings(self):
 
         try: max_run = self.following_details.order_by("-run_id")[0].run_id
         except IndexError: max_run = None
         following_ids = self.following_details.filter(run_id=max_run).values_list("following_id", flat=True)
-        return self.followings.filter(pk__in=following_ids)
+        return self.followings.filter(pk__in=following_ids).distinct()
 
     def most_recent_botometer_score(self):
 
