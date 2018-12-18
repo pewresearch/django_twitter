@@ -368,10 +368,10 @@ class AbstractTweet(AbstractTwitterObject):
             # REPLY TO STATUS
             if tweet_data.get('in_reply_to_status_id', None):
                 tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
-                    .objects.get_or_create(twitter_id=tweet_data['in_reply_to_status_id'].lower())
+                    .objects.get_or_create(twitter_id=tweet_data['in_reply_to_status_id_str'].lower())
                 if not tweet_obj.profile and tweet_data.get('in_reply_to_user_id', None):
                     reply_author_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL) \
-                        .objects.get_or_create(twitter_id=tweet_data['in_reply_to_user_id'].lower())
+                        .objects.get_or_create(twitter_id=tweet_data['in_reply_to_user_id_str'].lower())
                     tweet_obj.profile = reply_author_obj
                     tweet_obj.save()
                 self.in_reply_to_status = tweet_obj
