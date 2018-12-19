@@ -189,6 +189,8 @@ class AbstractTwitterProfile(AbstractTwitterObject):
             self.contributors_enabled = profile_data['contributors_enabled']
             self.urls = [url['expanded_url'] for url in profile_data.get('entities', {}).get('url', {}).get('urls', []) if
                          url['expanded_url']] if "url" in profile_data.get('entities', {}).keys() else profile_data.get('url', '')
+            if self.urls == None:
+                self.urls = []
             self.json = profile_data
             self.save()
 
