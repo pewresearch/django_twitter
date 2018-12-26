@@ -320,7 +320,16 @@ class AbstractTweet(AbstractTwitterObject):
 
             self.json = tweet_data
 
-            self.save()
+            try: self.save()
+            except:
+                try:
+                    self.json = decode_text(self.json)
+                    self.save()
+                except Exception as e:
+                    print e
+                    import pdb
+                    pdb.set_trace()
+                # \u0000
 
     def update_relations_from_json(self, tweet_data=None): # TODO: rename
 
@@ -395,7 +404,16 @@ class AbstractTweet(AbstractTwitterObject):
                 self.retweeted_status = tweet_obj
 
             self.json = tweet_data
-            self.save()
+            try: self.save()
+            except:
+                try:
+                    self.json = decode_text(self.json)
+                    self.save()
+                except Exception as e:
+                    print e
+                    import pdb
+                    pdb.set_trace()
+                # \u0000
 
     def url(self):
         return "http://www.twitter.com/statuses/{0}".format(self.twitter_id)
