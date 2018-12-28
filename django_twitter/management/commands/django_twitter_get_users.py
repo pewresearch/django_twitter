@@ -6,6 +6,7 @@ from tqdm import tqdm
 
 from pewhooks.twitter import TwitterAPIHandler
 
+
 class Command(BaseCommand):
 
     def add_arguments(self, parser):
@@ -41,14 +42,16 @@ class Command(BaseCommand):
 
     def process_users(self, lst_user_ids, twitter_profile_set, verbose, cnt=0):
         # TODO: handle if chunk has weird ids (special characters, spelling errors)
+        # TODO: this function leverages the bulk API call but its limitation is that you can't track individual accounts
+        # in terms of their suspensions and error codes; for the sake of being thorough, I recommend making this a wrapper around django_twitter_get_user
         lst_json = self.twitter.get_users(lst_user_ids)
         if lst_json is None:
             return cnt
 
+        user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
         for user_json in lst_json:
             if verbose:
                 print("Collecting user {}".format(user_json.screen_name))
-            user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
             twitter_user, created = user_model.objects.get_or_create(
                 twitter_id=user_json.id)
             twitter_user.update_from_json(user_json._json)
