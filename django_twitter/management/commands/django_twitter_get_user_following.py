@@ -4,11 +4,11 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.apps import apps
 
-from django_pewtils import get_model
-
 from tqdm import tqdm
 
 from pewhooks.twitter import TwitterAPIHandler
+
+from django_twitter.utils import get_twitter_user
 
 
 class Command(BaseCommand):
@@ -36,36 +36,39 @@ class Command(BaseCommand):
         scanned_count, updated_count = 0, 0
         user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
         relationship_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_RELATIONSHIP_MODEL)
-        twitter_json = self.twitter.get_user(options["twitter_id"])
-        follower, created = user_model.objects.get_or_create(twitter_id=twitter_json.id_str)
 
-        try: run_id = relationship_model.objects.filter(follower=follower).order_by("-run_id")[0].run_id + 1
-        except IndexError: run_id = 1
+        twitter_json = get_twitter_user(options["twitter_id"], self.twitter)
+        if twitter_json:
 
-        twitter_profile_set = None
-        if options["twitter_profile_set"]:
-            twitter_profile_set_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_SET_MODEL)
-            twitter_profile_set, created = twitter_profile_set_model.objects.get_or_create(name=options["twitter_profile_set"])
+            follower, created = user_model.objects.get_or_create(twitter_id=twitter_json.id_str)
 
-        try:
+            try: run_id = relationship_model.objects.filter(follower=follower).order_by("-run_id")[0].run_id + 1
+            except IndexError: run_id = 1
 
-            # Iterate through all tweets in timeline
-            for following_data in tqdm(self.twitter.iterate_user_friends(follower.twitter_id, hydrate_users=options['hydrate']),
-                                    desc = "Retrieving friends for user {}".format(follower.screen_name)):
-                if not options["hydrate"]:
-                    following, created = user_model.objects.get_or_create(twitter_id=following_data)
-                else:
-                    following, created = user_model.objects.get_or_create(twitter_id=following_data._json['id_str'])
-                    following.update_from_json(following_data._json)
-                relationship = relationship_model.objects.create(following=following, follower=follower, run_id=run_id)
-                # relationship, created = relationship_model.objects.get_or_create(friend=friend, follower=follower)
-                # date = datetime.datetime.now()
-                # if date not in relationship.dates:
-                #     relationship.dates.append(date)
-                #     relationship.save()
-                if twitter_profile_set:
-                    twitter_profile_set.profiles.add(friend)
+            twitter_profile_set = None
+            if options["twitter_profile_set"]:
+                twitter_profile_set_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_SET_MODEL)
+                twitter_profile_set, created = twitter_profile_set_model.objects.get_or_create(name=options["twitter_profile_set"])
 
-        except Exception as e:
-            print("Encountered an error: {}".format(e))
-            relationship_model.objects.filter(follower=follower, run_id=run_id).delete()
+            try:
+
+                # Iterate through all tweets in timeline
+                for following_data in tqdm(self.twitter.iterate_user_friends(follower.twitter_id, hydrate_users=options['hydrate']),
+                                        desc = "Retrieving friends for user {}".format(follower.screen_name)):
+                    if not options["hydrate"]:
+                        following, created = user_model.objects.get_or_create(twitter_id=following_data)
+                    else:
+                        following, created = user_model.objects.get_or_create(twitter_id=following_data._json['id_str'])
+                        following.update_from_json(following_data._json)
+                    relationship = relationship_model.objects.create(following=following, follower=follower, run_id=run_id)
+                    # relationship, created = relationship_model.objects.get_or_create(friend=friend, follower=follower)
+                    # date = datetime.datetime.now()
+                    # if date not in relationship.dates:
+                    #     relationship.dates.append(date)
+                    #     relationship.save()
+                    if twitter_profile_set:
+                        twitter_profile_set.profiles.add(friend)
+
+            except Exception as e:
+                print("Encountered an error: {}".format(e))
+                relationship_model.objects.filter(follower=follower, run_id=run_id).delete()

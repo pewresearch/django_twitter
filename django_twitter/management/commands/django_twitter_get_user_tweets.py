@@ -2,11 +2,11 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.apps import apps
 
-from django_pewtils import get_model
-
 from tqdm import tqdm
 
 from pewhooks.twitter import TwitterAPIHandler
+
+from django_twitter.utils import get_twitter_user
 
 
 class Command(BaseCommand):
@@ -40,7 +40,7 @@ class Command(BaseCommand):
 
         scanned_count, updated_count = 0, 0
         user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
-        twitter_json = self.twitter.get_user(options["twitter_id"])
+        twitter_json = get_twitter_user(options["twitter_id"], self.twitter)
         if twitter_json:
             twitter_user, created = user_model.objects.get_or_create(twitter_id=twitter_json.id_str)
 

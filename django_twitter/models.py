@@ -156,6 +156,8 @@ class AbstractTwitterProfile(AbstractTwitterObject):
     listed_count = models.IntegerField(null=True)
     statuses_count = models.IntegerField(null=True)
 
+    twitter_error_code = models.IntegerField(null=True)
+
     json = JSONField(null=True, default=dict)
 
     """
