@@ -382,6 +382,7 @@ class AbstractTweet(AbstractTwitterObject):
             if tweet_data.get('in_reply_to_status_id', None):
                 tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
                     .objects.get_or_create(twitter_id=tweet_data['in_reply_to_status_id_str'].lower())
+                tweet_obj.refresh_from_db()
                 if not tweet_obj.profile and tweet_data.get('in_reply_to_user_id_str', None):
                     reply_author_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL) \
                         .objects.get_or_create(twitter_id=tweet_data['in_reply_to_user_id_str'].lower())
