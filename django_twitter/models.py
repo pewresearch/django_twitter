@@ -156,6 +156,8 @@ class AbstractTwitterProfile(AbstractTwitterObject):
     listed_count = models.IntegerField(null=True)
     statuses_count = models.IntegerField(null=True)
 
+    twitter_error_code = models.IntegerField(null=True)
+
     json = JSONField(null=True, default=dict)
 
     """
@@ -346,7 +348,16 @@ class AbstractTweet(AbstractTwitterObject):
 
             self.json = tweet_data
 
-            self.save()
+            try: self.save()
+            except:
+                try:
+                    self.json = decode_text(self.json)
+                    self.save()
+                except Exception as e:
+                    print e
+                    import pdb
+                    pdb.set_trace()
+                # \u0000
 
     def update_relations_from_json(self, tweet_data=None): # TODO: rename
 
@@ -397,6 +408,7 @@ class AbstractTweet(AbstractTwitterObject):
             if tweet_data.get('in_reply_to_status_id', None):
                 tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
                     .objects.get_or_create(twitter_id=tweet_data['in_reply_to_status_id_str'].lower())
+                tweet_obj.refresh_from_db()
                 if not tweet_obj.profile and tweet_data.get('in_reply_to_user_id_str', None):
                     reply_author_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL) \
                         .objects.get_or_create(twitter_id=tweet_data['in_reply_to_user_id_str'].lower())
@@ -421,7 +433,16 @@ class AbstractTweet(AbstractTwitterObject):
                 self.retweeted_status = tweet_obj
 
             self.json = tweet_data
-            self.save()
+            try: self.save()
+            except:
+                try:
+                    self.json = decode_text(self.json)
+                    self.save()
+                except Exception as e:
+                    print e
+                    import pdb
+                    pdb.set_trace()
+                # \u0000
 
     def url(self):
         return "http://www.twitter.com/statuses/{0}".format(self.twitter_id)
