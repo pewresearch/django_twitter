@@ -4,6 +4,8 @@ from django.apps import apps
 
 from pewhooks.twitter import TwitterAPIHandler
 
+from django_twitter.utils import get_twitter_user
+
 
 class Command(BaseCommand):
 
@@ -33,9 +35,10 @@ class Command(BaseCommand):
             twitter_profile_set_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_SET_MODEL)
             twitter_profile_set, created = twitter_profile_set_model.objects.get_or_create(name=options["twitter_profile_set"])
 
-        user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
-        twitter_json = self.twitter.get_user(options["twitter_id"])
+        twitter_json = get_twitter_user(options["twitter_id"], self.twitter)
         if twitter_json:
+
+            user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
             twitter_user, created = user_model.objects.get_or_create(twitter_id=twitter_json.id_str)
 
             botometer_scores = self.twitter.get_user_botometer_score(options["twitter_id"])
