@@ -1,9 +1,11 @@
 import os, glob
 import json
+import random
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.apps import apps
+from django import db
 from django.db.utils import IntegrityError
 from multiprocessing import Pool
 from tqdm import tqdm
@@ -20,6 +22,7 @@ class Command(BaseCommand):
         parser.add_argument('--num_cores', type=int, default=2)
         parser.add_argument('--queue_size', type=int, default=500)
         parser.add_argument("--profile_set", type=str)
+        parser.add_argument("--sample_rate", type=float, default=1.0)
         parser.add_argument("--limit", type=int)
 
     def handle(self, *args, **options):
@@ -45,34 +48,44 @@ class Command(BaseCommand):
         self.processed_counter = 0
         tweet_queue = []
         for tweet_payload in generate_tweets(options['folder_name']):
-            t = load_tweet(tweet_payload)
-            if t: self.tweet_queue.append(t)
-            self.scanned_counter += 1
 
-            if len(self.tweet_queue) >= self.queue_size:
-                print("saving..")
-                self.pool.apply(save_users, args=[list(self.tweet_queue)])
-                if self.num_cores > 1:
-                    self.pool.apply_async(save_tweets, args=[list(tweet_queue),
-                                                             self.tweet_set.pk if self.tweet_set else None ])
-                    self.pool.apply_async(save_profileset, args=[list(tweet_queue),
-                                                                 self.profile_set])
-                else:
-                    # self.pool.apply(save_tweets, args=[list(self.tweet_queue),
-                    #                                    self.tweet_set.pk if self.tweet_set else None])
-                    # self.pool.apply(save_profileset, args=[list(self.tweet_queue), self.profile_set])
-                    save_tweets(list(self.tweet_queue),
-                                self.tweet_set.pk if self.tweet_set else None)
-                    #save_profileset(list(self.tweet_queue), self.profile_set)
-                self.tweet_queue = []
-                self.processed_counter += self.queue_size
-                print("{} tweets scanned, {} sent for processing".format(self.scanned_counter,
-                                                                         self.processed_counter))
+            if random.random() < options['sample_rate']:
 
+                t = load_tweet(tweet_payload)
+                if t: self.tweet_queue.append(t)
+                self.scanned_counter += 1
 
+                if len(self.tweet_queue) >= self.queue_size:
+                    print("saving..")
+
+                    if self.num_cores > 1:
+                        self.pool.apply_async(save_users, args=[list(self.tweet_queue)])
+                        self.pool.apply_async(save_tweets, args=[list(tweet_queue),
+                                                                 self.tweet_set.pk if self.tweet_set else None ])
+                        self.pool.apply_async(save_profileset, args=[list(tweet_queue),
+                                                                     self.profile_set])
+                    else:
+                        self.pool.apply(save_users, args=[list(self.tweet_queue)])
+                        self.pool.apply(save_tweets, args=[list(self.tweet_queue),
+                                                           self.tweet_set.pk if self.tweet_set else None])
+                        self.pool.apply(save_profileset, args=[list(self.tweet_queue), self.profile_set])
+                        # save_tweets(list(self.tweet_queue),
+                        #             self.tweet_set.pk if self.tweet_set else None)
+                        # save_profileset(list(self.tweet_queue), self.profile_set)
+                    self.tweet_queue = []
+                    self.processed_counter += self.queue_size
+                    print("{} tweets scanned, {} sent for processing".format(self.scanned_counter,
+                                                                             self.processed_counter))
+
+        # In case there's still remaining tweets in the queue
         save_all(tweet_queue, self.profile_set, self.tweet_set.pk if self.tweet_set else None)
 
+        self.pool.close()
+        self.pool.join()
+        db.connections.close_all()
+
 def save_all(tweet_queue, profile_set, tweet_set_pk=None):
+
     save_tweets(tweet_queue, tweet_set_pk)
     save_users(tweet_queue)
     save_profileset(tweet_queue, profile_set)
@@ -201,6 +214,7 @@ def load_tweet(tweet_payload):
         print e
 
 def save_tweets(tweets, tweet_set_id):
+
     reset_django_connection(settings.TWITTER_APP)
 
     tweet_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL)
@@ -224,6 +238,9 @@ def save_tweets(tweets, tweet_set_id):
 
 
 def save_users(tweets):
+
+    reset_django_connection(settings.TWITTER_APP)
+
     tweet_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL)
     success, error = 0, 0
     for tweet_json in tweets:
@@ -245,6 +262,7 @@ all_users = set()
 
 
 def save_profileset(tweets, profile_set_id):
+
     reset_django_connection(settings.TWITTER_APP)
 
     user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
