@@ -167,6 +167,32 @@ class AbstractTwitterProfile(AbstractTwitterObject):
 
         return str("{0}: http://twitter.com/{0}".format(self.screen_name) if self.screen_name else self.twitter_id)
 
+    def update_from_json_gnip(self, profile_data):
+        profile_data = profile_data['actor']
+        self.twitter_id = profile_data['id']
+        self.created_at = date_parse(profile_data['postedTime'])
+        self.screen_name = profile_data['preferredUsername'].lower()
+        self.description = profile_data['summary']
+        # Not sure if the if statement below is ever called
+        self.favorites_count = profile_data['favoritesCount'] if "favorites_count" in profile_data.keys() else \
+            profile_data['favouritesCount']
+        self.followers_count = profile_data['followersCount']
+        self.followings_count = profile_data['friendsCount']
+        self.listed_count = profile_data['listedCount']
+        self.language = profile_data['language']
+        self.statuses_count = profile_data['statusesCount']
+        self.profile_image_url = profile_data['image']
+        self.is_verified = profile_data['verified']
+        # Below is not in gnip
+        #self.status = profile_data['status']['text'] if 'status' in profile_data.keys() else None
+        self.contributors_enabled = profile_data['contributors_enabled']
+        self.urls = [link['href'] for link in profile_data['links']]
+        # self.urls = [url['expanded_url'] for url in profile_data.get('entities', {}).get('url', {}).get('urls', []) if
+        #              url['expanded_url']] if "url" in profile_data.get('entities', {}).keys() else profile_data.get(
+        #     'url', '')
+        self.json = profile_data
+        self.save()
+
     def update_from_json(self, profile_data=None):
 
         if not profile_data:
@@ -175,7 +201,7 @@ class AbstractTwitterProfile(AbstractTwitterObject):
             # TODO: Last step - Verify that all of the fields above are in here
             self.created_at = date_parse(profile_data['created_at'])
             self.screen_name = profile_data['screen_name'].lower()
-            self.description = profile_data['description'],
+            self.description = profile_data['description']
             self.favorites_count = profile_data['favorites_count'] if "favorites_count" in profile_data.keys() else \
                 profile_data['favourites_count']
             self.followers_count = profile_data['followers_count']
@@ -189,7 +215,7 @@ class AbstractTwitterProfile(AbstractTwitterObject):
             self.contributors_enabled = profile_data['contributors_enabled']
             self.urls = [url['expanded_url'] for url in profile_data.get('entities', {}).get('url', {}).get('urls', []) if
                          url['expanded_url']] if "url" in profile_data.get('entities', {}).keys() else profile_data.get('url', '')
-            if self.urls == None:
+            if self.urls == None or self.urls=='':
                 self.urls = []
             self.json = profile_data
             self.save()
@@ -271,7 +297,7 @@ class AbstractTweet(AbstractTwitterObject):
             decode_text(self.text)
         )
 
-    def update_from_json(self, tweet_data=None, get_retweeted_or_quoted_text=True):
+    def update_from_json(self, tweet_data=None, get_retweeted_or_quoted_text=True, is_gnip=False):
 
         if not tweet_data:
             tweet_data = self.json
