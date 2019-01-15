@@ -51,16 +51,21 @@ class Command(BaseCommand):
             # Iterate through all tweets in timeline
 
             if options['no_progress_bar']:
-                iterator = self.twitter.iterate_user_timeline(options['twitter_id'])
+                iterator = self.twitter.iterate_user_timeline(options['twitter_id'], return_errors=True)
             else:
-                iterator = tqdm(self.twitter.iterate_user_timeline(options['twitter_id']),
+                iterator = tqdm(self.twitter.iterate_user_timeline(options['twitter_id'], return_errors=True),
                                 desc = "Retrieving tweets for user {}".format(twitter_user.screen_name))
             print("Retrieving tweets for user {}".format(twitter_user.screen_name))
             for tweet_json in iterator:
-                keep_pulling, updated_count, scanned_count = \
-                    self.save_tweet(tweet_model, tweet_json, tweet_set, existing_tweets,
-                                    options['overwrite'], options['ignore_backfill'],
-                                    twitter_user.tweet_backfilled, updated_count, scanned_count)
+                if type(tweet_json) == int:
+                    twitter_user.is_private = True
+                    twitter_user.save()
+                    break
+                else:
+                    keep_pulling, updated_count, scanned_count = \
+                        self.save_tweet(tweet_model, tweet_json, tweet_set, existing_tweets,
+                                        options['overwrite'], options['ignore_backfill'],
+                                        twitter_user.tweet_backfilled, updated_count, scanned_count)
 
                 if not keep_pulling:
                     break
