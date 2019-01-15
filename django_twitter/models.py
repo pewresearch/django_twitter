@@ -138,6 +138,7 @@ class AbstractTwitterProfile(AbstractTwitterObject):
     urls = ArrayField(models.CharField(max_length=300), default=[])
     contributors_enabled = models.NullBooleanField(null=True)
     is_verified = models.NullBooleanField(null=True)
+    is_private = models.BooleanField(default=False)
     created_at = models.DateTimeField(null=True)
     profile_image_url = models.TextField(null=True)
 
