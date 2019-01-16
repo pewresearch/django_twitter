@@ -4,7 +4,7 @@ from django.db.utils import DataError
 from rookery_journalism.functions import Twitter
 from rookery_journalism.models import TwitterUser, TwitterPlace, TwitterTweet, TwitterLink
 
-from pewtils.http import canonical_link
+from pewtils.internal.http import canonical_link
 
 from tweepy.error import TweepError
 from tqdm import tqdm

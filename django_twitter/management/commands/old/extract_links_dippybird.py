@@ -7,8 +7,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.db.utils import IntegrityError
 
-from pewtils import decode_text
-from pewtils import chunker
+from pewtils import decode_text, chunker
 from django_pewtils import reset_django_connection
 
 from dippybird.models import Tweet, Link
