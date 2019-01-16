@@ -70,10 +70,10 @@ DATABASES = {
     'default': {
         'ENGINE':   'django.db.backends.postgresql',
         'HOST':     'localhost',
-        'NAME':     'test_db',
-        'USER':     'postgres',
-        'PASSWORD': 'test',
-        'PORT':     ''
+        'NAME':     'pvankessel',
+        'USER':     'pvankessel',
+        'PASSWORD': '',
+        'PORT':     '5432'
     }
 }
 SITE_READ_ONLY = False
@@ -171,3 +171,21 @@ TWITTER_HASHTAG_MODEL = "TwitterHashtag"
 TWITTER_PLACE_MODEL = "TwitterPlace"
 TWEET_SET_MODEL = "TweetSet"
 TWITTER_PROFILE_SET_MODEL = "TwitterProfileSet"
+
+
+os.environ["TWITTER_API_KEY_1"] = "Zjd0TOGsL2Xh78p1eREGpo27B"
+os.environ["TWITTER_API_SECRET_1"] = "DIqB4ImjZUq0GigvJ6ehxYZYrGwVR0pqO6lO3gyLZXNlNLV8q6"
+os.environ["TWITTER_API_ACCESS_TOKEN_1"] = "4017806483-CvYhevnC6KFKIXCZAOJ4tlAHJJfOlsLrH9GxJas"
+os.environ["TWITTER_API_ACCESS_SECRET_1"] = "BkSJP8wwymrbhHuNOQpmDDTyMP7L2tePE1H1GLyJCRt2e"
+
+
+os.environ["TWITTER_API_KEY_2"] = "Zjd0TOGsL2Xh78p1eREGpo27B"
+os.environ["TWITTER_API_SECRET_2"] = "DIqB4ImjZUq0GigvJ6ehxYZYrGwVR0pqO6lO3gyLZXNlNLV8q6"
+os.environ["TWITTER_API_ACCESS_TOKEN_2"] = "4017806483-CvYhevnC6KFKIXCZAOJ4tlAHJJfOlsLrH9GxJas"
+os.environ["TWITTER_API_ACCESS_SECRET_2"] = "BkSJP8wwymrbhHuNOQpmDDTyMP7L2tePE1H1GLyJCRt2e"
+os.environ["BOTOMETER_MASHAPE_KEY"] = "IC7TRQIdqimshOIFMwWNV9zwM8gZp1MpNS8jsn6pjBHqFC0kli"
+
+# os.environ["TWITTER_API_KEY_2"] = "Zjd0TOGsL2Xh78p1eREGpo27B"
+# os.environ["TWITTER_API_SECRET_2"] = "DIqB4ImjZUq0GigvJ6ehxYZYrGwVR0pqO6lO3gyLZXNlNLV8q6"
+# os.environ["TWITTER_API_ACCESS_TOKEN_2"] = "4017806483-CvYhevnC6KFKIXCZAOJ4tlAHJJfOlsLrH9GxJas"
+# os.environ["TWITTER_API_ACCESS_SECRET_2"] = "BkSJP8wwymrbhHuNOQpmDDTyMP7L2tePE1H1GLyJCRt2e"

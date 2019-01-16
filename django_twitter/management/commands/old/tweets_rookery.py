@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 from django.core.management.base import BaseCommand, CommandError
 from django.db.utils import DataError
-from pewtils.http import canonical_link
+from pewtils.internal.http import canonical_link
 from rookery_journalism.functions import Twitter
 from rookery_journalism.models import TwitterUser, TwitterTweet, TwitterList, TwitterSearch, TwitterLink, TwitterPlace
 

@@ -13,7 +13,7 @@ from urlparse import urlparse
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 
-from pewtils.twitter import TwitterAPIHandler
+from pewhooks.twitter import TwitterAPIHandler
 from pewtils.io import FileHandler
 from django_pewtils import reset_django_connection
 
