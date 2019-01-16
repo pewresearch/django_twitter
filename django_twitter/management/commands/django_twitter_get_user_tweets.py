@@ -2,11 +2,11 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.apps import apps
 
-from django_pewtils import get_model
-
 from tqdm import tqdm
 
 from pewhooks.twitter import TwitterAPIHandler
+
+from django_twitter.utils import get_twitter_user
 
 
 class Command(BaseCommand):
@@ -40,7 +40,7 @@ class Command(BaseCommand):
 
         scanned_count, updated_count = 0, 0
         user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
-        twitter_json = self.twitter.get_user(options["twitter_id"])
+        twitter_json = get_twitter_user(options["twitter_id"], self.twitter)
         if twitter_json:
             twitter_user, created = user_model.objects.get_or_create(twitter_id=twitter_json.id_str)
 
@@ -51,16 +51,21 @@ class Command(BaseCommand):
             # Iterate through all tweets in timeline
 
             if options['no_progress_bar']:
-                iterator = self.twitter.iterate_user_timeline(options['twitter_id'])
+                iterator = self.twitter.iterate_user_timeline(options['twitter_id'], return_errors=True)
             else:
-                iterator = tqdm(self.twitter.iterate_user_timeline(options['twitter_id']),
+                iterator = tqdm(self.twitter.iterate_user_timeline(options['twitter_id'], return_errors=True),
                                 desc = "Retrieving tweets for user {}".format(twitter_user.screen_name))
             print("Retrieving tweets for user {}".format(twitter_user.screen_name))
             for tweet_json in iterator:
-                keep_pulling, updated_count, scanned_count = \
-                    self.save_tweet(tweet_model, tweet_json, tweet_set, existing_tweets,
-                                    options['overwrite'], options['ignore_backfill'],
-                                    twitter_user.tweet_backfilled, updated_count, scanned_count)
+                if type(tweet_json) == int:
+                    twitter_user.is_private = True
+                    twitter_user.save()
+                    break
+                else:
+                    keep_pulling, updated_count, scanned_count = \
+                        self.save_tweet(tweet_model, tweet_json, tweet_set, existing_tweets,
+                                        options['overwrite'], options['ignore_backfill'],
+                                        twitter_user.tweet_backfilled, updated_count, scanned_count)
 
                 if not keep_pulling:
                     break

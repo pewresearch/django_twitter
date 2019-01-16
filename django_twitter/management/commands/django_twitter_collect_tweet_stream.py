@@ -159,13 +159,15 @@ class StreamListener(tweepy.StreamListener):
                     self.scanned_counter += 1
                     self.tweet_queue.append(tweet_json)
                     if len(self.tweet_queue) >= self.queue_size or self.stop:
-                        self.pool.apply(save_users, args=[list(self.tweet_queue)])
+
                         if self.num_cores > 1:
+                            self.pool.apply_async(save_users, args=[list(self.tweet_queue)])
                             self.pool.apply_async(save_tweets, args=[list(self.tweet_queue),
                                                                      self.tweet_set.pk if self.tweet_set else None])
                             self.pool.apply_async(save_profileset, args=[list(self.tweet_queue),
                                                                          self.profile_set])
                         else:
+                            self.pool.apply(save_users, args=[list(self.tweet_queue)])
                             self.pool.apply(save_tweets, args=[list(self.tweet_queue),
                                                                self.tweet_set.pk if self.tweet_set else None])
                             self.pool.apply(save_profileset, args=[list(self.tweet_queue), self.profile_set])
@@ -229,6 +231,7 @@ class StreamListener(tweepy.StreamListener):
 
 
 def save_tweets(tweets, tweet_set_id):
+
     reset_django_connection(settings.TWITTER_APP)
 
     tweet_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL)
@@ -252,6 +255,9 @@ def save_tweets(tweets, tweet_set_id):
 
 
 def save_users(tweets):
+
+    reset_django_connection(settings.TWITTER_APP)
+
     tweet_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL)
     success, error = 0, 0
     for tweet_json in tweets:
@@ -268,6 +274,7 @@ all_users = set()
 
 
 def save_profileset(tweets, profile_set_id):
+
     reset_django_connection(settings.TWITTER_APP)
 
     user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
