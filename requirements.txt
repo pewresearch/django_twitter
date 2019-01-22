@@ -1,6 +1,6 @@
 tqdm
 tweepy
-dateutil
+python-dateutil
 django-simple-history
 django<2.0
 git+ssh://labsdeploy/pewresearch/pewhooks#egg=pewhooks
