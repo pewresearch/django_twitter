@@ -1,3 +1,4 @@
+from __future__ import print_function
 import re
 import simple_history
 
@@ -355,7 +356,7 @@ class AbstractTweet(AbstractTwitterObject):
                     self.json = decode_text(self.json)
                     self.save()
                 except Exception as e:
-                    print e
+                    print(e)
                     import pdb
                     pdb.set_trace()
                 # \u0000
@@ -440,7 +441,7 @@ class AbstractTweet(AbstractTwitterObject):
                     self.json = decode_text(self.json)
                     self.save()
                 except Exception as e:
-                    print e
+                    print(e)
                     import pdb
                     pdb.set_trace()
                 # \u0000

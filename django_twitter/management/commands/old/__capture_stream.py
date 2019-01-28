@@ -1,3 +1,4 @@
+from __future__ import print_function
 from django_pewtils import reset_django_connection
 
 from django_twitter.models import Tweet, Link
@@ -90,6 +91,6 @@ def save_tweets(tweets, links_only, kw_query_id, use_s3, extract_secondary_links
             except django.db.utils.IntegrityError:
                 error += 1
 
-        print "{} tweets saved, {} skipped, {} errored".format(success, skip, error)
+        print("{} tweets saved, {} skipped, {} errored".format(success, skip, error))
 
     return True

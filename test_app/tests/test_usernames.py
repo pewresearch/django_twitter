@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import print_function
 from django.test import TestCase
 from django.conf import settings
 from django.apps import apps

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import datetime, hashlib
 
 from django.conf import settings
@@ -70,5 +71,5 @@ class Command(BaseCommand):
                         twitter_profile_set.profiles.add(follower)
 
             except Exception as e:
-                print "Encountered an error: {}".format(e)
+                print("Encountered an error: {}".format(e))
                 relationship_model.objects.filter(following=following, run_id=run_id).delete()
