@@ -1,3 +1,4 @@
+from __future__ import print_function
 from multiprocessing import Pool
 
 from django.core.management.base import BaseCommand, CommandError
@@ -216,4 +217,4 @@ def load_tweet(tweet_payload, rt_match, options, kwquery=None):
                 #    print("Could not do initial save of tweet {}.\n Message: {}".format(tweet_payload['id']), e)
 
     except Exception as e:
-        print e
+        print(e)

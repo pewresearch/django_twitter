@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os, json, glob, re, pandas
 
 from multiprocessing.pool import Pool
@@ -83,9 +84,9 @@ class Command(BaseCommand):
                     results = [r.get() for r in results]
                     result_sum = sum(results)
                     processed += result_sum
-                    print "{} tweets processed, {} total".format(result_sum, processed)
+                    print("{} tweets processed, {} total".format(result_sum, processed))
                 except Exception as e:
-                    print e
+                    print(e)
 
 def extract_links(tweet_ids, extract_secondary_links, expand_urls):
 

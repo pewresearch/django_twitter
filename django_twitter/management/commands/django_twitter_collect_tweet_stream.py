@@ -1,3 +1,4 @@
+from __future__ import print_function
 import django, tweepy, json
 
 from django.conf import settings

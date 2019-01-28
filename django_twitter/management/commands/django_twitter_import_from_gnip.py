@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os, glob
 import json
 import random
@@ -211,7 +212,7 @@ def load_tweet(tweet_payload):
         else:
             return None
     except Exception as e:
-        print e
+        print(e)
 
 def save_tweets(tweets, tweet_set_id):
 
