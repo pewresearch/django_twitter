@@ -1,4 +1,6 @@
 from __future__ import print_function
+from builtins import str
+from builtins import object
 import re
 import simple_history
 
@@ -16,6 +18,7 @@ from datetime import datetime
 from collections import defaultdict
 
 from pewtils import decode_text, is_not_null, is_null
+from future.utils import with_metaclass
 
 
 class AbstractTwitterBase(models.base.ModelBase):
@@ -28,7 +31,7 @@ class AbstractTwitterBase(models.base.ModelBase):
     it will be able to connect all your models together at runtime.
 
     """
-    class Meta:
+    class Meta(object):
         abstract = True
 
     def __new__(cls, name, bases, attrs):
@@ -42,34 +45,34 @@ class AbstractTwitterBase(models.base.ModelBase):
         counts = defaultdict(int)
         fields_to_add = {
             "TweetModel": [
-                (models.ForeignKey, "TwitterProfileModel", "profile", "tweets", None, True),
-                (models.ManyToManyField, "TwitterHashtagModel", "hashtags", "tweets", None, True),
-                (models.ForeignKey, "TwitterPlaceModel", "place", "tweets", None, True),
-                (models.ManyToManyField, "TwitterProfileModel", "user_mentions", "tweet_mentions", None, True),
-                (models.ForeignKey, "TweetModel", "retweeted_status", "retweets", None, True),
-                (models.ForeignKey, "TweetModel", "in_reply_to_status", "replies", None, True),
-                (models.ForeignKey, "TweetModel", "quoted_status", "quotes", None, True)
+                (models.ForeignKey, "TwitterProfileModel", "profile", "tweets", None, True, models.CASCADE),
+                (models.ManyToManyField, "TwitterHashtagModel", "hashtags", "tweets", None, True, None),
+                (models.ForeignKey, "TwitterPlaceModel", "place", "tweets", None, True, models.SET_NULL),
+                (models.ManyToManyField, "TwitterProfileModel", "user_mentions", "tweet_mentions", None, True, None),
+                (models.ForeignKey, "TweetModel", "retweeted_status", "retweets", None, True, models.SET_NULL),
+                (models.ForeignKey, "TweetModel", "in_reply_to_status", "replies", None, True, models.SET_NULL),
+                (models.ForeignKey, "TweetModel", "quoted_status", "quotes", None, True, models.SET_NULL)
             ],
             "BotometerScoreModel": [
-                (models.ForeignKey, "TwitterProfileModel", "profile", "botometer_scores", None, True)
+                (models.ForeignKey, "TwitterProfileModel", "profile", "botometer_scores", None, True, models.CASCADE)
             ],
             "TwitterRelationshipModel": [
-                (models.ForeignKey, "TwitterProfileModel", "following", "follower_details", None, True),
-                (models.ForeignKey, "TwitterProfileModel", "follower", "following_details", None, True)
+                (models.ForeignKey, "TwitterProfileModel", "following", "follower_details", None, True, models.CASCADE),
+                (models.ForeignKey, "TwitterProfileModel", "follower", "following_details", None, True, models.CASCADE)
             ],
             "TwitterProfileModel": [
-                (models.ManyToManyField, "TwitterProfileModel", "followers", "followings", "TwitterRelationshipModel", False)
+                (models.ManyToManyField, "TwitterProfileModel", "followers", "followings", "TwitterRelationshipModel", False, None)
             ],
             "TweetSetModel": [
-                (models.ManyToManyField, "TweetModel", "tweets", "tweet_sets", None, True)
+                (models.ManyToManyField, "TweetModel", "tweets", "tweet_sets", None, True, None)
             ],
             "TwitterProfileSetModel": [
-                (models.ManyToManyField, "TwitterProfileModel", "profiles", "twitter_profile_sets", None, True)
+                (models.ManyToManyField, "TwitterProfileModel", "profiles", "twitter_profile_sets", None, True, None)
             ]
         }
         throughs = ["TwitterRelationshipModel"]
-        for owner_model in fields_to_add.keys():
-            for relationship_type, related_model, field_name, related_name, through, symmetrical in fields_to_add[owner_model]:
+        for owner_model in list(fields_to_add.keys()):
+            for relationship_type, related_model, field_name, related_name, through, symmetrical, on_delete in fields_to_add[owner_model]:
 
                 if hasattr(cls, owner_model) and hasattr(cls, related_model) \
                         and getattr(cls, owner_model) and getattr(cls, related_model) and \
@@ -84,13 +87,23 @@ class AbstractTwitterBase(models.base.ModelBase):
                             field_params["symmetrical"] = symmetrical
                         if relationship_type != models.ManyToManyField and owner_model not in throughs:
                             field_params["null"] = True
-                        getattr(cls, owner_model).add_to_class(
-                            field_name,
-                            relationship_type(
-                                getattr(cls, related_model),
-                                **field_params
+                        if is_not_null(on_delete):
+                            getattr(cls, owner_model).add_to_class(
+                                field_name,
+                                relationship_type(
+                                    getattr(cls, related_model),
+                                    on_delete,
+                                    **field_params
+                                )
                             )
-                        )
+                        else:
+                            getattr(cls, owner_model).add_to_class(
+                                field_name,
+                                relationship_type(
+                                    getattr(cls, related_model),
+                                    **field_params
+                                )
+                            )
                     counts[owner_model] += 1
                     if counts[owner_model] == len(fields_to_add[owner_model]):
                         if getattr(cls, owner_model).__base__.__base__.__name__ == "AbstractTwitterObject":
@@ -106,7 +119,7 @@ class AbstractTwitterBase(models.base.ModelBase):
 
 class AbstractTwitterObject(models.Model):
 
-    class Meta:
+    class Meta(object):
         abstract = True
 
     twitter_id = models.CharField(max_length=150, db_index=True)
@@ -120,12 +133,11 @@ class AbstractTwitterObject(models.Model):
         super(AbstractTwitterObject, self).save(*args, **kwargs)
 
 
-class AbstractTwitterProfile(AbstractTwitterObject):
+class AbstractTwitterProfile(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
 
-    class Meta:
+    class Meta(object):
         abstract = True
 
-    __metaclass__ = AbstractTwitterBase
 
     tweet_backfilled = models.BooleanField(default=False,
                                          help_text="An indicator used in the sync_tweets management function; True indicates that the user's \
@@ -178,7 +190,7 @@ class AbstractTwitterProfile(AbstractTwitterObject):
         self.screen_name = profile_data['preferredUsername'].lower()
         self.description = profile_data['summary']
         # Not sure if the if statement below is ever called
-        self.favorites_count = profile_data['favoritesCount'] if "favorites_count" in profile_data.keys() else \
+        self.favorites_count = profile_data['favoritesCount'] if "favorites_count" in list(profile_data.keys()) else \
             profile_data['favouritesCount']
         self.followers_count = profile_data['followersCount']
         self.followings_count = profile_data['friendsCount']
@@ -206,7 +218,7 @@ class AbstractTwitterProfile(AbstractTwitterObject):
             self.created_at = date_parse(profile_data['created_at'])
             self.screen_name = profile_data['screen_name'].lower()
             self.description = profile_data['description']
-            self.favorites_count = profile_data['favorites_count'] if "favorites_count" in profile_data.keys() else \
+            self.favorites_count = profile_data['favorites_count'] if "favorites_count" in list(profile_data.keys()) else \
                 profile_data['favourites_count']
             self.followers_count = profile_data['followers_count']
             self.followings_count = profile_data['friends_count']
@@ -214,11 +226,11 @@ class AbstractTwitterProfile(AbstractTwitterObject):
             self.language = profile_data['lang']
             self.statuses_count = profile_data['statuses_count']
             self.profile_image_url = profile_data['profile_image_url']
-            self.status = profile_data['status']['text'] if 'status' in profile_data.keys() else None
+            self.status = profile_data['status']['text'] if 'status' in list(profile_data.keys()) else None
             self.is_verified = profile_data['verified']
             self.contributors_enabled = profile_data['contributors_enabled']
             self.urls = [url['expanded_url'] for url in profile_data.get('entities', {}).get('url', {}).get('urls', []) if
-                         url['expanded_url']] if "url" in profile_data.get('entities', {}).keys() else profile_data.get('url', '')
+                         url['expanded_url']] if "url" in list(profile_data.get('entities', {}).keys()) else profile_data.get('url', '')
             if self.urls == None or self.urls=='':
                 self.urls = []
             self.json = profile_data
@@ -250,12 +262,11 @@ class AbstractTwitterProfile(AbstractTwitterObject):
             return None
 
 
-class AbstractTweet(AbstractTwitterObject):
+class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
 
-    class Meta:
+    class Meta(object):
         abstract = True
 
-    __metaclass__ = AbstractTwitterBase
 
     # Rookery calls this created_at - I think that would be good for consistency
     created_at = models.DateTimeField(null=True, help_text="The time/date that the tweet was published")
@@ -450,12 +461,11 @@ class AbstractTweet(AbstractTwitterObject):
         return "http://www.twitter.com/statuses/{0}".format(self.twitter_id)
 
 
-class AbstractBotometerScore(models.Model):
+class AbstractBotometerScore(with_metaclass(AbstractTwitterBase, models.Model)):
 
-    class Meta:
+    class Meta(object):
         abstract = True
 
-    __metaclass__ = AbstractTwitterBase
 
     timestamp = models.DateTimeField(auto_now_add=True)
 
@@ -499,12 +509,11 @@ class AbstractBotometerScore(models.Model):
                 self.api_version = api_version
             self.save()
 
-class AbstractTwitterRelationship(models.Model):
+class AbstractTwitterRelationship(with_metaclass(AbstractTwitterBase, models.Model)):
 
-    class Meta:
+    class Meta(object):
         abstract = True
 
-    __metaclass__ = AbstractTwitterBase
 
     date = models.DateField(auto_now=True)
     run_id = models.IntegerField(null=True)
@@ -519,12 +528,11 @@ class AbstractTwitterRelationship(models.Model):
         return "{} following {}".format(self.follower, self.following)
 
 
-class AbstractTwitterHashtag(models.Model):
+class AbstractTwitterHashtag(with_metaclass(AbstractTwitterBase, models.Model)):
 
-    class Meta:
+    class Meta(object):
         abstract = True
 
-    __metaclass__ = AbstractTwitterBase
 
     name = models.CharField(max_length=150, unique=True, db_index=True)
 
@@ -537,12 +545,11 @@ class AbstractTwitterHashtag(models.Model):
 
 ####
 # Additional classes that are in Rookery that I don't think we need
-class AbstractTwitterPlace(AbstractTwitterObject):
+class AbstractTwitterPlace(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
 
-    class Meta:
+    class Meta(object):
         abstract = True
 
-    __metaclass__ = AbstractTwitterBase
 
     full_name = models.CharField(max_length = 255)
     name = models.CharField(max_length = 255)
@@ -573,12 +580,11 @@ class AbstractTwitterPlace(AbstractTwitterObject):
 # class_prepared.connect(add_historical_records)
 
 
-class AbstractTweetSet(models.Model):
+class AbstractTweetSet(with_metaclass(AbstractTwitterBase, models.Model)):
 
-    class Meta:
+    class Meta(object):
         abstract = True
 
-    __metaclass__ = AbstractTwitterBase
 
     name = models.CharField(max_length=256, unique=True)
 
@@ -593,12 +599,11 @@ class AbstractTweetSet(models.Model):
 
 
 
-class AbstractTwitterProfileSet(models.Model):
+class AbstractTwitterProfileSet(with_metaclass(AbstractTwitterBase, models.Model)):
 
-    class Meta:
+    class Meta(object):
         abstract = True
 
-    __metaclass__ = AbstractTwitterBase
 
     name = models.CharField(max_length=256, unique=True)
 
