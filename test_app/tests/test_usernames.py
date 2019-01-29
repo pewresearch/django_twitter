@@ -1,8 +1,11 @@
 # coding=utf-8
+from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
 from django.test import TestCase
 from django.conf import settings
 from django.apps import apps
-from StringIO import StringIO
+from io import StringIO
 from django.core.management import call_command
 import sys
 
