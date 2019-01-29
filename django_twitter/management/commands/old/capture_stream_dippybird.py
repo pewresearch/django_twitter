@@ -1,4 +1,7 @@
 from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 import tweepy
 import django
 import datetime
@@ -9,7 +12,7 @@ from multiprocessing import Pool
 from tweepy import Status, User
 
 from dateutil.parser import parse as parse_date
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings

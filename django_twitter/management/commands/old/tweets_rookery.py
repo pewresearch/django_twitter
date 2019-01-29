@@ -103,7 +103,7 @@ class Command(BaseCommand):
             if 'list' in params:
                 twitterParams['list_id'] = params['list'].list_id
                 print(twitterParams)
-                for item in twitter.Cursor(twitter.api.list_timeline, **twitterParams).items():
+                for item in list(twitter.Cursor(twitter.api.list_timeline, **twitterParams).items()):
                     tTweet, tUser = putTweet(item)
                     if timelineDirection:
                         maxId = tTweet.tweet_id if tTweet.tweet_id > maxId else maxId
@@ -114,7 +114,7 @@ class Command(BaseCommand):
             elif 'search' in params:
                 twitterParams['q'] = params['search'].query
                 print(twitterParams)
-                for item in twitter.Cursor(twitter.api.search, **twitterParams).items():
+                for item in list(twitter.Cursor(twitter.api.search, **twitterParams).items()):
                     tTweet, tUser = putTweet(item)
                     if timelineDirection:
                         maxId = tTweet.tweet_id if tTweet.tweet_id > maxId else maxId
@@ -126,7 +126,7 @@ class Command(BaseCommand):
             elif 'user' in params:
                 twitterParams['user_id'] = params['user'].user_id
                 print(twitterParams)
-                for item in twitter.Cursor(twitter.api.user_timeline, **twitterParams).items():
+                for item in list(twitter.Cursor(twitter.api.user_timeline, **twitterParams).items()):
                     tTweet, tUser = putTweet(item)
                     if timelineDirection:
                         maxId = tTweet.tweet_id if tTweet.tweet_id > maxId else maxId

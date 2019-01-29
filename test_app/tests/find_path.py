@@ -1,3 +1,4 @@
+from builtins import str
 def get_recursively(search_dict, field):
     """
     Takes a dict with nested lists and dicts,
@@ -7,7 +8,7 @@ def get_recursively(search_dict, field):
     fields_found = []
     key_path = []
 
-    for key, value in search_dict.iteritems():
+    for key, value in search_dict.items():
         if key == field:
             fields_found.append(value)
             new_str = str(key) + "/"
