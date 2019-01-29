@@ -1,3 +1,4 @@
+from __future__ import print_function
 from django.core.management.base import BaseCommand, CommandError
 from rookery_journalism.models import TwitterUser
 
@@ -18,7 +19,7 @@ class Command(BaseCommand):
                 if options['user_id'] \
                 else { 'screen_name': options['user_screen_name'] }
 
-            print userRecord
+            print(userRecord)
 
             if options['add']:
                 TwitterUser.objects.get_or_create(**userRecord)

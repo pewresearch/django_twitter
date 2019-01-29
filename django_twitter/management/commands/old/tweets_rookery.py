@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+from __future__ import print_function
 from django.core.management.base import BaseCommand, CommandError
 from django.db.utils import DataError
 from pewtils.internal.http import canonical_link
@@ -43,8 +44,8 @@ class Command(BaseCommand):
 
                     except DataError as e:
                         tPlace = None
-                        print e
-                        print placeRecord
+                        print(e)
+                        print(placeRecord)
                 else:
                     tPlace = None
 
@@ -59,14 +60,14 @@ class Command(BaseCommand):
                         tUser.tweets.add(tTweet)
 
                     except DataError as e:
-                        print e
-                        print tweetRecord
+                        print(e)
+                        print(tweetRecord)
 
                 except DataError as e:
-                    print e
-                    print userRecord
+                    print(e)
+                    print(userRecord)
 
-                print tTweet.user.user_id, tTweet.tweet_id, tTweet.created_at
+                print(tTweet.user.user_id, tTweet.tweet_id, tTweet.created_at)
 
                 for link in [
                     u['expanded_url'] if 'expanded_url' in u else u['url']
@@ -78,8 +79,8 @@ class Command(BaseCommand):
                         tLink.tweets.add(tTweet)
 
                     except DataError as e:
-                        print e
-                        print link
+                        print(e)
+                        print(link)
 
                 return tTweet, tUser
 
@@ -101,8 +102,8 @@ class Command(BaseCommand):
 
             if 'list' in params:
                 twitterParams['list_id'] = params['list'].list_id
-                print twitterParams
-                for item in twitter.Cursor(twitter.api.list_timeline, **twitterParams).items():
+                print(twitterParams)
+                for item in list(twitter.Cursor(twitter.api.list_timeline, **twitterParams).items()):
                     tTweet, tUser = putTweet(item)
                     if timelineDirection:
                         maxId = tTweet.tweet_id if tTweet.tweet_id > maxId else maxId
@@ -112,8 +113,8 @@ class Command(BaseCommand):
 
             elif 'search' in params:
                 twitterParams['q'] = params['search'].query
-                print twitterParams
-                for item in twitter.Cursor(twitter.api.search, **twitterParams).items():
+                print(twitterParams)
+                for item in list(twitter.Cursor(twitter.api.search, **twitterParams).items()):
                     tTweet, tUser = putTweet(item)
                     if timelineDirection:
                         maxId = tTweet.tweet_id if tTweet.tweet_id > maxId else maxId
@@ -124,8 +125,8 @@ class Command(BaseCommand):
 
             elif 'user' in params:
                 twitterParams['user_id'] = params['user'].user_id
-                print twitterParams
-                for item in twitter.Cursor(twitter.api.user_timeline, **twitterParams).items():
+                print(twitterParams)
+                for item in list(twitter.Cursor(twitter.api.user_timeline, **twitterParams).items()):
                     tTweet, tUser = putTweet(item)
                     if timelineDirection:
                         maxId = tTweet.tweet_id if tTweet.tweet_id > maxId else maxId

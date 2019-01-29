@@ -1,3 +1,4 @@
+from __future__ import print_function
 from django.core.management.base import BaseCommand, CommandError
 from django.db.utils import DataError
 
@@ -34,7 +35,7 @@ class Command(BaseCommand):
                     user.twitter_error = e[0]
                     user.save()
                 else:
-                    for tweet_object in twitter.Cursor(twitter.api.user_timeline, user_id=user.user_id).items():
+                    for tweet_object in list(twitter.Cursor(twitter.api.user_timeline, user_id=user.user_id).items()):
                         tTweet, tUser = self._putTweet(twitter, tweet_object, follow_links=False)
 
     def _putTweet(self, twitter, item, follow_links=False):
@@ -48,8 +49,8 @@ class Command(BaseCommand):
 
             except DataError as e:
                 tPlace = None
-                print e
-                print placeRecord
+                print(e)
+                print(placeRecord)
         else:
             tPlace = None
 
@@ -64,12 +65,12 @@ class Command(BaseCommand):
                 tUser.tweets.add(tTweet)
 
             except DataError as e:
-                print e
-                print tweetRecord
+                print(e)
+                print(tweetRecord)
 
         except DataError as e:
-            print e
-            print userRecord
+            print(e)
+            print(userRecord)
 
         #print tTweet.user.user_id, tTweet.tweet_id, tTweet.created_at
 
@@ -84,7 +85,7 @@ class Command(BaseCommand):
                     tLink.tweets.add(tTweet)
 
                 except DataError as e:
-                    print e
-                    print link
+                    print(e)
+                    print(link)
 
         return tTweet, tUser

@@ -1,9 +1,10 @@
+from __future__ import absolute_import
 from django.test import TestCase
 from django.conf import settings
 from django.apps import apps
 from django.core.management import call_command
 import json
-from find_path import get_recursively
+from .find_path import get_recursively
 
 # TODO: Figure out how to test this - statuses_count in TwitterProfile is inaccurate
 # class TweetTest(TestCase):
