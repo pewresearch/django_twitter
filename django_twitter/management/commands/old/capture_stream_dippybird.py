@@ -1,3 +1,7 @@
+from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 import tweepy
 import django
 import datetime
@@ -8,7 +12,7 @@ from multiprocessing import Pool
 from tweepy import Status, User
 
 from dateutil.parser import parse as parse_date
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
@@ -83,7 +87,7 @@ class StreamListener(tweepy.StreamListener):
         # self.old_count = Tweet.objects.count()
 
         super(StreamListener, self).__init__(self)
-        print "Stream initialized"
+        print("Stream initialized")
 
     def on_data(self, data):
 
@@ -131,7 +135,7 @@ class StreamListener(tweepy.StreamListener):
                             ])
                         self.tweet_queue = []
                         self.processed_counter += self.queue_size
-                        print "{} tweets scanned, {} sent for processing".format(self.scanned_counter, self.processed_counter)
+                        print("{} tweets scanned, {} sent for processing".format(self.scanned_counter, self.processed_counter))
                         # new_count = Tweet.objects.count()
                         # processed = new_count - self.old_count
                         # print "100 new tweets queued, {} processed since last time".format(processed)
@@ -139,14 +143,14 @@ class StreamListener(tweepy.StreamListener):
 
         except Exception as e:
 
-            print "UNKNOWN ERROR: {}".format(e)
+            print("UNKNOWN ERROR: {}".format(e))
             import pdb
             pdb.set_trace()
 
         return True
 
     def on_timeout(self):
-        print 'Snoozing Zzzzzz'
+        print('Snoozing Zzzzzz')
         return
 
     def on_limit(self, limit_data):
@@ -155,11 +159,11 @@ class StreamListener(tweepy.StreamListener):
         return
 
     def on_warning(self, warning):
-        print "WARNING: {}".format(warning)
+        print("WARNING: {}".format(warning))
         return
 
     def on_disconnect(self, disconnect):
-        print "DISCONNECT: {}".format(disconnect)
+        print("DISCONNECT: {}".format(disconnect))
         import pdb
         pdb.set_trace()
 
@@ -220,6 +224,6 @@ def save_tweets(tweets, links_only, kw_query_id, use_s3, extract_secondary_links
             except django.db.utils.IntegrityError:
                 error += 1
 
-        print "{} tweets saved, {} skipped, {} errored".format(success, skip, error)
+        print("{} tweets saved, {} skipped, {} errored".format(success, skip, error))
 
     return True

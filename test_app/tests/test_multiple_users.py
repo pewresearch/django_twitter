@@ -1,9 +1,11 @@
+from future import standard_library
+standard_library.install_aliases()
 import sys
 from django.conf import settings
 from django.core.management import call_command
 from django.apps import apps
 from django.test import TestCase
-from StringIO import StringIO
+from io import StringIO
 
 
 class MultipleUser(TestCase):
