@@ -1,3 +1,6 @@
+from __future__ import print_function
+from builtins import str
+from builtins import range
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.apps import apps
@@ -63,4 +66,4 @@ class Command(BaseCommand):
         return cnt
 
 def chunker(seq, size):
-    return (seq[pos:pos + size] for pos in xrange(0, len(seq), size))
+    return (seq[pos:pos + size] for pos in range(0, len(seq), size))

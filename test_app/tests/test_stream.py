@@ -1,7 +1,10 @@
+from __future__ import print_function
+from __future__ import absolute_import
+from builtins import range
 from django.test import TransactionTestCase
 from django.conf import settings
 from django.apps import apps
-from find_path import get_recursively
+from .find_path import get_recursively
 
 from django.core.management import call_command
 import random

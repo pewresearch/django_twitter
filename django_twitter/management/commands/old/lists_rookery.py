@@ -1,3 +1,4 @@
+from __future__ import print_function
 from django.core.management.base import BaseCommand, CommandError
 from rookery_journalism.functions import Twitter
 from rookery_journalism.models import TwitterUser, TwitterTweet, TwitterList
@@ -43,7 +44,7 @@ class Command(BaseCommand):
             twitterData = twitter.api.get_list(**params)
             userRecord  = twitter.generateRecord('user', twitterData)
             listRecord  = twitter.generateRecord('list', twitterData)
-            print listRecord
+            print(listRecord)
 
             if options['add']:
                 tUser, _ = TwitterUser.objects.get_or_create(**userRecord)
