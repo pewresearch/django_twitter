@@ -1,4 +1,5 @@
 from __future__ import print_function
+from builtins import str
 from django.test import TransactionTestCase
 from django.conf import settings
 from django.apps import apps

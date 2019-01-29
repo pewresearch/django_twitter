@@ -73,7 +73,7 @@ class Command(BaseCommand):
                 raise ValueError("Please specify a number of minutes/days/hours/tweets")
 
             passed_allowed_limit_type = False
-            for limit_type in allowable_limit_types.keys():
+            for limit_type in list(allowable_limit_types.keys()):
                 if limit_values[1] in allowable_limit_types[limit_type]:
                     self.limit['limit_type'] = limit_type
                     passed_allowed_limit_type = True

@@ -35,7 +35,7 @@ class Command(BaseCommand):
                     user.twitter_error = e[0]
                     user.save()
                 else:
-                    for tweet_object in twitter.Cursor(twitter.api.user_timeline, user_id=user.user_id).items():
+                    for tweet_object in list(twitter.Cursor(twitter.api.user_timeline, user_id=user.user_id).items()):
                         tTweet, tUser = self._putTweet(twitter, tweet_object, follow_links=False)
 
     def _putTweet(self, twitter, item, follow_links=False):

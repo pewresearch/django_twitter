@@ -1,4 +1,5 @@
 from __future__ import print_function
+from builtins import str
 from django_pewtils import reset_django_connection
 
 from django_twitter.models import Tweet, Link
