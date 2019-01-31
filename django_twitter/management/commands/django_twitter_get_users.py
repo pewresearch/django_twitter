@@ -39,7 +39,7 @@ class Command(BaseCommand):
 
         print("Collecting profile data for {} users".format(len(options["twitter_ids"])))
         cnt = 0
-        for user_id_block in tqdm(chunker(options['twitter_ids'], 100), total=len(options['twitter_ids'])/100):
+        for user_id_block in tqdm(chunk_list(options['twitter_ids'], 100), total=len(options['twitter_ids'])/100):
             cnt += self.process_users(user_id_block, twitter_profile_set, options['verbose'], cnt)
         print("{} users found".format(cnt))
 
@@ -65,5 +65,5 @@ class Command(BaseCommand):
             cnt += 1
         return cnt
 
-def chunker(seq, size):
+def chunk_list(seq, size):
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))

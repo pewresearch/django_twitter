@@ -8,7 +8,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.db.utils import IntegrityError
 
-from pewtils import decode_text, chunker
+from pewtils import decode_text, chunk_list
 from django_pewtils import reset_django_connection
 
 from dippybird.models import Tweet, Link
@@ -68,7 +68,7 @@ class Command(BaseCommand):
         else:
 
             processed = 0
-            for chunk in tqdm(chunker(list(tweets.values_list("pk", flat=True)), 1000 * options["num_cores"]),
+            for chunk in tqdm(chunk_list(list(tweets.values_list("pk", flat=True)), 1000 * options["num_cores"]),
                               total=tweets.count() / (1000 * options["num_cores"]), desc="Extracting links"):
                 pool = Pool(processes=options["num_cores"])
                 if options['num_cores'] == 1:
@@ -76,7 +76,7 @@ class Command(BaseCommand):
                 else:
                     func = pool.apply_async
                 results = []
-                for subchunk in chunker(chunk, 1000):
+                for subchunk in chunk_list(chunk, 1000):
                     results.append(func(extract_links, [subchunk, options["extract_secondary_links"], options["expand_urls"]]))
                 pool.close()
                 pool.join()
