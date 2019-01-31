@@ -3,6 +3,6 @@ tweepy
 python-dateutil
 django-simple-history
 django<2.0; python_version < '3.0'
-django; python_version >= '3.0'
+django>=2.1; python_version >= '3.0'
 git+ssh://labsdeploy/pewresearch/pewhooks#egg=pewhooks
 git+ssh://labsdeploy/pewresearch/django_pewtils#egg=django_pewtils
