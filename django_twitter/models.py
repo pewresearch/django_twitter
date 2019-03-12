@@ -2,6 +2,7 @@ from __future__ import print_function
 from builtins import str
 from builtins import object
 import re
+import json
 import simple_history
 
 from django.db import models
@@ -364,7 +365,8 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
             try: self.save()
             except:
                 try:
-                    self.json = decode_text(self.json)
+                    self.text = decode_text(self.text)
+                    self.json = json.loads(decode_text(json.dumps(self.json)))
                     self.save()
                 except Exception as e:
                     print(e)
@@ -449,7 +451,8 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
             try: self.save()
             except:
                 try:
-                    self.json = decode_text(self.json)
+                    self.text = decode_text(self.text)
+                    self.json = json.loads(decode_text(json.dumps(self.json)))
                     self.save()
                 except Exception as e:
                     print(e)
