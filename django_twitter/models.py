@@ -329,21 +329,19 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
             # 'quoted_status/extended_tweet/full_text/,  '
             # retweeted_status / quoted_status / extended_tweet / full_text / ']
 
-            if tweet_data.get('extended_tweet', {}).get('full_text', None):
-                full_text = tweet_data.get('extended_tweet', {}).get('full_text', '')
-            elif get_retweeted_or_quoted_text:
-                if tweet_data.get('retweeted_status', {}).get('extended_tweet', {}).get('full_text', None):
-                    full_text = tweet_data.get('retweeted_status', {}).get('extended_tweet', {}).get('full_text', '')
-                elif tweet_data.get('quoted_status', {}).get('extended_tweet', {}).get('full_text', None):
-                    full_text = tweet_data.get('quoted_status', {}).get('extended_tweet', {}).get('full_text', '')
-                elif tweet_data.get('retweeted_status', {}).get(
-                        'quoted_status', {}).get('extended_tweet', {}).get('full_text', None):
-                    full_text = tweet_data.get('retweeted_status', {}).get(
-                        'quoted_status', {}).get('extended_tweet', {}).get('full_text', None)
-                else:
-                    full_text = None
-            else:
-                full_text = None
+            full_text = tweet_data.get("full_text", None)
+            if not full_text:
+                if tweet_data.get('extended_tweet', {}).get('full_text', None):
+                    full_text = tweet_data.get('extended_tweet', {}).get('full_text', '')
+                elif get_retweeted_or_quoted_text:
+                    if tweet_data.get('retweeted_status', {}).get('extended_tweet', {}).get('full_text', None):
+                        full_text = tweet_data.get('retweeted_status', {}).get('extended_tweet', {}).get('full_text', '')
+                    elif tweet_data.get('quoted_status', {}).get('extended_tweet', {}).get('full_text', None):
+                        full_text = tweet_data.get('quoted_status', {}).get('extended_tweet', {}).get('full_text', '')
+                    elif tweet_data.get('retweeted_status', {}).get(
+                            'quoted_status', {}).get('extended_tweet', {}).get('full_text', None):
+                        full_text = tweet_data.get('retweeted_status', {}).get(
+                            'quoted_status', {}).get('extended_tweet', {}).get('full_text', None)
 
             if full_text: self.text = full_text
             else: self.text = tweet_data.get('text', '')
