@@ -419,9 +419,20 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
 
             # REPLY TO STATUS
             if tweet_data.get('in_reply_to_status_id', None):
-                tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
-                    .objects.get_or_create(twitter_id=tweet_data['in_reply_to_status_id_str'].lower())
-                tweet_obj.refresh_from_db()
+                try:
+                    tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
+                        .objects.get_or_create(twitter_id=tweet_data['in_reply_to_status_id_str'].lower())
+                    tweet_obj.refresh_from_db()
+                except:
+                    print("Folks, this returned too many tweets, doing this another way")
+                    dup_tweets = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
+                        .objects.filter(twitter_id = tweet_data['in_reply_to_status_id_str'].lower())
+                    tweet_pk = dup_tweets[0].pk
+                    tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
+                        .objects.get_or_create(pk=tweet_pk)
+                    tweet_obj.refresh_from_db()
+                    #import pdb
+                    #pdb.set_trace()
                 if not tweet_obj.profile and tweet_data.get('in_reply_to_user_id_str', None):
                     reply_author_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL) \
                         .objects.get_or_create(twitter_id=tweet_data['in_reply_to_user_id_str'].lower())
@@ -431,19 +442,41 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
 
             # QUOTE STATUS
             if tweet_data.get('quoted_status', None):
-                tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
-                    .objects.get_or_create(twitter_id=tweet_data['quoted_status']['id_str'].lower())
-                tweet_obj.update_from_json(tweet_data['quoted_status'])
-                tweet_obj.update_relations_from_json(tweet_data['quoted_status'])
-                self.quoted_status = tweet_obj
+                try:
+                    tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
+                        .objects.get_or_create(twitter_id=tweet_data['quoted_status']['id_str'].lower())
+                    tweet_obj.update_from_json(tweet_data['quoted_status'])
+                    tweet_obj.update_relations_from_json(tweet_data['quoted_status'])
+                    self.quoted_status = tweet_obj
+                except:
+                    print("Folks, this returned too many tweets, doing this another way")
+                    dup_tweets = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
+                        .objects.filter(twitter_id=tweet_data['quoted_status']['id_str'].lower())
+                    tweet_pk = dup_tweets[0].pk
+                    tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
+                        .objects.get_or_create(pk=tweet_pk)
+                    tweet_obj.update_from_json(tweet_data['quoted_status'])
+                    tweet_obj.update_relations_from_json(tweet_data['quoted_status'])
+                    self.quoted_status = tweet_obj
 
             # RETWEETED STATUS
             if tweet_data.get('retweeted_status', None):
-                tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
-                    .objects.get_or_create(twitter_id=tweet_data['retweeted_status']['id_str'].lower())
-                tweet_obj.update_from_json(tweet_data['retweeted_status'])
-                tweet_obj.update_relations_from_json(tweet_data['retweeted_status'])
-                self.retweeted_status = tweet_obj
+                try:
+                    tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
+                        .objects.get_or_create(twitter_id=tweet_data['retweeted_status']['id_str'].lower())
+                    tweet_obj.update_from_json(tweet_data['retweeted_status'])
+                    tweet_obj.update_relations_from_json(tweet_data['retweeted_status'])
+                    self.retweeted_status = tweet_obj
+                except:
+                    print("Folks, this returned too many tweets, doing this another way")
+                    dup_tweets = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
+                        .objects.filter(twitter_id=tweet_data['retweeted_status']['id_str'].lower())
+                    tweet_pk = dup_tweets[0].pk
+                    tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
+                        .objects.get_or_create(pk=tweet_pk)
+                    tweet_obj.update_from_json(tweet_data['retweeted_status'])
+                    tweet_obj.update_relations_from_json(tweet_data['retweeted_status'])
+                    self.retweeted_status = tweet_obj
 
             self.json = tweet_data
             try: self.save()
