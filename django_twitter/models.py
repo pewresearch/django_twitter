@@ -324,27 +324,66 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
             self.favorite_count = tweet_data.get("favorite_count", None)
             self.language = tweet_data.get('lang', None)
 
-            #Discovered full_text areas
-            #['extended_tweet/full_text/', 'retweeted_status/extended_tweet/full_text/',
-            # 'quoted_status/extended_tweet/full_text/,  '
-            # retweeted_status / quoted_status / extended_tweet / full_text / ']
+            # Discovered full_text areas:
+            # extended_tweet/full_text/
+            # retweeted_status/extended_tweet/full_text/
+            # quoted_status/extended_tweet/full_text/
+            # retweeted_status/quoted_status/extended_tweet/full_text/
 
-            full_text = tweet_data.get("full_text", None)
-            if not full_text:
-                if tweet_data.get('extended_tweet', {}).get('full_text', None):
-                    full_text = tweet_data.get('extended_tweet', {}).get('full_text', '')
-                elif get_retweeted_or_quoted_text:
-                    if tweet_data.get('retweeted_status', {}).get('extended_tweet', {}).get('full_text', None):
-                        full_text = tweet_data.get('retweeted_status', {}).get('extended_tweet', {}).get('full_text', '')
-                    elif tweet_data.get('quoted_status', {}).get('extended_tweet', {}).get('full_text', None):
-                        full_text = tweet_data.get('quoted_status', {}).get('extended_tweet', {}).get('full_text', '')
-                    elif tweet_data.get('retweeted_status', {}).get(
-                            'quoted_status', {}).get('extended_tweet', {}).get('full_text', None):
-                        full_text = tweet_data.get('retweeted_status', {}).get(
-                            'quoted_status', {}).get('extended_tweet', {}).get('full_text', None)
+            text_patterns = [
+                [],
+                ["extended_tweet"]
+            ]
+            additional_text_patterns = [
+                ["retweeted_status", "extended_tweet"],
+                ["quoted_status", "extended_tweet"],
+                ["retweeted_status", "quoted_status", "extended_tweet"],
+                ["retweeted_status"],
+                ["quoted_status"],
+            ]
+            text_keys = ["full_text", "text"]
 
-            if full_text: self.text = full_text
-            else: self.text = tweet_data.get('text', '')
+            def get_text(tweet_data):
+
+                text = None
+                for keys in text_patterns:
+                    subset = tweet_data
+                    for key in keys:
+                        subset = tweet_data.get(key, {})
+                    for text_key in text_keys:
+                        if text_key in subset.keys():
+                            text = subset[text_key]
+                            break
+                    if text:
+                        break
+
+                additional_text = None
+                for keys in additional_text_patterns:
+                    subset = tweet_data
+                    for key in keys:
+                        subset = tweet_data.get(key, {})
+                    for text_key in text_keys:
+                        if text_key in subset.keys():
+                            additional_text = subset[text_key]
+                            break
+                    if additional_text:
+                        break
+
+                if text and additional_text:
+                    if text.endswith(u"\u2026"):
+                        text = re.sub(text[-1], '', text)
+                        merge_text = text[-20:]
+                        text = "".join([
+                            text,
+                            merge_text.join(additional_text.split(merge_text)[1:])
+                        ])
+
+                elif not text and additional_text:
+                    text = additional_text
+
+                return text
+
+            self.text = get_text(tweet_data)
             self.text = u"{}".format(self.text)
 
             try:
