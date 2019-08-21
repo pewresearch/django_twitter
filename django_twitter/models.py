@@ -19,6 +19,7 @@ from datetime import datetime
 from collections import defaultdict
 
 from pewtils import decode_text, is_not_null, is_null
+from django_pewtils import consolidate_objects
 from future.utils import with_metaclass
 
 
@@ -306,9 +307,9 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
     def __str__(self):
 
         return "{0}, {1}:\nhttps://twitter.com/{2}/status/{3}/:\n {4}".format(
-            self.profile,
+            self.profile if self.profile else None,
             self.created_at,
-            self.profile.screen_name,
+            self.profile.screen_name if self.profile else None,
             self.twitter_id,
             decode_text(self.text)
         )
@@ -413,6 +414,14 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
 
     def update_relations_from_json(self, tweet_data=None): # TODO: rename
 
+        def _consolidate_duplicate_tweets(twitter_id):
+            tweets = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL).objects\
+                .filter(twitter_id=twitter_id)
+            target = tweets[0]
+            for tweet in tweets.exclude(pk=target.pk):
+                consolidate_objects(source=tweet, target=target)
+            return target
+
         if not tweet_data:
             tweet_data = self.json
         if tweet_data:
@@ -458,8 +467,11 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
 
             # REPLY TO STATUS
             if tweet_data.get('in_reply_to_status_id', None):
-                tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
-                    .objects.get_or_create(twitter_id=tweet_data['in_reply_to_status_id_str'].lower())
+                try:
+                    tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
+                        .objects.get_or_create(twitter_id=tweet_data['in_reply_to_status_id_str'].lower())
+                except apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL).MultipleObjectsReturned:
+                    tweet_obj = _consolidate_duplicate_tweets(tweet_data['in_reply_to_status_id_str'].lower())
                 tweet_obj.refresh_from_db()
                 if not tweet_obj.profile and tweet_data.get('in_reply_to_user_id_str', None):
                     reply_author_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL) \
@@ -470,16 +482,24 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
 
             # QUOTE STATUS
             if tweet_data.get('quoted_status', None):
-                tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
-                    .objects.get_or_create(twitter_id=tweet_data['quoted_status']['id_str'].lower())
+                try:
+                    tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
+                        .objects.get_or_create(twitter_id=tweet_data['quoted_status']['id_str'].lower())
+                except apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL).MultipleObjectsReturned:
+                    tweet_obj = _consolidate_duplicate_tweets(tweet_data['quoted_status']['id_str'].lower())
+                tweet_obj.refresh_from_db()
                 tweet_obj.update_from_json(tweet_data['quoted_status'])
                 tweet_obj.update_relations_from_json(tweet_data['quoted_status'])
                 self.quoted_status = tweet_obj
 
             # RETWEETED STATUS
             if tweet_data.get('retweeted_status', None):
-                tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
-                    .objects.get_or_create(twitter_id=tweet_data['retweeted_status']['id_str'].lower())
+                try:
+                    tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
+                        .objects.get_or_create(twitter_id=tweet_data['retweeted_status']['id_str'].lower())
+                except apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL).MultipleObjectsReturned:
+                    tweet_obj = _consolidate_duplicate_tweets(tweet_data['retweeted_status']['id_str'].lower())
+                tweet_obj.refresh_from_db()
                 tweet_obj.update_from_json(tweet_data['retweeted_status'])
                 tweet_obj.update_relations_from_json(tweet_data['retweeted_status'])
                 self.retweeted_status = tweet_obj
