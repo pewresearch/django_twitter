@@ -408,7 +408,6 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
                     tweet_obj = _consolidate_duplicate_tweets(tweet_data['quoted_status']['id_str'].lower())
                 tweet_obj.refresh_from_db()
                 tweet_obj.update_from_json(tweet_data['quoted_status'])
-                tweet_obj.update_relations_from_json(tweet_data['quoted_status'])
                 self.quoted_status = tweet_obj
 
             # RETWEETED STATUS
@@ -421,7 +420,6 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
                     tweet_obj = _consolidate_duplicate_tweets(tweet_data['retweeted_status']['id_str'].lower())
                 tweet_obj.refresh_from_db()
                 tweet_obj.update_from_json(tweet_data['retweeted_status'])
-                tweet_obj.update_relations_from_json(tweet_data['retweeted_status'])
                 self.retweeted_status = tweet_obj
 
             # UPDATE TWEET
