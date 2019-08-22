@@ -1,12 +1,11 @@
 from __future__ import print_function
-import django, tweepy, json
+import django, tweepy, json, datetime
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.apps import apps
 from django import db
 from multiprocessing import Pool
-from datetime import datetime, timedelta
 from tqdm import tqdm
 
 from django_pewtils import reset_django_connection, reset_django_connection_wrapper
@@ -84,11 +83,11 @@ class Command(BaseCommand):
             if limit_values[1] in allowable_limit_types["tweet"]:
                 self.limit["limit_count"] = int(limit_values[0])
             elif limit_values[1] in allowable_limit_types["minute"]:
-                self.limit["limit_time"] = datetime.now() + timedelta(minutes=int(limit_values[0]))
+                self.limit["limit_time"] = datetime.datetime.now() + datetime.timedelta(minutes=int(limit_values[0]))
             elif limit_values[1] in allowable_limit_types["hour"]:
-                self.limit["limit_time"] = datetime.now() + timedelta(hours=int(limit_values[0]))
+                self.limit["limit_time"] = datetime.datetime.now() + datetime.timedelta(hours=int(limit_values[0]))
             elif limit_values[1] in allowable_limit_types["day"]:
-                self.limit["limit_time"] = datetime.now() + timedelta(days=int(limit_values[0]))
+                self.limit["limit_time"] = datetime.datetime.now() + datetime.timedelta(days=int(limit_values[0]))
             else:
                 raise ValueError("Could not set limit")
 
@@ -228,7 +227,7 @@ class StreamListener(tweepy.StreamListener):
         elif self.limit['limit_type'] == "tweet":
             return self.processed_counter >= self.limit['limit_count']
         else:
-            return datetime.now() >= self.limit['limit_time']
+            return datetime.datetime.now() >= self.limit['limit_time']
 
 
 def save_tweets(tweets, tweet_set_id):
