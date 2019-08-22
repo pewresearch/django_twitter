@@ -18,6 +18,7 @@ from dateutil.parser import parse as date_parse
 from collections import defaultdict
 
 from pewtils import decode_text, is_not_null, is_null
+from django_pewtils import consolidate_objects
 from future.utils import with_metaclass
 
 
@@ -307,9 +308,9 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
     def __str__(self):
 
         return "{0}, {1}:\nhttps://twitter.com/{2}/status/{3}/:\n {4}".format(
-            self.profile,
+            self.profile if self.profile else None,
             self.created_at,
-            self.profile.screen_name,
+            self.profile.screen_name if self.profile else None,
             self.twitter_id,
             decode_text(self.text)
         )
@@ -479,6 +480,111 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
 
             self.json = tweet_data
 
+            try: self.save()
+            except:
+                try:
+                    self.text = decode_text(self.text)
+                    self.json = json.loads(decode_text(json.dumps(self.json)))
+                    self.save()
+                except Exception as e:
+                    print(e)
+                    import pdb
+                    pdb.set_trace()
+                # \u0000
+
+    def update_relations_from_json(self, tweet_data=None): # TODO: rename
+
+        def _consolidate_duplicate_tweets(twitter_id):
+            tweets = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL).objects\
+                .filter(twitter_id=twitter_id)
+            target = tweets[0]
+            for tweet in tweets.exclude(pk=target.pk):
+                consolidate_objects(source=tweet, target=target)
+            return target
+
+        if not tweet_data:
+            tweet_data = self.json
+        if tweet_data:
+
+            if not self.pk:
+                self.save()
+                self.refresh_from_db()
+
+            # PROFILE
+            profile_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
+            author, created = profile_model.objects.get_or_create(twitter_id=tweet_data['user']['id_str'])
+            author.update_from_json(tweet_data['user'])
+            self.profile = author
+
+            # USER MENTIONS
+            user_mentions = []
+            for user_mention in tweet_data.get("entities", {}).get("user_mentions", []):
+                existing_profiles = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)\
+                    .objects.filter(twitter_id=user_mention["id_str"])
+                if existing_profiles.count() > 1:
+                    # print "This tweet mentioned an ID that belongs to multiple profiles"
+                    # # TODO: you probably want to just try filtering on historical=False at this point
+                    # # for now, since this is so rare, we'll just add all the possibilities
+                    # import pdb
+                    # pdb.set_trace()
+                    for existing in existing_profiles:
+                        user_mentions.append(existing)
+                elif existing_profiles.count() == 1:
+                    user_mentions.append(existing_profiles[0])
+                else:
+                    mentioned_profile, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL) \
+                        .objects.get_or_create(twitter_id=user_mention["id_str"])
+                    user_mentions.append(mentioned_profile)
+            self.user_mentions = user_mentions
+
+            # HASHTAGS --
+            hashtags = []
+            for hashtag in tweet_data.get("entities", {}).get("hashtags", []):
+                hashtag_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_HASHTAG_MODEL) \
+                    .objects.get_or_create(name=hashtag['text'].lower())
+                hashtags.append(hashtag_obj)
+            self.hashtags = hashtags # [u"{}".format(h) for h in hashtags]
+
+            # REPLY TO STATUS
+            if tweet_data.get('in_reply_to_status_id', None):
+                try:
+                    tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
+                        .objects.get_or_create(twitter_id=tweet_data['in_reply_to_status_id_str'].lower())
+                except apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL).MultipleObjectsReturned:
+                    tweet_obj = _consolidate_duplicate_tweets(tweet_data['in_reply_to_status_id_str'].lower())
+                tweet_obj.refresh_from_db()
+                if not tweet_obj.profile and tweet_data.get('in_reply_to_user_id_str', None):
+                    reply_author_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL) \
+                        .objects.get_or_create(twitter_id=tweet_data['in_reply_to_user_id_str'].lower())
+                    tweet_obj.profile = reply_author_obj
+                    tweet_obj.save()
+                self.in_reply_to_status = tweet_obj
+
+            # QUOTE STATUS
+            if tweet_data.get('quoted_status', None):
+                try:
+                    tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
+                        .objects.get_or_create(twitter_id=tweet_data['quoted_status']['id_str'].lower())
+                except apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL).MultipleObjectsReturned:
+                    tweet_obj = _consolidate_duplicate_tweets(tweet_data['quoted_status']['id_str'].lower())
+                tweet_obj.refresh_from_db()
+                tweet_obj.update_from_json(tweet_data['quoted_status'])
+                tweet_obj.update_relations_from_json(tweet_data['quoted_status'])
+                self.quoted_status = tweet_obj
+
+            # RETWEETED STATUS
+            if tweet_data.get('retweeted_status', None):
+                try:
+                    tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
+                        .objects.get_or_create(twitter_id=tweet_data['retweeted_status']['id_str'].lower())
+                except apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL).MultipleObjectsReturned:
+                    tweet_obj = _consolidate_duplicate_tweets(tweet_data['retweeted_status']['id_str'].lower())
+                tweet_obj.refresh_from_db()
+                tweet_obj.update_from_json(tweet_data['retweeted_status'])
+                tweet_obj.update_relations_from_json(tweet_data['retweeted_status'])
+                self.retweeted_status = tweet_obj
+
+            self.json = tweet_data
             try: self.save()
             except:
                 try:
