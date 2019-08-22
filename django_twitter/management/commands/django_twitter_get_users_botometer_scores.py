@@ -1,11 +1,11 @@
+import datetime
+
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.apps import apps
 from django.core.management import call_command
 from multiprocessing import Pool
 from django import db
-
-from datetime import datetime
 from tqdm import tqdm
 
 
@@ -41,7 +41,7 @@ class Command(BaseCommand):
                 run_command = True
             else:
                 if options['update']:
-                    if last_score.timestamp.date() == datetime.now().date():
+                    if last_score.timestamp.date() == datetime.datetime.now().date():
                         run_command = False
                     else:
                         run_command = True
