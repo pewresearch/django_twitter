@@ -106,13 +106,15 @@ class AbstractTwitterBase(models.base.ModelBase):
                             )
                     counts[owner_model] += 1
                     if counts[owner_model] == len(fields_to_add[owner_model]):
-                        if getattr(cls, owner_model).__base__.__base__.__name__ == "AbstractTwitterObject":
-                            try:
-                                history = HistoricalRecords()
-                                history.contribute_to_class(getattr(cls, owner_model), "history")
-                                register(getattr(cls, owner_model))
-                            except simple_history.exceptions.MultipleRegistrationsError:
-                                pass
+                        for base1 in getattr(cls, owner_model).__bases__:
+                            for base2 in base1.__bases__:
+                                if base2.__name__ == "AbstractTwitterObject":
+                                    try:
+                                        history = HistoricalRecords()
+                                        history.contribute_to_class(getattr(cls, owner_model), "history")
+                                        register(getattr(cls, owner_model))
+                                    except simple_history.exceptions.MultipleRegistrationsError:
+                                        pass
 
         return model
 
