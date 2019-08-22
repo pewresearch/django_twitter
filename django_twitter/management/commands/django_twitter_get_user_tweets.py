@@ -110,7 +110,6 @@ class Command(BaseCommand):
                 twitter_id=tweet_json.id_str
             )
             tweet.update_from_json(tweet_json._json)
-            tweet.update_relations_from_json(tweet_json._json)
             if tweet_set:
                 tweet_set.tweets.add(tweet)
             updated_count += 1
