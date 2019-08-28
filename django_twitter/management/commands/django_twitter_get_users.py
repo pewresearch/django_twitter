@@ -55,8 +55,12 @@ class Command(BaseCommand):
         for user_json in lst_json:
             if verbose:
                 print("Collecting user {}".format(user_json.screen_name))
-            twitter_user, created = user_model.objects.get_or_create(
-                twitter_id=user_json.id)
+            try: twitter_user, created = user_model.objects.get_or_create(twitter_id=user_json.id)
+            except user_model.MultipleObjectsReturned:
+                print("Warning: multiple users found for {}".format(user_json.id))
+                print("For flexibility, Django Twitter does not enforce a unique constraint on twitter_id")
+                print("But in this case it can't tell which user to use, so it's picking the most recently updated one")
+                twitter_user = user_model.objects.filter(twitter_id=user_json.id).order_by("-last_update_time")[0]
             twitter_user.update_from_json(user_json._json)
             if twitter_profile_set:
                 twitter_profile_set.profiles.add(twitter_user)

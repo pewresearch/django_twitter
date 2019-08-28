@@ -342,10 +342,10 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
             try:
                 author, created = profile_model.objects.get_or_create(twitter_id=tweet_data['user']['id_str'])
             except profile_model.MultipleObjectsReturned:
-                print("Warning: multiple profiles found for {}".format(tweet_data['user']['id_str']))
+                print("Warning: multiple users found for {}".format(tweet_data['user']['id_str']))
                 print("For flexibility, Django Twitter does not enforce a unique constraint on twitter_id")
-                print("But in this case it can't tell which profile to use, so it's picking the first one")
-                author = profile_model.objects.filter(twitter_id=tweet_data['user']['id_str'])[0]
+                print("But in this case it can't tell which user to use, so it's picking the most recently updated one")
+                author = profile_model.objects.filter(twitter_id=tweet_data['user']['id_str']).order_by("-last_update_time")[0]
             author.update_from_json(tweet_data['user'])
             self.profile = author
 

@@ -289,6 +289,12 @@ def save_profileset(tweets, profile_set_id):
         if user not in all_users:
             all_users.add(user)
             twitter_user, created = user_model.objects.get_or_create(twitter_id=user)
+            try: twitter_user, created = user_model.objects.get_or_create(twitter_id=user)
+            except user_model.MultipleObjectsReturned:
+                print("Warning: multiple users found for {}".format(user))
+                print("For flexibility, Django Twitter does not enforce a unique constraint on twitter_id")
+                print("But in this case it can't tell which user to use, so it's picking the most recently updated one")
+                twitter_user = user_model.objects.filter(twitter_id=user).order_by("-last_update_time")[0]
             if created:
                 create_count += 1
             if profile_set:

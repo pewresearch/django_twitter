@@ -35,7 +35,12 @@ class Command(BaseCommand):
             twitter_ids = options['twitter_ids']
 
         for twitter_id in tqdm(twitter_ids, total=len(twitter_ids)):
-            user = twitter_profile_model.objects.get(twitter_id=twitter_id)
+            try: user, created = twitter_profile_model.objects.get_or_create(twitter_id=twitter_id)
+            except twitter_profile_model.MultipleObjectsReturned:
+                print("Warning: multiple users found for {}".format(twitter_id))
+                print("For flexibility, Django Twitter does not enforce a unique constraint on twitter_id")
+                print("But in this case it can't tell which user to use, so it's picking the most recently updated one")
+                user = twitter_profile_model.objects.filter(twitter_id=twitter_id).order_by("-last_update_time")[0]
             last_score = user.most_recent_botometer_score()
             if not last_score:
                 run_command = True
