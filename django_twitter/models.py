@@ -323,6 +323,7 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
             target = tweets[0]
             for tweet in tweets.exclude(pk=target.pk):
                 consolidate_objects(source=tweet, target=target)
+            target.refresh_from_db()
             return target
 
         if not tweet_data:
