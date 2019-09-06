@@ -151,7 +151,7 @@ class AbstractTwitterProfile(with_metaclass(AbstractTwitterBase, AbstractTwitter
     name = models.CharField(max_length=200, null=True)
     description = models.TextField(null=True)
     status = models.TextField(null=True)
-    urls = ArrayField(models.CharField(max_length=300), default=[])
+    urls = ArrayField(models.CharField(max_length=300), default=list)
     contributors_enabled = models.NullBooleanField(null=True)
     is_verified = models.NullBooleanField(null=True)
     is_private = models.BooleanField(default=False)
@@ -273,13 +273,13 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
 
     # Rookery calls this created_at - I think that would be good for consistency
     created_at = models.DateTimeField(null=True, help_text="The time/date that the tweet was published")
-    links = ArrayField(models.CharField(max_length=400), default=[], null=True,
+    links = ArrayField(models.CharField(max_length=400), default=list, null=True,
                        help_text="Links contained in the tweet")
     text = models.CharField(max_length = 1024, null = True) # Could change to 280 - no need to be so long
-    # hashtags = ArrayField(models.CharField(max_length=280), default = [], null=True)
+    # hashtags = ArrayField(models.CharField(max_length=280), default=list, null=True)
     # TODO: Change below to a relationship
     # user_mentions = models.ManyToManyField("")
-    user_mentions_raw = ArrayField(models.CharField(max_length=280), default=[], null=True)
+    user_mentions_raw = ArrayField(models.CharField(max_length=280), default=list, null=True)
 
     language = models.CharField(max_length=255, null=True)
 
