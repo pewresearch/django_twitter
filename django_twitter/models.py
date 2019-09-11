@@ -232,10 +232,13 @@ class AbstractTwitterProfile(with_metaclass(AbstractTwitterBase, AbstractTwitter
             self.status = profile_data['status']['text'] if 'status' in list(profile_data.keys()) else None
             self.is_verified = profile_data['verified']
             self.contributors_enabled = profile_data['contributors_enabled']
-            self.urls = [url['expanded_url'] for url in profile_data.get('entities', {}).get('url', {}).get('urls', []) if
-                         url['expanded_url']] if "url" in list(profile_data.get('entities', {}).keys()) else profile_data.get('url', '')
-            if self.urls == None or self.urls=='':
-                self.urls = []
+
+            if "url" in list(profile_data.get('entities', {}).keys()):
+                urls = [url['expanded_url'] for url in profile_data.get('entities', {}).get('url', {}).get('urls', []) if url['expanded_url']]
+            else:
+                urls = [profile_data.get('url', '')]
+            urls = [u for u in urls if is_not_null(u)]
+            self.urls = urls
             self.json = profile_data
             self.save()
 
