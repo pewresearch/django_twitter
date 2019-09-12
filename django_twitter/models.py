@@ -1,6 +1,8 @@
 from __future__ import print_function
+from __future__ import unicode_literals
 from builtins import str
 from builtins import object
+
 import re
 import json
 import simple_history
@@ -216,6 +218,11 @@ class AbstractTwitterProfile(with_metaclass(AbstractTwitterBase, AbstractTwitter
 
         if not profile_data:
             profile_data = self.json
+
+        if not hasattr(profile_data, "keys"):
+            while not hasattr(profile_data, "keys"):
+                profile_data = json.loads(profile_data)
+
         if profile_data:
             # TODO: Last step - Verify that all of the fields above are in here
             self.created_at = date_parse(profile_data['created_at'])
@@ -333,8 +340,8 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
             tweet_data = self.json
         if tweet_data:
 
-            if isinstance(tweet_data, unicode):
-                while not isinstance(tweet_data, unicode):
+            if not hasattr(tweet_data, "keys"):
+                while not hasattr(tweet_data, "keys"):
                     tweet_data = json.loads(tweet_data)
 
             if not self.pk:
@@ -374,7 +381,7 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
                                                                 model_name=settings.TWITTER_PROFILE_MODEL) \
                         .objects.get_or_create(twitter_id=user_mention["id_str"])
                     user_mentions.append(mentioned_profile)
-            self.user_mentions = user_mentions
+            self.user_mentions.set(user_mentions)
 
             # HASHTAGS
             hashtags = []
@@ -383,7 +390,7 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
                                                       model_name=settings.TWITTER_HASHTAG_MODEL) \
                     .objects.get_or_create(name=hashtag['text'].lower())
                 hashtags.append(hashtag_obj)
-            self.hashtags = hashtags  # [u"{}".format(h) for h in hashtags]
+            self.hashtags.set(hashtags)  # [u"{}".format(h) for h in hashtags]
 
             # REPLY TO STATUS
             if tweet_data.get('in_reply_to_status_id', None):
