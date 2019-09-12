@@ -247,7 +247,7 @@ def save_tweets(tweets, tweet_set_name, profile_set_name, test):
     tweet_set = None
     if tweet_set_name:
         tweet_set_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_SET_MODEL)
-        tweet_set = tweet_set_model.objects.get(name=tweet_set_name)
+        tweet_set, created = tweet_set_model.objects.get_or_create(name=tweet_set_name)
 
     profile_set = None
     if profile_set_name:
