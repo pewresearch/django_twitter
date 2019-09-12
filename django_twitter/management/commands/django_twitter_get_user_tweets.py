@@ -20,8 +20,9 @@ class Command(BaseCommand):
         parser.add_argument("--ignore_backfill", action="store_true", default=False)
         parser.add_argument("--overwrite", action="store_true", default=False)
         parser.add_argument('--max_backfill_date', type=str)
-        parser.add_argument("--tweet_set", type = str)
+        parser.add_argument("--tweet_set_name", type = str)
         parser.add_argument("--no_progress_bar", action="store_true", default=False)
+        parser.add_argument("--limit", type=int, default=None)
 
         parser.add_argument('--api_key', type=str)
         parser.add_argument('--api_secret', type=str)
@@ -37,10 +38,14 @@ class Command(BaseCommand):
             access_secret=options["access_secret"]
         )
 
+        max_backfill_date = None
+        if options['max_backfill_date']:
+            max_backfill_date = date_parse(options['max_backfill_date'])
+
         tweet_set = None
-        if options["tweet_set"]:
+        if options["tweet_set_name"]:
             tweet_set_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_SET_MODEL)
-            tweet_set, created = tweet_set_model.objects.get_or_create(name=options["tweet_set"])
+            tweet_set, created = tweet_set_model.objects.get_or_create(name=options["tweet_set_name"])
 
         scanned_count, updated_count = 0, 0
         user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
@@ -64,6 +69,7 @@ class Command(BaseCommand):
             else:
                 iterator = tqdm(self.twitter.iterate_user_timeline(options['twitter_id'], return_errors=True),
                                 desc = "Retrieving tweets for user {}".format(twitter_user.screen_name))
+
             print("Retrieving tweets for user {}".format(twitter_user.screen_name))
             keep_pulling = True
             for tweet_json in iterator:
@@ -73,61 +79,37 @@ class Command(BaseCommand):
                     print("User {} is private".format(twitter_user.screen_name))
                     break
                 else:
-                    keep_pulling, updated_count, scanned_count = \
-                        self.save_tweet(tweet_model, tweet_json, tweet_set, existing_tweets,
-                                        options['overwrite'], options['ignore_backfill'], options["max_backfill_date"],
-                                        twitter_user.tweet_backfilled, updated_count, scanned_count)
+
+                    scanned_count += 1
+                    if options['overwrite'] or (tweet_json.id_str not in existing_tweets):
+                        # Only write a tweet if you're overwriting, or it doesn't already exist
+                        tweet, created = tweet_model.objects.get_or_create(
+                            twitter_id=tweet_json.id_str
+                        )
+                        tweet.update_from_json(tweet_json._json)
+                        if tweet_set:
+                            tweet_set.tweets.add(tweet)
+                        updated_count += 1
+                        if not tweet.text:
+                            import pdb
+                            pdb.set_trace()
+
+                    keep_pulling = True
+                    if twitter_user.tweet_backfilled and tweet_json.id_str in existing_tweets and not options['ignore_backfill']:
+                        # Only stop if the account has been backfilled and you encounter an existing tweet
+                        print("Encountered existing tweet, stopping now")
+                        keep_pulling = False
+                    elif max_backfill_date:
+                        timestamp = date_parse(tweet_json._json['created_at'], ignoretz=True)
+                        if timestamp < max_backfill_date:
+                            print("Reached the limit of ignore_backfill")
+                            keep_pulling = False
+                    if options["limit"] and scanned_count >= options["limit"]:
+                        keep_pulling = False
 
                 if not keep_pulling:
                     break
 
-                # if (options['overwrite'] or options['ignore_backfill']) or \
-                #     (tweet_json.id_str not in existing_tweets):
-                #
-                #     tweet, created = tweet_model.objects.get_or_create(
-                #         twitter_id=tweet_json.id_str
-                #     )
-                #     tweet.update_from_json(tweet_json._json)
-                #     if tweet_set:
-                #         tweet_set.tweets.add(tweet)
-                #     updated_count += 1
-                #     scanned_count += 1
-                # elif twitter_user.tweet_backfilled and \
-                #         ((not options['ignore_backfill']) or \
-                #         (tweet_json.id_str in existing_tweets)):
-                #     print("Encountered existing tweet, stopping now")
-                #     break
-                # else:
-                #     print("Reached end of tweets, stopping")
-                #     break
-
             twitter_user.tweet_backfilled = True
             twitter_user.save()
             print("{}: {} tweets scanned, {} updated".format(str(twitter_user), scanned_count, updated_count))
-
-    def save_tweet(self, tweet_model, tweet_json, tweet_set, existing_tweets, overwrite, ignore_backfill,
-                   max_backfill_date, backfilled, updated_count, scanned_count):
-
-        scanned_count += 1
-        if overwrite or (tweet_json.id_str not in existing_tweets):
-            # Only write a tweet if you're overwriting, or it doesn't already exist
-            tweet, created = tweet_model.objects.get_or_create(
-                twitter_id=tweet_json.id_str
-            )
-            tweet.update_from_json(tweet_json._json)
-            if tweet_set:
-                tweet_set.tweets.add(tweet)
-            updated_count += 1
-
-        keep_pulling = True
-        if backfilled and tweet_json.id_str in existing_tweets and not ignore_backfill:
-            # Only stop if the account has been backfilled and you encounter an existing tweet
-            print("Encountered existing tweet, stopping now")
-            keep_pulling = False
-        elif max_backfill_date:
-            timestamp = date_parse(tweet_json._json['created_at'], ignoretz=True)
-            if timestamp < date_parse(max_backfill_date):
-                print("Reached the limit of ignore_backfill")
-                keep_pulling = False
-
-        return (keep_pulling, updated_count, scanned_count)
