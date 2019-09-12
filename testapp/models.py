@@ -9,7 +9,7 @@ class Politician(models.Model):
 
 class TwitterProfile(AbstractTwitterProfile):
 
-    politician = models.ForeignKey("testapp.Politician", related_name="twitter_profiles", null=True)
+    politician = models.ForeignKey("testapp.Politician", related_name="twitter_profiles", null=True, on_delete=models.SET_NULL)
 
 class Tweet(AbstractTweet):
 
