@@ -325,10 +325,14 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
             decode_text(self.text)
         )
 
-    def update_from_json(self, tweet_data=None, get_retweeted_or_quoted_text=True, is_gnip=False):
+    def update_from_json(self, tweet_data=None):
+
+        tweet_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL)
+        profile_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
+        hashtag_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_HASHTAG_MODEL)
 
         def _consolidate_duplicate_tweets(twitter_id):
-            tweets = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL).objects\
+            tweets = tweet_model.objects\
                 .filter(twitter_id=twitter_id)
             target = tweets[0]
             for tweet in tweets.exclude(pk=target.pk):
@@ -349,7 +353,6 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
                 self.refresh_from_db()
 
             # PROFILE
-            profile_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
             try:
                 author, created = profile_model.objects.get_or_create(twitter_id=tweet_data['user']['id_str'])
             except profile_model.MultipleObjectsReturned:
@@ -363,48 +366,42 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
             # USER MENTIONS
             user_mentions = []
             for user_mention in tweet_data.get("entities", {}).get("user_mentions", []):
-                existing_profiles = apps.get_model(app_label=settings.TWITTER_APP,
-                                                   model_name=settings.TWITTER_PROFILE_MODEL) \
-                    .objects.filter(twitter_id=user_mention["id_str"])
+                existing_profiles = profile_model.objects.filter(twitter_id=user_mention["id_str"])
                 if existing_profiles.count() > 1:
-                    # print "This tweet mentioned an ID that belongs to multiple profiles"
-                    # # TODO: you probably want to just try filtering on historical=False at this point
-                    # # for now, since this is so rare, we'll just add all the possibilities
-                    # import pdb
-                    # pdb.set_trace()
+                    print("Warning: multiple users found for {}".format(user_mention['id_str']))
+                    print("For flexibility, Django Twitter does not enforce a unique constraint on twitter_id")
+                    print("But in this case it can't tell which user to use, so it's associating this tweet with all")
                     for existing in existing_profiles:
                         user_mentions.append(existing)
                 elif existing_profiles.count() == 1:
                     user_mentions.append(existing_profiles[0])
                 else:
-                    mentioned_profile, created = apps.get_model(app_label=settings.TWITTER_APP,
-                                                                model_name=settings.TWITTER_PROFILE_MODEL) \
-                        .objects.get_or_create(twitter_id=user_mention["id_str"])
+                    mentioned_profile, created = profile_model.objects.get_or_create(twitter_id=user_mention["id_str"])
                     user_mentions.append(mentioned_profile)
             self.user_mentions.set(user_mentions)
 
             # HASHTAGS
             hashtags = []
             for hashtag in tweet_data.get("entities", {}).get("hashtags", []):
-                hashtag_obj, created = apps.get_model(app_label=settings.TWITTER_APP,
-                                                      model_name=settings.TWITTER_HASHTAG_MODEL) \
-                    .objects.get_or_create(name=hashtag['text'].lower())
+                hashtag_obj, created = hashtag_model.objects.get_or_create(name=hashtag['text'].lower())
                 hashtags.append(hashtag_obj)
-            self.hashtags.set(hashtags)  # [u"{}".format(h) for h in hashtags]
+            self.hashtags.set(hashtags)
 
             # REPLY TO STATUS
             if tweet_data.get('in_reply_to_status_id', None):
                 try:
-                    tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
-                        .objects.get_or_create(twitter_id=tweet_data['in_reply_to_status_id_str'].lower())
-                except apps.get_model(app_label=settings.TWITTER_APP,
-                                      model_name=settings.TWEET_MODEL).MultipleObjectsReturned:
+                    tweet_obj, created = tweet_model.objects.get_or_create(twitter_id=tweet_data['in_reply_to_status_id_str'].lower())
+                except tweet_model.MultipleObjectsReturned:
                     tweet_obj = _consolidate_duplicate_tweets(tweet_data['in_reply_to_status_id_str'].lower())
                 tweet_obj.refresh_from_db()
                 if not tweet_obj.profile and tweet_data.get('in_reply_to_user_id_str', None):
-                    reply_author_obj, created = apps.get_model(app_label=settings.TWITTER_APP,
-                                                               model_name=settings.TWITTER_PROFILE_MODEL) \
-                        .objects.get_or_create(twitter_id=tweet_data['in_reply_to_user_id_str'].lower())
+                    try:
+                        reply_author_obj, created = profile_model.objects.get_or_create(twitter_id=tweet_data['in_reply_to_user_id_str'].lower())
+                    except profile_model.MultipleObjectsReturned:
+                        print("Warning: multiple users found for {}".format(tweet_data['in_reply_to_user_id_str']))
+                        print("For flexibility, Django Twitter does not enforce a unique constraint on twitter_id")
+                        print("But in this case it can't tell which user to use, so it's picking the most recently updated one")
+                        reply_author_obj = profile_model.objects.filter(twitter_id=tweet_data['in_reply_to_user_id_str'].lower()).order_by("-last_update_time")[0]
                     tweet_obj.profile = reply_author_obj
                     tweet_obj.save()
                 self.in_reply_to_status = tweet_obj
@@ -412,10 +409,8 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
             # QUOTE STATUS
             if tweet_data.get('quoted_status', None):
                 try:
-                    tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
-                        .objects.get_or_create(twitter_id=tweet_data['quoted_status']['id_str'].lower())
-                except apps.get_model(app_label=settings.TWITTER_APP,
-                                      model_name=settings.TWEET_MODEL).MultipleObjectsReturned:
+                    tweet_obj, created = tweet_model.objects.get_or_create(twitter_id=tweet_data['quoted_status']['id_str'].lower())
+                except tweet_model.MultipleObjectsReturned:
                     tweet_obj = _consolidate_duplicate_tweets(tweet_data['quoted_status']['id_str'].lower())
                 tweet_obj.refresh_from_db()
                 tweet_obj.update_from_json(tweet_data['quoted_status'])
@@ -424,10 +419,8 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
             # RETWEETED STATUS
             if tweet_data.get('retweeted_status', None):
                 try:
-                    tweet_obj, created = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL) \
-                        .objects.get_or_create(twitter_id=tweet_data['retweeted_status']['id_str'].lower())
-                except apps.get_model(app_label=settings.TWITTER_APP,
-                                      model_name=settings.TWEET_MODEL).MultipleObjectsReturned:
+                    tweet_obj, created = tweet_model.objects.get_or_create(twitter_id=tweet_data['retweeted_status']['id_str'].lower())
+                except tweet_model.MultipleObjectsReturned:
                     tweet_obj = _consolidate_duplicate_tweets(tweet_data['retweeted_status']['id_str'].lower())
                 tweet_obj.refresh_from_db()
                 tweet_obj.update_from_json(tweet_data['retweeted_status'])
