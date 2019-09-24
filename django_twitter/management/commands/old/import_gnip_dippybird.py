@@ -14,47 +14,56 @@ from tqdm import tqdm
 
 
 class Command(BaseCommand):
-
     def add_arguments(self, parser):
 
-        parser.add_argument('-f', '--folder_name', type=str)
-        parser.add_argument('-b', '--batch_id', type=int)
-        parser.add_argument('-k','--keyword', type=str)
-        parser.add_argument('-l','--limit', type=int, default=-1)
-        parser.add_argument('--num_cores', type=int, default=1)
+        parser.add_argument("-f", "--folder_name", type=str)
+        parser.add_argument("-b", "--batch_id", type=int)
+        parser.add_argument("-k", "--keyword", type=str)
+        parser.add_argument("-l", "--limit", type=int, default=-1)
+        parser.add_argument("--num_cores", type=int, default=1)
         parser.add_argument("--use_multiprocessing", action="store_true", default=False)
-        parser.add_argument("--extract_secondary_links", action="store_true", default=False)
+        parser.add_argument(
+            "--extract_secondary_links", action="store_true", default=False
+        )
 
     def handle(self, *args, **options):
 
         # set retweet pattern
-        rt_match = re.compile(r'RT @.*: (.*)')
+        rt_match = re.compile(r"RT @.*: (.*)")
 
         if options["use_multiprocessing"]:
             pool = Pool(processes=options["num_cores"])
             for file in generate_tweet_files(options["folder_name"]):
                 if options["num_cores"] == 1:
-                    pool.apply(load_tweet_file, [file, rt_match, options], {"kwquery": options["keyword"]})
+                    pool.apply(
+                        load_tweet_file,
+                        [file, rt_match, options],
+                        {"kwquery": options["keyword"]},
+                    )
                 else:
-                    pool.apply_async(load_tweet_file, [file, rt_match, options], {"kwquery": options["keyword"]})
+                    pool.apply_async(
+                        load_tweet_file,
+                        [file, rt_match, options],
+                        {"kwquery": options["keyword"]},
+                    )
             pool.close()
             pool.join()
 
         else:
 
             # tweet generator
-            tweets = generate_tweets(options['folder_name'])
+            tweets = generate_tweets(options["folder_name"])
             count = 0
 
             if options["keyword"]:
                 # keyword query
-                kwquery = KeywordQuery.objects.get(name=options['keyword'])
+                kwquery = KeywordQuery.objects.get(name=options["keyword"])
 
             # and run through the tweets
             for tweet_payload in tqdm(tweets, desc="Loading GNIP"):
                 # for debugging or just doing a certain chunk
-                if options['limit'] > 0:
-                    if count == options['limit']:
+                if options["limit"] > 0:
+                    if count == options["limit"]:
                         break
                     else:
                         count += 1
@@ -67,26 +76,27 @@ def generate_tweet_files(folder_name):
     if not os.path.isdir(folder_name):
         raise ValueError("Directory not found.")
 
-    for file in glob.glob(os.path.join(folder_name, '*.json')):
+    for file in glob.glob(os.path.join(folder_name, "*.json")):
         yield file
 
 
 def generate_tweets(folder_name):
-    '''
+    """
     Generator for tweets from GNIP - since this could get run
      multiple times
     :return: JSON payload of tweet
-    '''
+    """
 
     for file in generate_tweet_files(folder_name):
 
         # read each file in as a list of strings, one JSON/tweet per line
-        with (open(file, 'r')) as f:
+        with (open(file, "r")) as f:
             tweets = f.readlines()
         # process each JSON, extracting the ID and URLs;
         # since it's a string, omit the final two characters
         for tweet in tweets:
             yield json.loads(tweet[0:-2])
+
 
 def load_tweet_file(file, rt_match, options, kwquery=None):
 
@@ -96,10 +106,11 @@ def load_tweet_file(file, rt_match, options, kwquery=None):
         # keyword query
         kwquery = KeywordQuery.objects.get(name=kwquery)
 
-    with (open(file, 'r')) as f:
+    with (open(file, "r")) as f:
         for tweet in tqdm(f, desc="Loading tweets from file '{}'".format(file)):
             tweet_payload = json.loads(tweet[0:-2])
             load_tweet(tweet_payload, rt_match, options, kwquery=kwquery)
+
 
 # def get_body_text(payload, rt_match):
 #     '''
@@ -171,12 +182,15 @@ def load_tweet(tweet_payload, rt_match, options, kwquery=None):
 
     # There's always an information summary tweet, which we want to skip
     try:
-        if tweet_payload.get('id'):
+        if tweet_payload.get("id"):
             # check if the tweet exists. If it does, we don't need to do anything
             try:
-                existing = Tweet.objects.get(tw_id=tweet_payload['id'].split(':')[-1])
+                existing = Tweet.objects.get(tw_id=tweet_payload["id"].split(":")[-1])
                 if not existing.gnip:
-                    icantbelieveimdoingthis_prefix, icantbelieveimdoingthis_suffix = existing.tw_id[:-1], existing.tw_id[-1:]
+                    icantbelieveimdoingthis_prefix, icantbelieveimdoingthis_suffix = (
+                        existing.tw_id[:-1],
+                        existing.tw_id[-1:],
+                    )
                     mapper_of_shame = {
                         "0": "a",
                         "1": "b",
@@ -188,10 +202,14 @@ def load_tweet(tweet_payload, rt_match, options, kwquery=None):
                         "7": "h",
                         "8": "i",
                         "9": "j",
-                        "mysoul": "emptyinside"
+                        "mysoul": "emptyinside",
                     }
-                    thisistheworstthingiveeverdone = mapper_of_shame[icantbelieveimdoingthis_suffix]
-                    existing.tw_id = icantbelieveimdoingthis_prefix + thisistheworstthingiveeverdone
+                    thisistheworstthingiveeverdone = mapper_of_shame[
+                        icantbelieveimdoingthis_suffix
+                    ]
+                    existing.tw_id = (
+                        icantbelieveimdoingthis_prefix + thisistheworstthingiveeverdone
+                    )
                     existing.save()
                     existing = None
             except:
@@ -200,14 +218,20 @@ def load_tweet(tweet_payload, rt_match, options, kwquery=None):
             if not existing:
                 # try:
                 tweet = Tweet()
-                tweet.tw_id = tweet_payload['id'].split(':')[-1]
+                tweet.tw_id = tweet_payload["id"].split(":")[-1]
                 tweet.json = tweet_payload
                 tweet.gnip = True
                 # tweet.text = get_body_text(tweet_payload, rt_match)
-                tweet.batch_id = 3 # TODO: good lord this should be using the batch_id that for some reason is a keyword parameter
+                tweet.batch_id = (
+                    3
+                )  # TODO: good lord this should be using the batch_id that for some reason is a keyword parameter
                 tweet.save()
                 tweet.extract_text()
-                tweet.extract_links(extract_secondary_links=options["extract_secondary_links"], save=True, process=True)
+                tweet.extract_links(
+                    extract_secondary_links=options["extract_secondary_links"],
+                    save=True,
+                    process=True,
+                )
 
                 if kwquery:
                     # first is immigration
