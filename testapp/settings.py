@@ -7,19 +7,19 @@ INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django_twitter",
-    "testapp"
+    "testapp",
 ]
 
 TEMPLATES = []
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'PASSWORD': '',
-        'HOST': 'localhost',
-        'PORT': '',
+    "default": {
+        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        "NAME": "postgres",
+        "USER": "postgres",
+        "PASSWORD": "",
+        "HOST": "localhost",
+        "PORT": "",
     }
 }
 
