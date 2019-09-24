@@ -5,16 +5,18 @@ from django_pewtils import reset_django_connection
 from django_twitter.models import Tweet, Link
 from pewhooks.twitter import TwitterAPIHandler
 
-class Command(BaseCommand):
 
+class Command(BaseCommand):
     def add_arguments(self, parser):
 
-        parser.add_argument('--keyword_query_name', type=str, default=None)
-        parser.add_argument('--links_only', action="store_true", default=False)
-        parser.add_argument('--extract_secondary_links', action="store_true", default=False)
-        parser.add_argument('--use_s3', action="store_true", default=False)
-        parser.add_argument('--num_cores', type=int, default=2)
-        parser.add_argument('--queue_size', type=int, default=500)
+        parser.add_argument("--keyword_query_name", type=str, default=None)
+        parser.add_argument("--links_only", action="store_true", default=False)
+        parser.add_argument(
+            "--extract_secondary_links", action="store_true", default=False
+        )
+        parser.add_argument("--use_s3", action="store_true", default=False)
+        parser.add_argument("--num_cores", type=int, default=2)
+        parser.add_argument("--queue_size", type=int, default=500)
 
     def handle(self, *args, **options):
 
@@ -22,7 +24,7 @@ class Command(BaseCommand):
             api_key=settings.TWITTER_API_KEY,
             api_secret=settings.TWITTER_API_SECRET,
             access_token=settings.TWITTER_ACCESS_TOKEN,
-            access_secret=settings.TWITTER_ACCESS_SECRET
+            access_secret=settings.TWITTER_ACCESS_SECRET,
         )
 
         if options["keyword_query_name"]:
@@ -37,12 +39,10 @@ class Command(BaseCommand):
             num_cores=options["num_cores"],
             queue_size=options["queue_size"],
             use_s3=options["use_s3"],
-            extract_secondary_links=options["extract_secondary_links"]
+            extract_secondary_links=options["extract_secondary_links"],
         )
 
         twitter.capture_stream_sample(listener, async=False, keywords=query)
-
-
 
 
 def save_tweets(tweets, links_only, kw_query_id, use_s3, extract_secondary_links):
@@ -51,11 +51,12 @@ def save_tweets(tweets, links_only, kw_query_id, use_s3, extract_secondary_links
 
     if use_s3:
 
-        h = FileHandler("tweets/{}".format("full_stream" if not kw_query_id else kw_query_id),
+        h = FileHandler(
+            "tweets/{}".format("full_stream" if not kw_query_id else kw_query_id),
             use_s3=True,
             bucket=settings.S3_BUCKET,
             aws_access=settings.AWS_ACCESS_KEY_ID,
-            aws_secret=settings.AWS_SECRET_ACCESS_KEY
+            aws_secret=settings.AWS_SECRET_ACCESS_KEY,
         )
         h.write(str(datetime.datetime.now()), tweets, format="json")
 
@@ -66,8 +67,7 @@ def save_tweets(tweets, links_only, kw_query_id, use_s3, extract_secondary_links
 
             try:
                 tweet = Tweet.objects.create_or_update(
-                    {"tw_id": tweet_json["id_str"]},
-                    {"json": tweet_json}
+                    {"tw_id": tweet_json["id_str"]}, {"json": tweet_json}
                 )
             except Exception as e:
                 tweet = Tweet.objects.get(tw_id=tweet_json["id_str"])

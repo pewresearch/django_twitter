@@ -7,7 +7,6 @@ from dippybird.models import Tweet, Link
 
 
 class Command(BaseCommand):
-
     def handle(self, *args, **options):
 
         # h = FileHandler("tweets", bucket=settings.AWS_STORAGE_BUCKET_NAME, use_s3=True)
