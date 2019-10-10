@@ -365,6 +365,7 @@ class AbstractTwitterProfile(
         if profile_data:
             # TODO: Last step - Verify that all of the fields above are in here
             self.created_at = date_parse(profile_data["created_at"])
+            self.name = profile_data["name"]
             self.screen_name = profile_data["screen_name"].lower()
             self.description = profile_data["description"]
             self.favorites_count = (
@@ -441,7 +442,6 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
     class Meta(object):
         abstract = True
 
-    # Rookery calls this created_at - I think that would be good for consistency
     created_at = models.DateTimeField(
         null=True, help_text="The time/date that the tweet was published"
     )
@@ -454,9 +454,7 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
     text = models.CharField(
         max_length=1024, null=True
     )  # Could change to 280 - no need to be so long
-    # hashtags = ArrayField(models.CharField(max_length=280), default=list, null=True)
-    # TODO: Change below to a relationship
-    # user_mentions = models.ManyToManyField("")
+
     user_mentions_raw = ArrayField(
         models.CharField(max_length=280), default=list, null=True
     )
