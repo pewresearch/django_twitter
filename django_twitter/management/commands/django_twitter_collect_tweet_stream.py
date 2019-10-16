@@ -116,14 +116,14 @@ class StreamListener(tweepy.StreamListener):
         profile_set=None,
         num_cores=2,
         queue_size=500,
-        limit={},
+        limit=None,
         test=False,
     ):
 
         self.tweet_set = tweet_set
         self.profile_set = profile_set
         self.queue_size = queue_size
-        self.limit = limit
+        self.limit = limit if limit else {}
         self.test = test
 
         self.tweet_queue = []
