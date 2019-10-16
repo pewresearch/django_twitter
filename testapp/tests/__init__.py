@@ -195,15 +195,12 @@ class BaseTests(DjangoTestCase):
         self.assertIsNotNone(score.json["display_scores"]["english"])
         self.assertIsNotNone(score.overall_score_english)
 
-        self.assertGreater(self.TwitterProfile.objects.count(), 0)
-        self.assertGreater(self.TwitterRelationship.objects.count(), 0)
-        self.assertGreater(self.TwitterHashtag.objects.count(), 0)
-
         call_command(
             "django_twitter_get_profile_set_botometer_scores",
             "get_profile_botometer_score",
             num_cores=1,
-            add_to_profile_set="get_profile_set_botometer_score",
+            add_to_profile_set="get_profile_set_botometer_scores",
+            update_existingc=True,  # so we fetch it again and link the profile to the profile set correctly
         )
         self.assertEqual(
             profile.twitter_profile_sets.filter(
@@ -211,6 +208,10 @@ class BaseTests(DjangoTestCase):
             ).count(),
             1,
         )
+
+        self.assertGreater(self.TwitterProfile.objects.count(), 0)
+        self.assertGreater(self.TwitterRelationship.objects.count(), 0)
+        self.assertGreater(self.TwitterHashtag.objects.count(), 0)
 
     def test_stream_command(self):
 
@@ -223,6 +224,7 @@ class BaseTests(DjangoTestCase):
         )
         self.assertGreater(self.Tweet.objects.count(), 0)
         self.Tweet.objects.all().delete()
+
         call_command(
             "django_twitter_collect_tweet_stream",
             num_cores=1,
@@ -236,6 +238,19 @@ class BaseTests(DjangoTestCase):
         self.assertGreater(self.TweetSet.objects.get(name="test").tweets.count(), 0)
         self.assertGreater(
             self.TwitterProfileSet.objects.get(name="test").profiles.count(), 0
+        )
+
+        call_command(
+            "django_twitter_collect_tweet_stream",
+            num_cores=1,
+            limit="1 minute",
+            queue_size=5,
+            test=True,
+            keyword_query="pew",
+            add_to_tweet_set="pew_tweets",
+        )
+        self.assertGreater(
+            self.TweetSet.objects.get(name="pew_tweets").tweets.count(), 0
         )
 
     def tearDown(self):
