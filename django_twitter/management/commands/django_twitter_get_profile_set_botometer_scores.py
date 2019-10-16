@@ -23,7 +23,7 @@ class Command(BaseCommand):
         parser.add_argument("--botometer_key", type=str)
 
         parser.add_argument("--num_cores", type=int, default=2)
-        parser.add_argument("--update", action="store_true", default=False)
+        parser.add_argument("--update_existing", action="store_true", default=False)
 
     def handle(self, *args, **options):
 
@@ -39,13 +39,10 @@ class Command(BaseCommand):
         pool = Pool(processes=options["num_cores"])
         profile_set = get_twitter_profile_set(options["profile_set"])
         twitter_ids = profile_set.profiles.values_list("twitter_id", flat=True)
-        for twitter_id in tqdm(twitter_ids, total=len(twitter_ids)):
+        for twitter_id in tqdm(twitter_ids, total=twitter_ids.count()):
             profile = get_twitter_profile(twitter_id, create=True)
             last_score = profile.most_recent_botometer_score()
-            if not last_score or (
-                options["update"]
-                and last_score.timestamp.date() != datetime.datetime.now().date()
-            ):
+            if not last_score or options["update_existing"]:
                 if options["num_cores"] > 1:
                     pool.apply_async(
                         call_command,
