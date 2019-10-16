@@ -46,7 +46,9 @@ class BaseTests(DjangoTestCase):
 
     def test_user_commands(self):
 
-        call_command("django_twitter_get_user", "pvankessel")
+        call_command(
+            "django_twitter_get_profile", "pvankessel", add_to_profile_set="get_profile"
+        )
         self.assertEqual(
             self.TwitterProfile.objects.filter(screen_name="pvankessel").count(), 1
         )
@@ -61,22 +63,72 @@ class BaseTests(DjangoTestCase):
         self.assertIsNotNone(profile.favorites_count)
         self.assertIsNotNone(profile.screen_name)
 
-        call_command("django_twitter_get_user_followers", profile.twitter_id)
+        call_command(
+            "django_twitter_get_profile_set",
+            "get_profile",
+            num_cores=1,
+            add_to_profile_set="get_profile_set",
+        )
+        self.assertEqual(
+            profile.twitter_profile_sets.filter(name="get_profile_set").count(), 1
+        )
+
+        call_command(
+            "django_twitter_get_profile_followers",
+            profile.twitter_id,
+            add_to_profile_set="get_profile_followers",
+            limit=5,
+        )
         self.assertGreater(profile.followers.count(), 0)
         self.assertGreater(profile.current_followers().count(), 0)
+        call_command(
+            "django_twitter_get_profile_set_followers",
+            "get_profile",
+            num_cores=1,
+            add_to_profile_set="get_profile_set_followers",
+            limit=5,
+        )
+        self.assertGreater(
+            self.TwitterProfileSet.objects.get(
+                name="get_profile_set_followers"
+            ).profiles.count(),
+            1,
+        )
 
-        call_command("django_twitter_get_user_following", profile.twitter_id)
+        call_command(
+            "django_twitter_get_profile_followings",
+            profile.twitter_id,
+            add_to_profile_set="get_profile_followings",
+            limit=5,
+        )
         self.assertGreater(profile.followings.count(), 0)
         self.assertGreater(profile.current_followings().count(), 0)
         call_command(
-            "django_twitter_get_user_tweets",
+            "django_twitter_get_profile_set_followings",
+            "get_profile",
+            num_cores=1,
+            add_to_profile_set="get_profile_set_followings",
+            limit=5,
+        )
+        self.assertGreater(
+            self.TwitterProfileSet.objects.get(
+                name="get_profile_set_followings"
+            ).profiles.count(),
+            1,
+        )
+
+        call_command(
+            "django_twitter_get_profile_tweets",
             profile.twitter_id,
             limit=50,
-            tweet_set_name="test",
+            add_to_profile_set="get_profile_tweets",
+            add_to_tweet_set="get_profile_tweets",
         )
         correct_num_tweets = profile.tweets.count()
         self.assertGreater(correct_num_tweets, 0)
-        for tweet in self.TweetSet.objects.get(name="test").tweets.all()[:5]:
+        for tweet in self.TweetSet.objects.get(name="get_profile_tweets").tweets.all()[
+            :5
+        ]:
             self.assertIsNotNone(tweet.twitter_id)
             self.assertIsNotNone(tweet.text)
             self.assertIsNotNone(tweet.created_at)
@@ -93,24 +145,50 @@ class BaseTests(DjangoTestCase):
         num_tweets = profile.tweets.count()
         self.assertLess(num_tweets, correct_num_tweets)
         call_command(
-            "django_twitter_get_user_tweets",
+            "django_twitter_get_profile_tweets",
             profile.twitter_id,
             ignore_backfill=True,
             max_backfill_date=limit1.strftime("%Y-%m-%d"),
             limit=50,
+            add_to_profile_set="get_profile_tweets",
+            add_to_tweet_set="get_profile_tweets",
         )
         self.assertGreater(profile.tweets.count(), num_tweets)
         num_tweets = profile.tweets.count()
         self.assertLess(num_tweets, correct_num_tweets)
         call_command(
-            "django_twitter_get_user_tweets",
+            "django_twitter_get_profile_tweets",
             profile.twitter_id,
             ignore_backfill=True,
             limit=50,
+            add_to_profile_set="get_profile_tweets",
+            add_to_tweet_set="get_profile_tweets",
         )
         self.assertGreaterEqual(profile.tweets.count(), correct_num_tweets)
 
-        call_command("django_twitter_get_user_botometer_score", profile.twitter_id)
+        call_command(
+            "django_twitter_get_profile_set_tweets",
+            "get_profile_tweets",
+            num_cores=1,
+            ignore_backfill=True,
+            limit=50,
+            add_to_profile_set="get_profile_set_tweets",
+            add_to_tweet_set="get_profile_set_tweets",
+            overwrite=True,  # this is so we don't skip over adding tweets to the tweet set
+        )
+        self.assertEqual(
+            profile.twitter_profile_sets.filter(name="get_profile_set_tweets").count(),
+            1,
+        )
+        self.assertGreater(
+            self.TweetSet.objects.get(name="get_profile_set_tweets").tweets.count(), 0
+        )
+
+        call_command(
+            "django_twitter_get_profile_botometer_score",
+            profile.twitter_id,
+            add_to_profile_set="get_profile_botometer_score",
+        )
         self.assertGreater(profile.botometer_scores.count(), 0)
         score = profile.most_recent_botometer_score()
         self.assertIsNotNone(score.json["cap"]["english"])
@@ -120,6 +198,19 @@ class BaseTests(DjangoTestCase):
         self.assertGreater(self.TwitterProfile.objects.count(), 0)
         self.assertGreater(self.TwitterRelationship.objects.count(), 0)
         self.assertGreater(self.TwitterHashtag.objects.count(), 0)
+
+        call_command(
+            "django_twitter_get_profile_set_botometer_scores",
+            "get_profile_botometer_score",
+            num_cores=1,
+            add_to_profile_set="get_profile_set_botometer_score",
+        )
+        self.assertEqual(
+            profile.twitter_profile_sets.filter(
+                name="get_profile_set_botometer_scores"
+            ).count(),
+            1,
+        )
 
     def test_stream_command(self):
 
@@ -137,8 +228,8 @@ class BaseTests(DjangoTestCase):
             num_cores=1,
             limit="10 tweets",
             queue_size=5,
-            profile_set_name="test",
-            tweet_set_name="test",
+            add_to_profile_set="test",
+            add_to_tweet_set="test",
             test=True,
         )
         self.assertGreater(self.Tweet.objects.count(), 0)

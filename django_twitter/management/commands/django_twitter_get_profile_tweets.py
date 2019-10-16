@@ -9,17 +9,23 @@ from dateutil.parser import parse as date_parse
 
 from pewhooks.twitter import TwitterAPIHandler
 
-from django_twitter.utils import get_twitter_user
+from django_twitter.utils import (
+    get_twitter_profile_json,
+    get_twitter_profile,
+    get_tweet_set,
+    get_twitter_profile_set,
+)
 
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
 
         parser.add_argument("twitter_id", type=str)
+        parser.add_argument("--add_to_profile_set", type=str)
+        parser.add_argument("--add_to_tweet_set", type=str)
         parser.add_argument("--ignore_backfill", action="store_true", default=False)
         parser.add_argument("--overwrite", action="store_true", default=False)
         parser.add_argument("--max_backfill_date", type=str)
-        parser.add_argument("--tweet_set_name", type=str)
         parser.add_argument("--no_progress_bar", action="store_true", default=False)
         parser.add_argument("--limit", type=int, default=None)
 
@@ -42,69 +48,49 @@ class Command(BaseCommand):
             max_backfill_date = date_parse(options["max_backfill_date"])
 
         tweet_set = None
-        if options["tweet_set_name"]:
-            tweet_set_model = apps.get_model(
-                app_label=settings.TWITTER_APP, model_name=settings.TWEET_SET_MODEL
-            )
-            tweet_set, created = tweet_set_model.objects.get_or_create(
-                name=options["tweet_set_name"]
-            )
+        if options["add_to_tweet_set"]:
+            tweet_set = get_tweet_set(options["add_to_tweet_set"])
+
+        twitter_profile_set = None
+        if options["add_to_profile_set"]:
+            twitter_profile_set = get_twitter_profile_set(options["add_to_profile_set"])
 
         scanned_count, updated_count = 0, 0
-        user_model = apps.get_model(
-            app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL
-        )
-        twitter_json = get_twitter_user(options["twitter_id"], self.twitter)
+        twitter_json = get_twitter_profile_json(options["twitter_id"], self.twitter)
         if twitter_json:
-            try:
-                twitter_user, created = user_model.objects.get_or_create(
-                    twitter_id=twitter_json.id_str
-                )
-            except user_model.MultipleObjectsReturned:
-                print(
-                    "Warning: multiple users found for {}".format(twitter_json.id_str)
-                )
-                print(
-                    "For flexibility, Django Twitter does not enforce a unique constraint on twitter_id"
-                )
-                print(
-                    "But in this case it can't tell which user to use, so it's picking the most recently updated one"
-                )
-                twitter_user = user_model.objects.filter(
-                    twitter_id=twitter_json.id_str
-                ).order_by("-last_update_time")[0]
+            twitter_profile = get_twitter_profile(twitter_json.id_str)
 
             tweet_model = apps.get_model(
                 app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL
             )
             # Get list of current tweets
             existing_tweets = list(
-                twitter_user.tweets.values_list("twitter_id", flat=True)
+                twitter_profile.tweets.values_list("twitter_id", flat=True)
             )
 
             # Iterate through all tweets in timeline
 
             if options["no_progress_bar"]:
-                iterator = self.twitter.iterate_user_timeline(
+                iterator = self.twitter.iterate_profile_timeline(
                     options["twitter_id"], return_errors=True
                 )
             else:
                 iterator = tqdm(
-                    self.twitter.iterate_user_timeline(
+                    self.twitter.iterate_profile_timeline(
                         options["twitter_id"], return_errors=True
                     ),
                     desc="Retrieving tweets for user {}".format(
-                        twitter_user.screen_name
+                        twitter_profile.screen_name
                     ),
                 )
 
-            print("Retrieving tweets for user {}".format(twitter_user.screen_name))
+            print("Retrieving tweets for user {}".format(twitter_profile.screen_name))
             keep_pulling = True
             for tweet_json in iterator:
                 if type(tweet_json) == int:
-                    twitter_user.is_private = True
-                    twitter_user.save()
-                    print("User {} is private".format(twitter_user.screen_name))
+                    twitter_profile.is_private = True
+                    twitter_profile.save()
+                    print("User {} is private".format(twitter_profile.screen_name))
                     break
                 else:
 
@@ -124,10 +110,8 @@ class Command(BaseCommand):
                             import pdb
 
                             pdb.set_trace()
-
-                    keep_pulling = True
                     if (
-                        twitter_user.tweet_backfilled
+                        twitter_profile.tweet_backfilled
                         and tweet_json.id_str in existing_tweets
                         and not options["ignore_backfill"]
                     ):
@@ -147,10 +131,12 @@ class Command(BaseCommand):
                 if not keep_pulling:
                     break
 
-            twitter_user.tweet_backfilled = True
-            twitter_user.save()
+            twitter_profile.tweet_backfilled = True
+            twitter_profile.save()
+            if twitter_profile_set:
+                twitter_profile_set.profiles.add(twitter_profile)
             print(
                 "{}: {} tweets scanned, {} updated".format(
-                    str(twitter_user), scanned_count, updated_count
+                    str(twitter_profile), scanned_count, updated_count
                 )
             )
