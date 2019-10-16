@@ -23,6 +23,8 @@ from pewtils import decode_text, is_not_null, is_null
 from django_pewtils import consolidate_objects
 from future.utils import with_metaclass
 
+from django_twitter.utils import get_twitter_profile
+
 
 class AbstractTwitterBase(models.base.ModelBase):
 
@@ -79,7 +81,7 @@ class AbstractTwitterBase(models.base.ModelBase):
                 (
                     models.ManyToManyField,
                     "TwitterProfileModel",
-                    "user_mentions",
+                    "profile_mentions",
                     "tweet_mentions",
                     None,
                     True,
@@ -268,7 +270,7 @@ class AbstractTwitterProfile(
 
     tweet_backfilled = models.BooleanField(
         default=False,
-        help_text="An indicator used in the sync_tweets management function; True indicates that the user's \
+        help_text="An indicator used in the sync_tweets management function; True indicates that the profile's \
         tweet history has been backfilled as far as possible, so the sync function will stop after it hits an existing \
         tweet the next time it runs.",
     )
@@ -455,7 +457,7 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
         max_length=1024, null=True
     )  # Could change to 280 - no need to be so long
 
-    user_mentions_raw = ArrayField(
+    profile_mentions_raw = ArrayField(
         models.CharField(max_length=280), default=list, null=True
     )
 
@@ -477,7 +479,7 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
     profile = models.ForeignKey(your_app.TwitterProfileModel, related_name="tweets") 
     hashtags = models.ManyToManyField(your_app.TwitterHashtagModel, related_name="tweets")
     place = models.ForeignKey(your_app.TwitterPlaceModel, related_name="tweets")
-    user_mentions = models.ManyToManyField(your_app.TwitterProfileModel, related_name="tweet_mentions")
+    profile_mentions = models.ManyToManyField(your_app.TwitterProfileModel, related_name="tweet_mentions")
     retweeted_status = models.ForeignKey(your_app.TweetModel, related_name="retweets")
     in_reply_to_status = models.ForeignKey(your_app.TweetModel, related_name="replies")
     quoted_status = models.ForeignKey(your_app.TweetModel, related_name="quotes")
@@ -526,56 +528,40 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
                 self.refresh_from_db()
 
             # PROFILE
-            try:
-                author, created = profile_model.objects.get_or_create(
-                    twitter_id=tweet_data["user"]["id_str"]
-                )
-            except profile_model.MultipleObjectsReturned:
-                print(
-                    "Warning: multiple users found for {}".format(
-                        tweet_data["user"]["id_str"]
-                    )
-                )
-                print(
-                    "For flexibility, Django Twitter does not enforce a unique constraint on twitter_id"
-                )
-                print(
-                    "But in this case it can't tell which user to use, so it's picking the most recently updated one"
-                )
-                author = profile_model.objects.filter(
-                    twitter_id=tweet_data["user"]["id_str"]
-                ).order_by("-last_update_time")[0]
+            author = get_twitter_profile(tweet_data["user"]["id_str"], create=True)
             author.update_from_json(tweet_data["user"])
             self.profile = author
 
-            # USER MENTIONS
-            user_mentions = []
-            for user_mention in tweet_data.get("entities", {}).get("user_mentions", []):
+            # PROFILE MENTIONS
+            profile_mentions = []
+            for profile_mention in tweet_data.get("entities", {}).get(
+                "user_mentions", []
+            ):
                 existing_profiles = profile_model.objects.filter(
-                    twitter_id=user_mention["id_str"]
+                    twitter_id=profile_mention["id_str"]
                 )
                 if existing_profiles.count() > 1:
                     print(
-                        "Warning: multiple users found for {}".format(
-                            user_mention["id_str"]
+                        "Warning: multiple profiles found for {}".format(
+                            profile_mention["id_str"]
                         )
                     )
                     print(
                         "For flexibility, Django Twitter does not enforce a unique constraint on twitter_id"
                     )
                     print(
-                        "But in this case it can't tell which user to use, so it's associating this tweet with all"
+                        "But in this case it can't tell which profile to use, so it's associating this tweet with all"
                     )
                     for existing in existing_profiles:
-                        user_mentions.append(existing)
+                        profile_mentions.append(existing)
                 elif existing_profiles.count() == 1:
-                    user_mentions.append(existing_profiles[0])
+                    profile_mentions.append(existing_profiles[0])
                 else:
                     mentioned_profile, created = profile_model.objects.get_or_create(
-                        twitter_id=user_mention["id_str"]
+                        twitter_id=profile_mention["id_str"]
                     )
-                    user_mentions.append(mentioned_profile)
-            self.user_mentions.set(user_mentions)
+                    profile_mentions.append(mentioned_profile)
+            self.profile_mentions.set(profile_mentions)
 
             # HASHTAGS
             hashtags = []
@@ -600,25 +586,9 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
                 if not tweet_obj.profile and tweet_data.get(
                     "in_reply_to_user_id_str", None
                 ):
-                    try:
-                        reply_author_obj, created = profile_model.objects.get_or_create(
-                            twitter_id=tweet_data["in_reply_to_user_id_str"].lower()
-                        )
-                    except profile_model.MultipleObjectsReturned:
-                        print(
-                            "Warning: multiple users found for {}".format(
-                                tweet_data["in_reply_to_user_id_str"]
-                            )
-                        )
-                        print(
-                            "For flexibility, Django Twitter does not enforce a unique constraint on twitter_id"
-                        )
-                        print(
-                            "But in this case it can't tell which user to use, so it's picking the most recently updated one"
-                        )
-                        reply_author_obj = profile_model.objects.filter(
-                            twitter_id=tweet_data["in_reply_to_user_id_str"].lower()
-                        ).order_by("-last_update_time")[0]
+                    reply_author_obj = get_twitter_profile(
+                        tweet_data["in_reply_to_user_id_str"].lower(), create=True
+                    )
                     tweet_obj.profile = reply_author_obj
                     tweet_obj.save()
                 self.in_reply_to_status = tweet_obj

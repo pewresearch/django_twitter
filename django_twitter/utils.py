@@ -15,10 +15,74 @@ from django.db.models import Count
 from pewanalytics.text import TextDataFrame
 
 
-def get_twitter_user(twitter_id, twitter_handler):
+def get_tweet_set(tweet_set_name):
+
+    tweet_set_model = apps.get_model(
+        app_label=settings.TWITTER_APP, model_name=settings.TWEET_SET_MODEL
+    )
+    tweet_set, created = tweet_set_model.objects.get_or_create(name=tweet_set_name)
+    return tweet_set
+
+
+def get_twitter_profile_set(twitter_profile_set_name):
 
     """
-    Helper function to get a profile from a Twitter ID. Grabs the JSON from the API, but if an error is returned
+    Helper function to get or create a TwitterProfileSet
+
+    :param twitter_profile_set_name: The name of the profile set
+    :return: A TwitterProfileSet object
+    """
+
+    twitter_profile_set_model = apps.get_model(
+        app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_SET_MODEL
+    )
+    twitter_profile_set, created = twitter_profile_set_model.objects.get_or_create(
+        name=twitter_profile_set_name
+    )
+    return twitter_profile_set
+
+
+def get_twitter_profile(twitter_id, create=False):
+
+    """
+    Helper function to get an existing profile from a Twitter ID. If multiple profiles are returned (Django Twitter
+    does not enforce a unique constraint) then the most recently updated profile is selected.
+
+    :param twitter_id: A Twitter ID (NOT a username)
+    :param create: If a profile doesn't exist, create it
+    :return: An existing TwitterProfile record, if one exists
+    """
+
+    profile_model = apps.get_model(
+        app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL
+    )
+    try:
+        if create:
+            existing_profile, created = profile_model.objects.get_or_create(
+                twitter_id=twitter_id
+            )
+        else:
+            existing_profile = profile_model.objects.get(twitter_id=twitter_id)
+    except profile_model.DoesNotExist:
+        existing_profile = None
+    except profile_model.MultipleObjectsReturned:
+        print("Warning: multiple profiles found for {}".format(twitter_id))
+        print(
+            "For flexibility, Django Twitter does not enforce a unique constraint on twitter_id"
+        )
+        print(
+            "But in this case it can't tell which profile to use, so it's picking the most recently updated one"
+        )
+        existing_profile = profile_model.objects.filter(twitter_id=twitter_id).order_by(
+            "-last_update_time"
+        )[0]
+    return existing_profile
+
+
+def get_twitter_profile_json(twitter_id, twitter_handler):
+
+    """
+    Helper function to get a profile JSON from a Twitter ID. Grabs the JSON from the API, but if an error is returned
     it searches for the profile in the database and updates it with the error code.
 
     :param twitter_id: A Twitter ID or username
@@ -26,27 +90,13 @@ def get_twitter_user(twitter_id, twitter_handler):
     :return: JSON for the profile
     """
 
-    user_model = apps.get_model(
+    profile_model = apps.get_model(
         app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL
     )
-    twitter_json = twitter_handler.get_user(twitter_id, return_errors=True)
+    twitter_json = twitter_handler.get_profile(twitter_id, return_errors=True)
     if isinstance(twitter_json, int):
         error_code = twitter_json
-        try:
-            existing_profile = user_model.objects.get(twitter_id=twitter_id)
-        except user_model.DoesNotExist:
-            existing_profile = None
-        except user_model.MultipleObjectsReturned:
-            print("Warning: multiple users found for {}".format(twitter_id))
-            print(
-                "For flexibility, Django Twitter does not enforce a unique constraint on twitter_id"
-            )
-            print(
-                "But in this case it can't tell which user to use, so it's picking the most recently updated one"
-            )
-            existing_profile = user_model.objects.filter(
-                twitter_id=twitter_id
-            ).order_by("-last_update_time")[0]
+        existing_profile = get_twitter_profile(twitter_id)
         if existing_profile:
             existing_profile.twitter_error_code = error_code
             existing_profile.save()
@@ -88,7 +138,7 @@ def identify_unusual_profiles_by_tweet_text(profiles, most_recent_n=10):
     :return: A 2-tuple of dataframes (most_similar, most_unique)
     """
 
-    user_model = apps.get_model(
+    profile_model = apps.get_model(
         app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL
     )
     profiles = pd.DataFrame.from_records(profiles.values("twitter_id"))
@@ -96,7 +146,7 @@ def identify_unusual_profiles_by_tweet_text(profiles, most_recent_n=10):
     for twitter_id in tqdm(profiles["twitter_id"].values, desc="Gathering tweet text"):
         if twitter_id:
             tweets = (
-                user_model.objects.get(twitter_id=twitter_id)
+                profile_model.objects.get(twitter_id=twitter_id)
                 .tweets.filter(text__isnull=False)
                 .order_by("-created_at")[:most_recent_n]
             )
