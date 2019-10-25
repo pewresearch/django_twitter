@@ -200,7 +200,7 @@ class BaseTests(DjangoTestCase):
             "get_profile_botometer_score",
             num_cores=1,
             add_to_profile_set="get_profile_set_botometer_scores",
-            update_existingc=True,  # so we fetch it again and link the profile to the profile set correctly
+            update_existing=True,  # so we fetch it again and link the profile to the profile set correctly
         )
         self.assertEqual(
             profile.twitter_profile_sets.filter(
