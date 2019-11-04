@@ -2,6 +2,7 @@
 import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+LOCAL_CACHE_ROOT = "cache"
 
 INSTALLED_APPS = [
     "django.contrib.auth",
