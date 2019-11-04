@@ -327,35 +327,6 @@ class AbstractTwitterProfile(
             else self.twitter_id
         )
 
-    def update_from_json_gnip(self, profile_data):
-        profile_data = profile_data["actor"]
-        self.twitter_id = profile_data["id"]
-        self.created_at = date_parse(profile_data["postedTime"])
-        self.screen_name = profile_data["preferredUsername"].lower()
-        self.description = profile_data["summary"]
-        # Not sure if the if statement below is ever called
-        self.favorites_count = (
-            profile_data["favoritesCount"]
-            if "favorites_count" in list(profile_data.keys())
-            else profile_data["favouritesCount"]
-        )
-        self.followers_count = profile_data["followersCount"]
-        self.followings_count = profile_data["friendsCount"]
-        self.listed_count = profile_data["listedCount"]
-        self.language = profile_data["language"]
-        self.statuses_count = profile_data["statusesCount"]
-        self.profile_image_url = profile_data["image"]
-        self.is_verified = profile_data["verified"]
-        # Below is not in gnip
-        # self.status = profile_data['status']['text'] if 'status' in profile_data.keys() else None
-        self.contributors_enabled = profile_data["contributors_enabled"]
-        self.urls = [link["href"] for link in profile_data["links"]]
-        # self.urls = [url['expanded_url'] for url in profile_data.get('entities', {}).get('url', {}).get('urls', []) if
-        #              url['expanded_url']] if "url" in profile_data.get('entities', {}).keys() else profile_data.get(
-        #     'url', '')
-        self.json = profile_data
-        self.save()
-
     def update_from_json(self, profile_data=None):
 
         if not profile_data:
