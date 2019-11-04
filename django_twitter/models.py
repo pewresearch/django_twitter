@@ -6,6 +6,7 @@ from builtins import object
 import re
 import json
 import simple_history
+import django
 
 from django.db import models
 from django.contrib.postgres.fields import ArrayField, JSONField
@@ -402,7 +403,13 @@ class AbstractTwitterProfile(
             urls = [u for u in urls if is_not_null(u)]
             self.urls = urls
             self.json = profile_data
-            self.save()
+            try:
+                self.save()
+            except (django.db.utils.IntegrityError, ValueError):
+                self.description = decode_text(self.description)
+                self.screen_name = decode_text(self.screen_name)
+                self.status = decode_text(self.status)
+                self.save()
 
     def url(self):
         return "http://www.twitter.com/intent/user?user_id={0}".format(
