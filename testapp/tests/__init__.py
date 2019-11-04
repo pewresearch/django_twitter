@@ -213,6 +213,91 @@ class BaseTests(DjangoTestCase):
         self.assertGreater(self.TwitterRelationship.objects.count(), 0)
         self.assertGreater(self.TwitterHashtag.objects.count(), 0)
 
+    def test_utility_functions(self):
+
+        from django_twitter.utils import (
+            identify_unusual_profiles_by_descriptions,
+            identify_unusual_profiles_by_tweet_text,
+            get_monthly_twitter_activity,
+            find_missing_date_ranges,
+        )
+
+        # We're going to assume that Justin Bieber will always be quite distinctive from the Pew accounts
+        # And that none of these accounts will disappear anytime soon
+        for handle in [
+            "pewresearch",
+            "pewglobal",
+            "pewmethods",
+            "pewjournalism",
+            "facttank",
+            "pewscience",
+            "pewreligion",
+            "pewhispanic",
+            "pewinternet",
+            "pvankessel",
+            "justinbieber",
+        ]:
+            call_command(
+                "django_twitter_get_profile", handle, add_to_profile_set="test"
+            )
+        call_command(
+            "django_twitter_get_profile_set_tweets",
+            "test",
+            num_cores=1,
+            ignore_backfill=True,
+            limit=25,
+            overwrite=True,
+        )
+        profiles = self.TwitterProfileSet.objects.get(name="test").profiles.all()
+
+        most_similar, most_unique = identify_unusual_profiles_by_tweet_text(profiles)
+        self.assertEqual(len(most_unique), 1)
+        self.assertEqual(
+            self.TwitterProfile.objects.get(
+                twitter_id=most_unique["twitter_id"].values[0]
+            ).screen_name,
+            "justinbieber",
+        )
+
+        most_similar, most_unique = identify_unusual_profiles_by_descriptions(profiles)
+        self.assertEqual(len(most_unique), 1)
+        self.assertEqual(
+            self.TwitterProfile.objects.get(
+                twitter_id=most_unique["twitter_id"].values[0]
+            ).screen_name,
+            "justinbieber",
+        )
+
+        results = get_monthly_twitter_activity(
+            profiles,
+            datetime.date(2018, 1, 1),
+            max_date=datetime.datetime.now().date() + datetime.timedelta(days=1),
+        )
+        self.assertEqual(len(results), profiles.count())
+        current_month = "{}_{}".format(
+            datetime.datetime.now().year, datetime.datetime.now().month
+        )
+        self.assertIn(current_month, results.columns)
+        self.assertGreater(results[current_month].sum(), 0)
+
+        results = find_missing_date_ranges(
+            profiles,
+            datetime.date(2018, 1, 1),
+            max_date=datetime.datetime.now().date() + datetime.timedelta(days=1),
+            min_consecutive_missing_dates=1,
+        )
+        earliest_tweet = (
+            self.Tweet.objects.filter(profile__in=profiles)
+            .order_by("created_at")[0]
+            .created_at
+        )
+        min_missing = (earliest_tweet - datetime.datetime(2018, 1, 1)).days
+        for profile in profiles:
+            self.assertGreaterEqual(
+                results[results["twitter_id"] == profile.twitter_id]["range"].max(),
+                min_missing,
+            )
+
     def test_stream_command(self):
 
         call_command(
@@ -254,4 +339,9 @@ class BaseTests(DjangoTestCase):
         )
 
     def tearDown(self):
-        pass
+        from django.conf import settings
+        import shutil, os
+
+        cache_path = os.path.join(settings.BASE_DIR, settings.LOCAL_CACHE_ROOT)
+        if os.path.exists(cache_path):
+            shutil.rmtree(cache_path)
