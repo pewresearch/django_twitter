@@ -110,7 +110,7 @@ def _identify_unusual_text(profiles, text_col):
     empty = profiles[(profiles[text_col].isnull()) | (profiles[text_col] == "")]
     not_empty = profiles[~(profiles[text_col].isnull()) & ~(profiles[text_col] == "")]
     tdf = TextDataFrame(
-        not_empty, text_col, min_frequency=1, analyzer="char", ngram_range=(1, 10)
+        not_empty, text_col, min_df=1, analyzer="char", ngram_range=(1, 10)
     )
     similarities = cosine_similarity(tdf.tfidf, tdf.tfidf)
     not_empty["avg_cosine"] = pd.DataFrame(similarities, index=not_empty.index).mean()
@@ -169,7 +169,7 @@ def identify_unusual_profiles_by_descriptions(profiles):
     descriptions = pd.DataFrame.from_records(
         profiles.values("twitter_id", "description")
     )
-    return _identify_unusual_text(profiles, "description")
+    return _identify_unusual_text(descriptions, "description")
 
 
 def get_monthly_twitter_activity(profiles, min_date, max_date=None):
