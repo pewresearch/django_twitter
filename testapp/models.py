@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 from django_twitter.models import *
 
@@ -8,46 +9,41 @@ class Politician(models.Model):
     pass
 
 
-class TwitterProfile(AbstractTwitterProfile):
+if settings.TWITTER_APP == "testapp":
 
-    politician = models.ForeignKey(
-        "testapp.Politician",
-        related_name="twitter_profiles",
-        null=True,
-        on_delete=models.SET_NULL,
-    )
+    class TwitterProfile(AbstractTwitterProfile):
 
+        politician = models.ForeignKey(
+            "testapp.Politician",
+            related_name="twitter_profiles",
+            null=True,
+            on_delete=models.SET_NULL,
+        )
 
-class Tweet(AbstractTweet):
+    class Tweet(AbstractTweet):
 
-    pass
+        pass
 
+    class BotometerScore(AbstractBotometerScore):
 
-class BotometerScore(AbstractBotometerScore):
+        pass
 
-    pass
+    class TwitterRelationship(AbstractTwitterRelationship):
 
+        pass
 
-class TwitterRelationship(AbstractTwitterRelationship):
+    class TwitterHashtag(AbstractTwitterHashtag):
 
-    pass
+        pass
 
+    class TwitterPlace(AbstractTwitterPlace):
 
-class TwitterHashtag(AbstractTwitterHashtag):
+        pass
 
-    pass
+    class TweetSet(AbstractTweetSet):
 
+        pass
 
-class TwitterPlace(AbstractTwitterPlace):
+    class TwitterProfileSet(AbstractTwitterProfileSet):
 
-    pass
-
-
-class TweetSet(AbstractTweetSet):
-
-    pass
-
-
-class TwitterProfileSet(AbstractTwitterProfileSet):
-
-    pass
+        pass
