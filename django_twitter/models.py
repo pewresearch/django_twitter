@@ -851,3 +851,32 @@ class AbstractTwitterProfileSet(with_metaclass(AbstractTwitterBase, models.Model
     def __str__(self):
 
         return self.name
+
+
+if settings.TWITTER_APP == "django_twitter":
+
+    print("WOOT 1")
+
+    class TwitterProfile(AbstractTwitterProfile):
+        pass
+
+    class Tweet(AbstractTweet):
+        pass
+
+    class BotometerScore(AbstractBotometerScore):
+        pass
+
+    class TwitterRelationship(AbstractTwitterRelationship):
+        pass
+
+    class TwitterHashtag(AbstractTwitterHashtag):
+        pass
+
+    class TwitterPlace(AbstractTwitterPlace):
+        pass
+
+    class TweetSet(AbstractTweetSet):
+        pass
+
+    class TwitterProfileSet(AbstractTwitterProfileSet):
+        pass
