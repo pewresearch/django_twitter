@@ -11,8 +11,14 @@ from django.core.management import call_command
 from django.conf import settings
 from django.apps import apps
 
-
-class BaseTests(DjangoTestCase):
+# TODO: if you try to overwrite the settings, it fails because the models.py
+# TODO: files get loaded before the settings get overwritten
+# migrations = copy.deepcopy(settings.MIGRATION_MODULES)
+# migrations["testapp"] = "testapp.migrations.django_twitter_models"
+#
+#
+# @override_settings(TWITTER_APP="django_twitter", MIGRATION_MODULES=migrations)
+class DjangoTwitterTests(DjangoTestCase):
 
     """
     To test, navigate to django_twitter root folder and run `python manage.py test testapp.tests`
