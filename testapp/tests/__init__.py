@@ -11,12 +11,12 @@ from django.core.management import call_command
 from django.conf import settings
 from django.apps import apps
 
-# TODO: if you try to overwrite the settings, it fails because the models.py
-# TODO: files get loaded before the settings get overwritten
+# TODO: if you try to override the settings, it fails because the models.py files get loaded before the settings
+#  get overwritten, so the conditionals in models.py use the testapp.settings.py defaults instead of the overrides.
+#  There may be a way to modify django_twitter.apps to conditionally load or ignore the models rather than hard-code
+#  a conditional into models.py, but I haven't figured that out yet
 # migrations = copy.deepcopy(settings.MIGRATION_MODULES)
 # migrations["testapp"] = "testapp.migrations.django_twitter_models"
-#
-#
 # @override_settings(TWITTER_APP="django_twitter", MIGRATION_MODULES=migrations)
 class DjangoTwitterTests(DjangoTestCase):
 
