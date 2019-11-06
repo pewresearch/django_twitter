@@ -7,6 +7,7 @@ LOCAL_CACHE_ROOT = "cache"
 INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
+    "django.contrib.sites",
     "django_twitter",
     "testapp",
 ]
@@ -26,7 +27,12 @@ DATABASES = {
 
 SECRET_KEY = "testing"
 
+# TWITTER_APP = "django_twitter"
+# MIGRATION_MODULES = {"testapp": "testapp.migrations.django_twitter_models"}
+
 TWITTER_APP = "testapp"
+MIGRATION_MODULES = {"testapp": "testapp.migrations.testapp_models"}
+
 TWITTER_PROFILE_MODEL = "TwitterProfile"
 TWEET_MODEL = "Tweet"
 BOTOMETER_SCORE_MODEL = "BotometerScore"
