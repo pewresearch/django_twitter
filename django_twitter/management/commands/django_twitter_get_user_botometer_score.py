@@ -39,7 +39,12 @@ class Command(BaseCommand):
         if twitter_json:
 
             user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
-            twitter_user, created = user_model.objects.get_or_create(twitter_id=twitter_json.id_str)
+            try: twitter_user, created = user_model.objects.get_or_create(twitter_id=twitter_json.id_str)
+            except user_model.MultipleObjectsReturned:
+                print("Warning: multiple users found for {}".format(twitter_json.id_str))
+                print("For flexibility, Django Twitter does not enforce a unique constraint on twitter_id")
+                print("But in this case it can't tell which user to use, so it's picking the most recently updated one")
+                twitter_user = user_model.objects.filter(twitter_id=twitter_json.id_str).order_by("-last_update_time")[0]
 
             botometer_scores = self.twitter.get_user_botometer_score(options["twitter_id"])
             botometer_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.BOTOMETER_SCORE_MODEL)
