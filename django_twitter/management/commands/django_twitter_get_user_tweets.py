@@ -46,7 +46,12 @@ class Command(BaseCommand):
         user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
         twitter_json = get_twitter_user(options["twitter_id"], self.twitter)
         if twitter_json:
-            twitter_user, created = user_model.objects.get_or_create(twitter_id=twitter_json.id_str)
+            try: twitter_user, created = user_model.objects.get_or_create(twitter_id=twitter_json.id_str)
+            except user_model.MultipleObjectsReturned:
+                print("Warning: multiple users found for {}".format(twitter_json.id_str))
+                print("For flexibility, Django Twitter does not enforce a unique constraint on twitter_id")
+                print("But in this case it can't tell which user to use, so it's picking the most recently updated one")
+                twitter_user = user_model.objects.filter(twitter_id=twitter_json.id_str).order_by("-last_update_time")[0]
 
             tweet_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL)
             # Get list of current tweets
@@ -110,7 +115,6 @@ class Command(BaseCommand):
                 twitter_id=tweet_json.id_str
             )
             tweet.update_from_json(tweet_json._json)
-            tweet.update_relations_from_json(tweet_json._json)
             if tweet_set:
                 tweet_set.tweets.add(tweet)
             updated_count += 1
