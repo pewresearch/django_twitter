@@ -1,5 +1,7 @@
 import pandas as pd
 
+from tqdm import tqdm
+
 from django.conf import settings
 from django.apps import apps
 
@@ -43,7 +45,7 @@ def get_twitter_profile_dataframe(profiles, date, *extra_values):
     """
 
     rows = []
-    for profile in profiles:
+    for profile in tqdm(profiles, desc="Extracting Twitter profiles"):
         history = profile.history.filter(history_date__lte=date).order_by("-history_date")
         if history.count() > 0:
             row = history.values(
@@ -68,13 +70,14 @@ def get_twitter_profile_dataframe(profiles, date, *extra_values):
                 "history_date",
                 *extra_values
             )[0]
-            row["most_recent_history"] = profile.history.order_by("-history_date")[0].history_date
-            row["earliest_history"] = profile.history.order_by("history_date")[0].history_date
+            row["history_date"] = row["history_date"].date()
+            row["most_recent_history"] = profile.history.order_by("-history_date")[0].history_date.date()
+            row["earliest_history"] = profile.history.order_by("history_date")[0].history_date.date()
             rows.append(row)
     df = pd.DataFrame(rows)
     if len(rows) > 0:
-        df['created_at'] = df['created_at'].dt.tz_convert(tz='US/Eastern')
-        df['last_update_time'] = df['last_update_time'].dt.tz_convert(tz='US/Eastern')
+        df['created_at'] = df['created_at'].dt.date
+        df['last_update_time'] = df['last_update_time'].dt.date
 
     return df
 
@@ -118,7 +121,7 @@ def get_tweet_dataframe(profiles, start_date, end_date, *extra_values):
         "in_reply_to_status__twitter_id": "in_reply_to_status",
         "quoted_status__twitter_id": "quoted_status"
     })
-    df['created_at'] = df['created_at'].dt.tz_convert(tz='US/Eastern')
-    df['last_update_time'] = df['last_update_time'].dt.tz_convert(tz='US/Eastern')
+    df['created_at'] = df['created_at'].dt.date
+    df['last_update_time'] = df['last_update_time'].dt.date
 
     return df
