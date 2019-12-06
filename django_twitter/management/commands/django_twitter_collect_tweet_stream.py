@@ -11,29 +11,37 @@ from tqdm import tqdm
 from django_pewtils import reset_django_connection, reset_django_connection_wrapper
 from pewhooks.twitter import TwitterAPIHandler
 
+from django_twitter.utils import get_twitter_profile_set, get_tweet_set
+
 allowable_limit_types = {
-    'minute': ["m", "min", "minutes"],
-    'hour': ['h', 'hour'],
-    'day': ['d', 'days'],
-    'tweet': ['t', 'tweets']
+    "minute": ["m", "min", "minutes", "minute"],
+    "hour": ["h", "hour", "hours"],
+    "day": ["d", "days", "day"],
+    "tweet": ["t", "tweets"],
 }
 
 
 class Command(BaseCommand):
-
     def add_arguments(self, parser):
 
-        parser.add_argument("--tweet_set", type=str)
-        parser.add_argument('--num_cores', type=int, default=2)
-        parser.add_argument('--queue_size', type=int, default=500)
-        parser.add_argument('--keyword_query', type=str)
-        parser.add_argument("--twitter_profile_set", type=str)
-        parser.add_argument('--limit', type=str, default='', help="Accepts: x tweets, x minutes, x hours, x days")
+        parser.add_argument("--num_cores", type=int, default=2)
+        parser.add_argument("--queue_size", type=int, default=500)
+        parser.add_argument("--keyword_query", type=str)
+        parser.add_argument(
+            "--limit",
+            type=str,
+            default="",
+            help="Accepts: x tweets, x minutes, x hours, x days",
+        )
+        parser.add_argument("--test", action="store_true", default=False)
 
-        parser.add_argument('--api_key', type=str)
-        parser.add_argument('--api_secret', type=str)
-        parser.add_argument('--access_token', type=str)
-        parser.add_argument('--access_secret', type=str)
+        parser.add_argument("--add_to_tweet_set", type=str)
+        parser.add_argument("--add_to_profile_set", type=str)
+
+        parser.add_argument("--api_key", type=str)
+        parser.add_argument("--api_secret", type=str)
+        parser.add_argument("--access_token", type=str)
+        parser.add_argument("--access_secret", type=str)
 
     def handle(self, *args, **options):
 
@@ -41,31 +49,24 @@ class Command(BaseCommand):
             api_key=options["api_key"],
             api_secret=options["api_secret"],
             access_token=options["access_token"],
-            access_secret=options["access_secret"]
+            access_secret=options["access_secret"],
         )
-
-        tweet_set = None
-        if options["tweet_set"]:
-            tweet_set_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_SET_MODEL)
-            tweet_set, created = tweet_set_model.objects.get_or_create(name=options["tweet_set"])
-
-        profile_set = None
-        if options['twitter_profile_set']:
-            profile_set = options['twitter_profile_set']
 
         # determine time / tweets
         self.limit = {}
-        if options["limit"] == '':
+        if options["limit"] == "":
             # could technically put these above but want to make it more explicit
-            self.limit['limit_type'] = None
-            self.limit['limit_count'] = None
-            self.limit['limit_time'] = None
+            self.limit["limit_type"] = None
+            self.limit["limit_count"] = None
+            self.limit["limit_time"] = None
         else:
-            limit_values = options["limit"].split(' ')
+            limit_values = options["limit"].split(" ")
 
             # error checking
             if not len(limit_values) == 2:
-                raise ValueError("Please specify limit in format: <number> <duration/tweets>.")
+                raise ValueError(
+                    "Please specify limit in format: <number> <duration/tweets>."
+                )
             try:
                 temp = int(limit_values[0])
             except:
@@ -74,7 +75,7 @@ class Command(BaseCommand):
             passed_allowed_limit_type = False
             for limit_type in list(allowable_limit_types.keys()):
                 if limit_values[1] in allowable_limit_types[limit_type]:
-                    self.limit['limit_type'] = limit_type
+                    self.limit["limit_type"] = limit_type
                     passed_allowed_limit_type = True
                     break
             if not passed_allowed_limit_type:
@@ -83,40 +84,52 @@ class Command(BaseCommand):
             if limit_values[1] in allowable_limit_types["tweet"]:
                 self.limit["limit_count"] = int(limit_values[0])
             elif limit_values[1] in allowable_limit_types["minute"]:
-                self.limit["limit_time"] = datetime.datetime.now() + datetime.timedelta(minutes=int(limit_values[0]))
+                self.limit["limit_time"] = datetime.datetime.now() + datetime.timedelta(
+                    minutes=int(limit_values[0])
+                )
             elif limit_values[1] in allowable_limit_types["hour"]:
-                self.limit["limit_time"] = datetime.datetime.now() + datetime.timedelta(hours=int(limit_values[0]))
+                self.limit["limit_time"] = datetime.datetime.now() + datetime.timedelta(
+                    hours=int(limit_values[0])
+                )
             elif limit_values[1] in allowable_limit_types["day"]:
-                self.limit["limit_time"] = datetime.datetime.now() + datetime.timedelta(days=int(limit_values[0]))
+                self.limit["limit_time"] = datetime.datetime.now() + datetime.timedelta(
+                    days=int(limit_values[0])
+                )
             else:
                 raise ValueError("Could not set limit")
 
         listener = StreamListener(
-            tweet_set=tweet_set,
-            profile_set=profile_set,
+            tweet_set=options["add_to_tweet_set"],
+            profile_set=options["add_to_profile_set"],
             num_cores=options["num_cores"],
             queue_size=options["queue_size"],
-            limit=self.limit
+            limit=self.limit,
+            test=options["test"],
         )
 
-        self.twitter.capture_stream_sample(listener, async=False, keywords=[options['keyword_query']])
+        self.twitter.capture_stream_sample(
+            listener,
+            use_async=False,
+            keywords=[options["keyword_query"]] if options["keyword_query"] else None,
+        )
 
 
 class StreamListener(tweepy.StreamListener):
-
     def __init__(
-            self,
-            tweet_set=None,
-            profile_set=None,
-            num_cores=2,
-            queue_size=500,
-            limit={}
+        self,
+        tweet_set=None,
+        profile_set=None,
+        num_cores=2,
+        queue_size=500,
+        limit=None,
+        test=False,
     ):
 
         self.tweet_set = tweet_set
         self.profile_set = profile_set
         self.queue_size = queue_size
-        self.limit = limit
+        self.limit = limit if limit else {}
+        self.test = test
 
         self.tweet_queue = []
         self.pool = Pool(processes=num_cores)
@@ -124,78 +137,84 @@ class StreamListener(tweepy.StreamListener):
         self.scanned_counter = 0
         self.processed_counter = 0
 
-        self.stop = False
-
-        # self.old_count = Tweet.objects.count()
-
         super(StreamListener, self).__init__(self)
         print("Stream initialized")
 
     def on_data(self, data):
 
-        if self.limit_exceeded() and not self.stop:
-            print("Limit exceeded, stopping...")
-            self.stop = True
-        else:
+        try:
+            tweet_json = json.loads(data)
 
-            try:
-                tweet_json = json.loads(data)
+            if "delete" in tweet_json:
+                delete = tweet_json["delete"]["status"]
+                if self.on_delete(delete["id"], delete["user_id"]) is False:
+                    return False
+            elif "limit" in tweet_json:
+                if self.on_limit(tweet_json["limit"]["track"]) is False:
+                    return False
+            elif "disconnect" in tweet_json:
+                if self.on_disconnect(tweet_json["disconnect"]) is False:
+                    return False
+            elif "warning" in tweet_json:
+                if self.on_warning(tweet_json["warning"]) is False:
+                    return False
+            else:
 
-                if 'delete' in tweet_json:
-                    delete = tweet_json['delete']['status']
-                    if self.on_delete(delete['id'], delete['user_id']) is False:
-                        return False
-                elif 'limit' in tweet_json:
-                    if self.on_limit(tweet_json['limit']['track']) is False:
-                        return False
-                elif 'disconnect' in tweet_json:
-                    if self.on_disconnect(tweet_json['disconnect']) is False:
-                        return False
-                elif 'warning' in tweet_json:
-                    if self.on_warning(tweet_json['warning']) is False:
-                        return False
-                else:
+                self.scanned_counter += 1
+                self.tweet_queue.append(tweet_json)
+                if len(self.tweet_queue) >= self.queue_size:
 
-                    self.scanned_counter += 1
-                    self.tweet_queue.append(tweet_json)
-                    if len(self.tweet_queue) >= self.queue_size or self.stop:
+                    if self.num_cores > 1:
+                        self.pool.apply_async(
+                            save_tweets,
+                            args=[
+                                list(self.tweet_queue),
+                                self.tweet_set,
+                                self.profile_set,
+                                self.test,
+                            ],
+                        )
+                    else:
+                        self.pool.apply(
+                            save_tweets,
+                            args=[
+                                list(self.tweet_queue),
+                                self.tweet_set,
+                                self.profile_set,
+                                self.test,
+                            ],
+                        )
 
-                        if self.num_cores > 1:
-                            self.pool.apply_async(save_users, args=[list(self.tweet_queue)])
-                            self.pool.apply_async(save_tweets, args=[list(self.tweet_queue),
-                                                                     self.tweet_set.pk if self.tweet_set else None])
-                            self.pool.apply_async(save_profileset, args=[list(self.tweet_queue),
-                                                                         self.profile_set])
-                        else:
-                            self.pool.apply(save_users, args=[list(self.tweet_queue)])
-                            self.pool.apply(save_tweets, args=[list(self.tweet_queue),
-                                                               self.tweet_set.pk if self.tweet_set else None])
-                            self.pool.apply(save_profileset, args=[list(self.tweet_queue), self.profile_set])
-                        self.tweet_queue = []
-                        self.processed_counter += self.queue_size
-                        print("{} tweets scanned, {} sent for processing".format(self.scanned_counter,
-                                                                                 self.processed_counter))
-                        if self.stop:
-                            # wait for db connections
-                            self.pool.close()
-                            self.pool.join()
+                    self.tweet_queue = []
+                    self.processed_counter += self.queue_size
+                    print(
+                        "{} tweets scanned, {} sent for processing".format(
+                            self.scanned_counter, self.processed_counter
+                        )
+                    )
+                    if self.limit_exceeded():
+                        # wait for db connections
+                        self.pool.close()
+                        self.pool.join()
+                        if not self.test:
                             db.connections.close_all()
-                            return False
-                        # new_count = Tweet.objects.count()
-                        # processed = new_count - self.old_count
-                        # print("100 new tweets queued, {} processed since last time".format(processed))
-                        # self.old_count = new_count
+                        return False
+                    else:
+                        return True
+                else:
+                    return True
 
-            except Exception as e:
+        except Exception as e:
 
-                print("UNKNOWN ERROR: {}".format(e))
-                import pdb
-                pdb.set_trace()
+            print("UNKNOWN ERROR: {}".format(e))
+            import pdb
+
+            pdb.set_trace()
 
             return True
 
     def on_timeout(self):
-        print('Snoozing Zzzzzz')
+        print("Snoozing Zzzzzz")
         return
 
     def on_limit(self, limit_data):
@@ -210,6 +229,7 @@ class StreamListener(tweepy.StreamListener):
     def on_disconnect(self, disconnect):
         print("DISCONNECT: {}".format(disconnect))
         import pdb
+
         pdb.set_trace()
 
     def on_error(self, status):
@@ -222,82 +242,41 @@ class StreamListener(tweepy.StreamListener):
         # return False
 
     def limit_exceeded(self):
-        if self.limit['limit_type'] is None:
+        if self.limit["limit_type"] is None:
             return True
-        elif self.limit['limit_type'] == "tweet":
-            return self.processed_counter >= self.limit['limit_count']
+        elif self.limit["limit_type"] == "tweet":
+            return self.processed_counter >= self.limit["limit_count"]
         else:
-            return datetime.datetime.now() >= self.limit['limit_time']
+            return datetime.datetime.now() >= self.limit["limit_time"]
 
 
-def save_tweets(tweets, tweet_set_id):
+def save_tweets(tweets, tweet_set, profile_set, test):
 
-    reset_django_connection(settings.TWITTER_APP)
+    if not test:
+        reset_django_connection(settings.TWITTER_APP)
 
-    tweet_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL)
-    tweet_set = None
-    if tweet_set_id:
-        tweet_set_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_SET_MODEL)
-        tweet_set = tweet_set_model.objects.get(pk=tweet_set_id)
+    tweet_model = apps.get_model(
+        app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL
+    )
+    if tweet_set:
+        tweet_set = get_tweet_set(tweet_set)
+    if profile_set:
+        profile_set = get_twitter_profile_set(profile_set)
+
     success, error = 0, 0
     for tweet_json in tweets:
         try:
-            tweet, created = tweet_model.objects.get_or_create(twitter_id=tweet_json['id_str'])
+            tweet, created = tweet_model.objects.get_or_create(
+                twitter_id=tweet_json["id_str"]
+            )
             tweet.update_from_json(tweet_json)
             if tweet_set:
                 tweet_set.tweets.add(tweet)
+            if profile_set:
+                profile_set.profiles.add(tweet.profile)
             success += 1
         except django.db.utils.IntegrityError:
             error += 1
 
     print("{} tweets saved, {} errored".format(success, error))
     return True
-
-
-def save_users(tweets):
-
-    reset_django_connection(settings.TWITTER_APP)
-
-    tweet_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL)
-    success, error = 0, 0
-    for tweet_json in tweets:
-        try:
-            tweet, created = tweet_model.objects.get_or_create(twitter_id=tweet_json['id_str'])
-            tweet.update_from_json(tweet_json)
-            success += 1
-        except django.db.utils.IntegrityError:
-            error += 1
-    print("{} users saved, {} errored".format(success, error))
-
-
-all_users = set()
-
-
-def save_profileset(tweets, profile_set_id):
-
-    reset_django_connection(settings.TWITTER_APP)
-
-    user_model = apps.get_model(app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL)
-    profile_set = None
-    if profile_set_id:
-        profile_set_model = apps.get_model(app_label=settings.TWITTER_APP,
-                                           model_name=settings.TWITTER_PROFILE_SET_MODEL)
-        profile_set, created = profile_set_model.objects.get_or_create(name=profile_set_id)
-    success, error, create_count = 0, 0, 0
-    for tweet_json in tweets:
-        user = tweet_json['user']['id']
-        if user not in all_users:
-            all_users.add(user)
-            twitter_user, created = user_model.objects.get_or_create(twitter_id=user)
-            try: twitter_user, created = user_model.objects.get_or_create(twitter_id=user)
-            except user_model.MultipleObjectsReturned:
-                print("Warning: multiple users found for {}".format(user))
-                print("For flexibility, Django Twitter does not enforce a unique constraint on twitter_id")
-                print("But in this case it can't tell which user to use, so it's picking the most recently updated one")
-                twitter_user = user_model.objects.filter(twitter_id=user).order_by("-last_update_time")[0]
-            if created:
-                create_count += 1
-            if profile_set:
-                profile_set.profiles.add(twitter_user)
-            success += 1
-    print("{} profiles set, {} errored, {} created".format(success, error, create_count))
