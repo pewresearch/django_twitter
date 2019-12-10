@@ -1,4 +1,7 @@
 from __future__ import print_function
+
+import datetime
+
 from builtins import str
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -25,7 +28,9 @@ class Command(BaseCommand):
         parser.add_argument("--add_to_tweet_set", type=str)
         parser.add_argument("--ignore_backfill", action="store_true", default=False)
         parser.add_argument("--overwrite", action="store_true", default=False)
-        parser.add_argument("--max_backfill_date", type=str)
+        group = parser.add_mutually_exclusive_group(required=False)
+        group.add_argument("--max_backfill_date", type=str)
+        group.add_argument("--max_backfill_days", type=int)
         parser.add_argument("--no_progress_bar", action="store_true", default=False)
         parser.add_argument("--limit", type=int, default=None)
 
@@ -46,7 +51,13 @@ class Command(BaseCommand):
         max_backfill_date = None
         if options["max_backfill_date"]:
             max_backfill_date = date_parse(options["max_backfill_date"])
-
+        elif options["max_backfill_days"]:
+            max_backfill_date = datetime.datetime.now() - datetime.timedelta(
+                days=options["max_backfill_days"]
+            )
+            max_backfill_date = datetime.datetime(
+                max_backfill_date.year, max_backfill_date.month, max_backfill_date.day
+            )
         tweet_set = None
         if options["add_to_tweet_set"]:
             tweet_set = get_tweet_set(options["add_to_tweet_set"])
