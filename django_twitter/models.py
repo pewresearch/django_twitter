@@ -855,8 +855,6 @@ class AbstractTwitterProfileSet(with_metaclass(AbstractTwitterBase, models.Model
 
 if settings.TWITTER_APP == "django_twitter":
 
-    print("WOOT 1")
-
     class TwitterProfile(AbstractTwitterProfile):
         pass
 
