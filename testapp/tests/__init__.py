@@ -145,6 +145,7 @@ class DjangoTwitterTests(DjangoTestCase):
         tweet.save()
         tweet.update_from_json()
 
+        # Test with max_backfill_date
         limit1 = profile.tweets.order_by("created_at")[25].created_at
         limit2 = profile.tweets.order_by("created_at")[45].created_at
         profile.tweets.filter(created_at__lt=limit2).delete()
@@ -155,6 +156,34 @@ class DjangoTwitterTests(DjangoTestCase):
             profile.twitter_id,
             ignore_backfill=True,
             max_backfill_date=limit1.strftime("%Y-%m-%d"),
+            limit=50,
+            add_to_profile_set="get_profile_tweets",
+            add_to_tweet_set="get_profile_tweets",
+        )
+        self.assertGreater(profile.tweets.count(), num_tweets)
+        num_tweets = profile.tweets.count()
+        self.assertLess(num_tweets, correct_num_tweets)
+        call_command(
+            "django_twitter_get_profile_tweets",
+            profile.twitter_id,
+            ignore_backfill=True,
+            limit=50,
+            add_to_profile_set="get_profile_tweets",
+            add_to_tweet_set="get_profile_tweets",
+        )
+        self.assertGreaterEqual(profile.tweets.count(), correct_num_tweets)
+
+        # Test with max_backfill_days
+        limit1 = profile.tweets.order_by("created_at")[25].created_at
+        limit2 = profile.tweets.order_by("created_at")[45].created_at
+        profile.tweets.filter(created_at__lt=limit2).delete()
+        num_tweets = profile.tweets.count()
+        self.assertLess(num_tweets, correct_num_tweets)
+        call_command(
+            "django_twitter_get_profile_tweets",
+            profile.twitter_id,
+            ignore_backfill=True,
+            max_backfill_days=(datetime.datetime.now() - limit1).days,
             limit=50,
             add_to_profile_set="get_profile_tweets",
             add_to_tweet_set="get_profile_tweets",
