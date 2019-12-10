@@ -16,7 +16,9 @@ class Command(BaseCommand):
         parser.add_argument("--add_to_tweet_set", type=str)
         parser.add_argument("--ignore_backfill", action="store_true", default=False)
         parser.add_argument("--overwrite", action="store_true", default=False)
-        parser.add_argument("--max_backfill_date", type=str)
+        group = parser.add_mutually_exclusive_group(required=False)
+        group.add_argument("--max_backfill_date", type=str)
+        group.add_argument("--max_backfill_days", type=int)
         parser.add_argument("--no_progress_bar", action="store_true", default=False)
         parser.add_argument("--limit", type=int, default=None)
 
@@ -35,6 +37,7 @@ class Command(BaseCommand):
             "ignore_backfill": options["ignore_backfill"],
             "overwrite": options["overwrite"],
             "max_backfill_date": options["max_backfill_date"],
+            "max_backfill_days": options["max_backfill_days"],
             "no_progress_bar": options["no_progress_bar"],
             "limit": options["limit"],
             "api_key": options["api_key"],
