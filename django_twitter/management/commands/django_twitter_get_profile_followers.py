@@ -22,6 +22,7 @@ class Command(BaseCommand):
         parser.add_argument("--add_to_profile_set", type=str)
         parser.add_argument("--hydrate", action="store_true", default=False)
         parser.add_argument("--limit", type=int)
+        parser.add_argument("--no_progress_bar", action="store_true", default=False)
 
         parser.add_argument("--api_key", type=str)
         parser.add_argument("--api_secret", type=str)
@@ -64,16 +65,19 @@ class Command(BaseCommand):
             try:
 
                 # Iterate through all tweets in timeline
-                for follower_data in tqdm(
-                    self.twitter.iterate_profile_followers(
-                        following.twitter_id,
-                        hydrate_profiles=options["hydrate"],
-                        limit=options["limit"],
-                    ),
-                    desc="Retrieving followers for user {}".format(
-                        following.screen_name
-                    ),
-                ):
+                iterator = self.twitter.iterate_profile_followers(
+                    following.twitter_id,
+                    hydrate_profiles=options["hydrate"],
+                    limit=options["limit"],
+                )
+
+                if not options["no_progress_bar"]:
+                    iterator = tqdm(
+                        iterator,
+                        desc="Retrieving followers for user {}".format(follower.screen_name)
+                    )
+
+                for follower_data in iterator:
                     if not options["hydrate"]:
                         follower = get_twitter_profile(follower_data, create=True)
                     else:
