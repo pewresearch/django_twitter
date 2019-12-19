@@ -73,7 +73,9 @@ class Command(BaseCommand):
                 if not options["no_progress_bar"]:
                     iterator = tqdm(
                         iterator,
-                        desc="Retrieving friends for user {}".format(follower.screen_name)
+                        desc="Retrieving friends for user {}".format(
+                            follower.screen_name
+                        ),
                     )
 
                 for following_data in iterator:
