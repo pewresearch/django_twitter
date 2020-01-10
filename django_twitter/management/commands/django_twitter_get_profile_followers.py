@@ -75,7 +75,7 @@ class Command(BaseCommand):
                     iterator = tqdm(
                         iterator,
                         desc="Retrieving followers for user {}".format(
-                            follower.screen_name
+                            following.screen_name
                         ),
                     )
 
