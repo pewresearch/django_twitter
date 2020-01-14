@@ -28,7 +28,11 @@ if settings.TWITTER_APP == "testapp":
 
         pass
 
-    class TwitterRelationship(AbstractTwitterRelationship):
+    class TwitterFollowerList(AbstractTwitterFollowerList):
+
+        pass
+
+    class TwitterFollowingList(AbstractTwitterFollowingList):
 
         pass
 
