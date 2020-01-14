@@ -17,6 +17,7 @@ from django_twitter.utils import (
     get_twitter_profile,
     get_tweet_set,
     get_twitter_profile_set,
+    get_concrete_model,
 )
 
 
@@ -71,9 +72,7 @@ class Command(BaseCommand):
         if twitter_json:
             twitter_profile = get_twitter_profile(twitter_json.id_str)
 
-            tweet_model = apps.get_model(
-                app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL
-            )
+            Tweet = get_concrete_model("AbstractTweet")
             # Get list of current tweets
             existing_tweets = list(
                 twitter_profile.tweets.values_list("twitter_id", flat=True)
@@ -110,7 +109,7 @@ class Command(BaseCommand):
                         tweet_json.id_str not in existing_tweets
                     ):
                         # Only write a tweet if you're overwriting, or it doesn't already exist
-                        tweet, created = tweet_model.objects.get_or_create(
+                        tweet, created = Tweet.objects.get_or_create(
                             twitter_id=tweet_json.id_str
                         )
                         tweet.update_from_json(tweet_json._json)

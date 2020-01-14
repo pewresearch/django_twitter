@@ -26,29 +26,15 @@ class DjangoTwitterTests(DjangoTestCase):
 
     def setUp(self):
 
-        self.TwitterProfile = apps.get_model(
-            app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL
-        )
-        self.TwitterProfileSet = apps.get_model(
-            app_label=settings.TWITTER_APP,
-            model_name=settings.TWITTER_PROFILE_SET_MODEL,
-        )
-        self.Tweet = apps.get_model(
-            app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL
-        )
-        self.TweetSet = apps.get_model(
-            app_label=settings.TWITTER_APP, model_name=settings.TWEET_SET_MODEL
-        )
-        self.BotometerScore = apps.get_model(
-            app_label=settings.TWITTER_APP, model_name=settings.BOTOMETER_SCORE_MODEL
-        )
-        self.TwitterRelationship = apps.get_model(
-            app_label=settings.TWITTER_APP,
-            model_name=settings.TWITTER_RELATIONSHIP_MODEL,
-        )
-        self.TwitterHashtag = apps.get_model(
-            app_label=settings.TWITTER_APP, model_name=settings.TWITTER_HASHTAG_MODEL
-        )
+        from django_twitter.utils import get_concrete_model
+
+        self.TwitterProfile = get_concrete_model("AbstractTwitterProfile")
+        self.TwitterProfileSet = get_concrete_model("AbstractTwitterProfileSet")
+        self.Tweet = get_concrete_model("AbstractTweet")
+        self.TweetSet = get_concrete_model("AbstractTweetSet")
+        self.BotometerScore = get_concrete_model("AbstractBotometerScore")
+        self.TwitterRelationship = get_concrete_model("AbstractTwitterRelationship")
+        self.TwitterHashtag = get_concrete_model("AbstractTwitterHashtag")
 
     def test_user_commands(self):
 

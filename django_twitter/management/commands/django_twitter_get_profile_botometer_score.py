@@ -8,6 +8,7 @@ from django_twitter.utils import (
     get_twitter_profile_json,
     get_twitter_profile,
     get_twitter_profile_set,
+    get_concrete_model,
 )
 
 
@@ -45,11 +46,8 @@ class Command(BaseCommand):
             botometer_scores = self.twitter.get_profile_botometer_score(
                 options["twitter_id"]
             )
-            botometer_model = apps.get_model(
-                app_label=settings.TWITTER_APP,
-                model_name=settings.BOTOMETER_SCORE_MODEL,
-            )
-            score = botometer_model.objects.create(profile=twitter_profile)
+            BotometerScore = get_concrete_model("AbstractBotometerScore")
+            score = BotometerScore.objects.create(profile=twitter_profile)
             score.update_from_json(botometer_scores)
 
             if profile_set:
