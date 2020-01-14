@@ -15,12 +15,19 @@ from django.db.models import Count
 from pewanalytics.text import TextDataFrame
 
 
+def get_concrete_model(abstract_model_name):
+
+    for model in apps.get_app_config(settings.TWITTER_APP).get_models():
+        for base in model.__bases__:
+            if base.__name__ == abstract_model_name:
+                return model
+    return None
+
+
 def get_tweet_set(tweet_set_name):
 
-    tweet_set_model = apps.get_model(
-        app_label=settings.TWITTER_APP, model_name=settings.TWEET_SET_MODEL
-    )
-    tweet_set, created = tweet_set_model.objects.get_or_create(name=tweet_set_name)
+    TweetSet = get_concrete_model("AbstractTweetSet")
+    tweet_set, created = TweetSet.objects.get_or_create(name=tweet_set_name)
     return tweet_set
 
 
@@ -33,10 +40,8 @@ def get_twitter_profile_set(twitter_profile_set_name):
     :return: A TwitterProfileSet object
     """
 
-    twitter_profile_set_model = apps.get_model(
-        app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_SET_MODEL
-    )
-    twitter_profile_set, created = twitter_profile_set_model.objects.get_or_create(
+    TwitterProfileSet = get_concrete_model("AbstractTwitterProfileSet")
+    twitter_profile_set, created = TwitterProfileSet.objects.get_or_create(
         name=twitter_profile_set_name
     )
     return twitter_profile_set
@@ -53,19 +58,17 @@ def get_twitter_profile(twitter_id, create=False):
     :return: An existing TwitterProfile record, if one exists
     """
 
-    profile_model = apps.get_model(
-        app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL
-    )
+    TwitterProfile = get_concrete_model("AbstractTwitterProfile")
     try:
         if create:
-            existing_profile, created = profile_model.objects.get_or_create(
+            existing_profile, created = TwitterProfile.objects.get_or_create(
                 twitter_id=twitter_id
             )
         else:
-            existing_profile = profile_model.objects.get(twitter_id=twitter_id)
-    except profile_model.DoesNotExist:
+            existing_profile = TwitterProfile.objects.get(twitter_id=twitter_id)
+    except TwitterProfile.DoesNotExist:
         existing_profile = None
-    except profile_model.MultipleObjectsReturned:
+    except TwitterProfile.MultipleObjectsReturned:
         print("Warning: multiple profiles found for {}".format(twitter_id))
         print(
             "For flexibility, Django Twitter does not enforce a unique constraint on twitter_id"
@@ -73,9 +76,9 @@ def get_twitter_profile(twitter_id, create=False):
         print(
             "But in this case it can't tell which profile to use, so it's picking the most recently updated one"
         )
-        existing_profile = profile_model.objects.filter(twitter_id=twitter_id).order_by(
-            "-last_update_time"
-        )[0]
+        existing_profile = TwitterProfile.objects.filter(
+            twitter_id=twitter_id
+        ).order_by("-last_update_time")[0]
     return existing_profile
 
 
@@ -90,9 +93,6 @@ def get_twitter_profile_json(twitter_id, twitter_handler):
     :return: JSON for the profile
     """
 
-    profile_model = apps.get_model(
-        app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL
-    )
     twitter_json = twitter_handler.get_profile(twitter_id, return_errors=True)
     if isinstance(twitter_json, int):
         error_code = twitter_json
@@ -138,15 +138,13 @@ def identify_unusual_profiles_by_tweet_text(profiles, most_recent_n=10):
     :return: A 2-tuple of dataframes (most_similar, most_unique)
     """
 
-    profile_model = apps.get_model(
-        app_label=settings.TWITTER_APP, model_name=settings.TWITTER_PROFILE_MODEL
-    )
+    TwitterProfile = get_concrete_model("AbstractTwitterProfile")
     profiles = pd.DataFrame.from_records(profiles.values("twitter_id"))
     profiles["tweet_text"] = ""
     for twitter_id in tqdm(profiles["twitter_id"].values, desc="Gathering tweet text"):
         if twitter_id:
             tweets = (
-                profile_model.objects.get(twitter_id=twitter_id)
+                TwitterProfile.objects.get(twitter_id=twitter_id)
                 .tweets.filter(text__isnull=False)
                 .order_by("-created_at")[:most_recent_n]
             )
@@ -186,13 +184,11 @@ def get_monthly_twitter_activity(profiles, min_date, max_date=None):
     :return: DataFrame
     """
 
-    tweet_model = apps.get_model(
-        app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL
-    )
+    Tweet = get_concrete_model("AbstractTweet")
     profiles = pd.DataFrame.from_records(
         profiles.values("pk", "name", "screen_name", "created_at")
     )
-    tweets = tweet_model.objects.filter(profile_id__in=profiles["pk"].values).filter(
+    tweets = Tweet.objects.filter(profile_id__in=profiles["pk"].values).filter(
         created_at__gte=min_date
     )
     if max_date:
@@ -390,11 +386,9 @@ def get_tweet_dataframe(profiles, start_date, end_date, *extra_values):
     :return:
     """
 
-    tweet_model = apps.get_model(
-        app_label=settings.TWITTER_APP, model_name=settings.TWEET_MODEL
-    )
+    Tweet = get_concrete_model("AbstractTweet")
     tweets = (
-        tweet_model.objects.filter(profile__in=profiles)
+        Tweet.objects.filter(profile__in=profiles)
         .filter(created_at__lte=end_date)
         .filter(created_at__gte=start_date)
         .values(
