@@ -12,6 +12,7 @@ from django_twitter.utils import (
     get_twitter_profile_json,
     get_twitter_profile,
     get_twitter_profile_set,
+    get_concrete_model,
 )
 
 
@@ -38,10 +39,7 @@ class Command(BaseCommand):
             access_secret=options["access_secret"],
         )
 
-        relationship_model = apps.get_model(
-            app_label=settings.TWITTER_APP,
-            model_name=settings.TWITTER_RELATIONSHIP_MODEL,
-        )
+        TwitterRelationship = get_concrete_model("AbstractTwitterRelationship")
 
         if options["add_to_profile_set"]:
             profile_set = get_twitter_profile_set(options["add_to_profile_set"])
@@ -54,7 +52,7 @@ class Command(BaseCommand):
             following = get_twitter_profile(twitter_json.id_str, create=True)
             try:
                 run_id = (
-                    relationship_model.objects.filter(following=following)
+                    TwitterRelationship.objects.filter(following=following)
                     .order_by("-run_id")[0]
                     .run_id
                     + 1
@@ -87,7 +85,7 @@ class Command(BaseCommand):
                             follower_data._json["id_str"], create=True
                         )
                         follower.update_from_json(follower_data._json)
-                    relationship = relationship_model.objects.create(
+                    relationship = TwitterRelationship.objects.create(
                         following=following, follower=follower, run_id=run_id
                     )
                     if profile_set:
@@ -95,6 +93,6 @@ class Command(BaseCommand):
 
             except Exception as e:
                 print("Encountered an error: {}".format(e))
-                relationship_model.objects.filter(
+                TwitterRelationship.objects.filter(
                     following=following, run_id=run_id
                 ).delete()
