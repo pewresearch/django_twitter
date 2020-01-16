@@ -344,10 +344,10 @@ def get_twitter_profile_dataframe(profiles, date, *extra_values, **kwargs):
             date = datetime.datetime(
                 date.year, date.month, date.day, tzinfo=pytz.timezone("US/Eastern")
             )
-        lt_diff = date - (lt_history[0].history_date)
-        gt_diff = (gt_history[0].history_date) - date
 
         if lt_history.count() > 0 and gt_history.count() > 0:
+            lt_diff = date - (lt_history[0].history_date)
+            gt_diff = (gt_history[0].history_date) - date
             if gt_diff > lt_diff:
                 history = gt_history
             else:
