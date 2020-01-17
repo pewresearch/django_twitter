@@ -480,6 +480,19 @@ def get_tweet_dataframe(profiles, start_date, end_date, *extra_values, **kwargs)
                     "statuses_count",
                 )
             )
+            # Since history objects get created any time ANYTHING changes on a model, they don't necessarily represent handshakes with the API
+            # So by de-duping like so:
+            stats = stats.sort_values("history_date").drop_duplicates(
+                subset=[
+                    "followers_count",
+                    "favorites_count",
+                    "followings_count",
+                    "listed_count",
+                    "statuses_count",
+                ]
+            )
+            # We can isolate those handshakes by filtering down to timestamps when the stats values changed
+            # Which could only have occurred via an API update
             stats = stats.set_index("history_date").resample("D").max()
             stats["followers_count"] = stats["followers_count"].interpolate(
                 limit_area="inside"
