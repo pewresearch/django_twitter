@@ -315,7 +315,7 @@ def find_missing_date_ranges(
     return missing_dates
 
 
-def get_twitter_profile_dataframe(profiles, date, *extra_values, **kwargs):
+def get_twitter_profile_dataframe(profiles, date, *extra_values):
     """
     Given a QuerySet of TwitterProfile objects and a date, returns a dataframe of the profiles. The date is used to
     scan each profile's historical records and find the snapshot closest to the date requested, without exceeding the
@@ -326,7 +326,6 @@ def get_twitter_profile_dataframe(profiles, date, *extra_values, **kwargs):
     :param date: The function will attempt to return profiles as they appeared as of the date provided
     :param extra_values: Additional arguments can be used to select additional fields to return (operates the same as
     requesting fields via `TwitterProfile.objects.values(field1, field2)`
-    :param include_stats: Whether or not to include time-sensitive stats like follower counts
     :return: A DataFrame representing the TwitterProfiles at a certain point in time
     """
 
@@ -373,11 +372,6 @@ def get_twitter_profile_dataframe(profiles, date, *extra_values, **kwargs):
                 "created_at",
                 "location",
                 "language",
-                "favorites_count",
-                "followers_count",
-                "followings_count",
-                "listed_count",
-                "statuses_count",
                 "twitter_error_code",
                 "history_date",
                 *extra_values
@@ -398,15 +392,6 @@ def get_twitter_profile_dataframe(profiles, date, *extra_values, **kwargs):
             tz="US/Eastern"
         )
         df["earliest_history"] = df["earliest_history"].dt.tz_convert(tz="US/Eastern")
-        if "include_stats" not in kwargs.keys() or not kwargs["include_stats"]:
-            for metric in [
-                "favorites_count",
-                "followers_count",
-                "followings_count",
-                "listed_count",
-                "statuses_count",
-            ]:
-                del df[metric]
 
     return df
 
