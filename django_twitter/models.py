@@ -18,6 +18,7 @@ from picklefield.fields import PickledObjectField
 from simple_history import register
 from simple_history.models import HistoricalRecords
 from dateutil.parser import parse as date_parse
+from difflib import SequenceMatcher
 from collections import defaultdict
 
 from pewtils import decode_text, is_not_null, is_null
@@ -642,15 +643,14 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
                         break
 
                 if text and additional_text:
-                    if text.endswith("\u2026"):
+                    if text.endswith("\u2026") or text.endswith(u"\u2026"):
                         text = re.sub(text[-1], "", text)
-                        merge_text = text[-20:]
-                        text = "".join(
-                            [
-                                text,
-                                merge_text.join(additional_text.split(merge_text)[1:]),
-                            ]
-                        )
+                        s = SequenceMatcher(None, additional_text, text, autojunk=True)
+                        for block in s.get_matching_blocks():
+                            if block.size > 1:
+                                overlap = additional_text[block.a: (block.a + block.size)]
+                                additional_text = re.sub(overlap, '', additional_text)
+                        text = "".join([text, additional_text])
 
                 elif not text and additional_text:
                     text = additional_text
