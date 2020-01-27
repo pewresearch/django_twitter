@@ -643,6 +643,7 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
                         break
 
                 if text and additional_text:
+                    # Examples of RTs: 1116460554237902849, 1116460554237902849, 1084731566423715841
                     if text.endswith("\u2026") or text.endswith(u"\u2026"):
                         text = re.sub(text[-1], "", text)
                         s = SequenceMatcher(None, additional_text, text, autojunk=True)
