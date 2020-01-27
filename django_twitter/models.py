@@ -650,7 +650,7 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
                         for block in s.get_matching_blocks():
                             if block.size > 1:
                                 overlap = additional_text[block.a: (block.a + block.size)]
-                                additional_text = re.sub(overlap, '', additional_text)
+                                additional_text = additional_text.replace(overlap, '')
                         text = "".join([text, additional_text])
 
                 elif not text and additional_text:
