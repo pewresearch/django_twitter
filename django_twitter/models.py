@@ -327,6 +327,7 @@ class AbstractTwitterProfile(
                 ('followings_count',),
                 ('is_verified', 'verified'),
                 ('listed_count',),
+                ('location',),
                 ('profile_image_url',),
                 ('statuses_count',),
             ):
