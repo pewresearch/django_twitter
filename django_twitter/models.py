@@ -277,47 +277,28 @@ class AbstractTwitterProfile(
         tweet the next time it runs.",
     )
 
-    screen_name = models.CharField(
-        max_length=100, db_index=True, null=True, help_text="Twitter screen name"
-    )
-    name = models.CharField(max_length=200, null=True)
-    description = models.TextField(null=True)
-    status = models.TextField(null=True)
-    urls = ArrayField(models.CharField(max_length=300), default=list)
-    contributors_enabled = models.NullBooleanField(null=True)
-    is_verified = models.NullBooleanField(null=True)
-    is_private = models.BooleanField(default=False)
-    created_at = models.DateTimeField(null=True)
-    profile_image_url = models.TextField(null=True)
-
-    ### Added from Rookery
-    geo_enabled = models.NullBooleanField()
-    # We're going to need to see what we need to do to be compliant with the GDPR here
-    location = models.CharField(max_length=512, null=True)  # 256 in Dippybird
-    language = models.CharField(
-        max_length=255, null=True
-    )  # I DON'T THINK THIS IS NECESSARY
-    # may not need both of these
-    time_zone = models.CharField(
-        max_length=255, null=True
-    )  # not sure if this will still be in API
-    utc_offset = models.CharField(
-        max_length=255, null=True
-    )  # not sure this needs to be a charfield.
-
-    favorites_count = models.IntegerField(null=True)
-    followers_count = models.IntegerField(null=True)
-    followings_count = models.IntegerField(null=True)
-    listed_count = models.IntegerField(null=True)
-    statuses_count = models.IntegerField(null=True)
-
-    twitter_error_code = models.IntegerField(null=True)
-
-    json = JSONField(null=True, default=dict)
+    screen_name             = models.CharField(max_length=100, db_index=True, null=True, help_text="Twitter screen name")
+    name                    = models.CharField(max_length=200, null=True)
+    contributors_enabled    = models.NullBooleanField(null=True)
+    created_at              = models.DateTimeField(null=True)
+    description             = models.TextField(null=True)
+    favorites_count         = models.IntegerField(null=True)
+    followers_count         = models.IntegerField(null=True)
+    followings_count        = models.IntegerField(null=True)
+    is_private              = models.BooleanField(default=False)
+    is_verified             = models.NullBooleanField(null=True)
+    listed_count            = models.IntegerField(null=True)
+    profile_image_url       = models.TextField(null=True)
+    status                  = models.TextField(null=True)
+    statuses_count          = models.IntegerField(null=True)
+    urls                    = ArrayField(models.CharField(max_length=300), default=list)
+    location                = models.CharField(max_length=512, null=True)
+    twitter_error_code      = models.IntegerField(null=True)
+    json                    = JSONField(null=True, default=dict)
 
     """
     AUTO-CREATED RELATIONSHIPS:
-    followers = models.ManyToManyField(your_app.TwitterProfileModel, related_name="followings") 
+    followers = models.ManyToManyField(your_app.TwitterProfileModel, related_name="followings")
     """
 
     def __str__(self):
@@ -455,7 +436,7 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
 
     """
     AUTO-CREATED RELATIONSHIPS:
-    profile = models.ForeignKey(your_app.TwitterProfileModel, related_name="tweets") 
+    profile = models.ForeignKey(your_app.TwitterProfileModel, related_name="tweets")
     hashtags = models.ManyToManyField(your_app.TwitterHashtagModel, related_name="tweets")
     place = models.ForeignKey(your_app.TwitterPlaceModel, related_name="tweets")
     profile_mentions = models.ManyToManyField(your_app.TwitterProfileModel, related_name="tweet_mentions")
@@ -663,31 +644,33 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
 
             try:
                 links = set(self.links)
+
             except TypeError:
                 links = set()
+
             for u in tweet_data.get("entities", {}).get("urls", []):
                 link = u.get("expanded_url", "")
+
                 if len(link) > 399:
                     link = u.get("url", "")
+
                 if is_not_null(link):
                     links.add(link)
-            self.links = list(links)
 
+            self.links = list(links)
             self.json = tweet_data
 
             try:
                 self.save()
+
             except:
                 try:
                     self.text = decode_text(self.text)
                     self.json = json.loads(decode_text(json.dumps(self.json)))
                     self.save()
+
                 except Exception as e:
                     print(e)
-                    import pdb
-
-                    pdb.set_trace()
-                # \u0000
 
     def url(self):
         return "http://www.twitter.com/statuses/{0}".format(self.twitter_id)
@@ -716,7 +699,7 @@ class AbstractBotometerScore(with_metaclass(AbstractTwitterBase, models.Model)):
 
     """
     AUTO-CREATED RELATIONSHIPS:
-    profile = models.ForeignKey(your_app.TwitterProfileModel, related_name="botometer_scores") 
+    profile = models.ForeignKey(your_app.TwitterProfileModel, related_name="botometer_scores")
     """
 
     def update_from_json(self, score_data=None, api_version=None):
