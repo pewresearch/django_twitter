@@ -319,29 +319,38 @@ class AbstractTwitterProfile(
                 profile_data = json.loads(profile_data)
 
         if profile_data:
-            # TODO: Last step - Verify that all of the fields above are in here
+            for db_name, *api_name in (
+                ('name',),
+                ('contributors_enabled',),
+                ('description',),
+                ('followers_count',),
+                ('followings_count',),
+                ('is_verified', 'verified'),
+                ('listed_count',),
+                ('profile_image_url',),
+                ('statuses_count',),
+            ):
+                if len(api_name) < 1:
+                    api_name = db_name
+
+                else:
+                    api_name = api_name[:1][0]
+
+                if api_name in profile_data:
+                    setattr(self, db_name, profile_data[api_name])
+
             self.created_at = date_parse(profile_data["created_at"])
-            self.name = profile_data["name"]
             self.screen_name = profile_data["screen_name"].lower()
-            self.description = profile_data["description"]
             self.favorites_count = (
                 profile_data["favorites_count"]
                 if "favorites_count" in list(profile_data.keys())
                 else profile_data["favourites_count"]
             )
-            self.followers_count = profile_data["followers_count"]
-            self.followings_count = profile_data["friends_count"]
-            self.listed_count = profile_data["listed_count"]
-            self.language = profile_data["lang"]
-            self.statuses_count = profile_data["statuses_count"]
-            self.profile_image_url = profile_data["profile_image_url"]
             self.status = (
                 profile_data["status"]["text"]
                 if "status" in list(profile_data.keys())
                 else None
             )
-            self.is_verified = profile_data["verified"]
-            self.contributors_enabled = profile_data["contributors_enabled"]
 
             if "url" in list(profile_data.get("entities", {}).keys()):
                 urls = [
