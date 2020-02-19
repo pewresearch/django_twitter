@@ -324,7 +324,7 @@ class AbstractTwitterProfile(
                 ('contributors_enabled',),
                 ('description',),
                 ('followers_count',),
-                ('followings_count',),
+                ('followings_count', 'friends_count'),
                 ('is_verified', 'verified'),
                 ('listed_count',),
                 ('location',),
