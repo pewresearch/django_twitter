@@ -159,6 +159,17 @@ class AbstractTwitterBase(models.base.ModelBase):
                     None,
                 )
             ],
+            "TwitterProfileSnapshotModel": [
+                (
+                    models.ForeignKey,
+                    "TwitterProfileModel",
+                    "profile",
+                    "snapshots",
+                    None,
+                    True,
+                    models.CASCADE,
+                )
+            ],
             "TweetSetModel": [
                 (
                     models.ManyToManyField,
@@ -277,24 +288,11 @@ class AbstractTwitterProfile(
         tweet the next time it runs.",
     )
 
-    screen_name             = models.CharField(max_length=100, db_index=True, null=True, help_text="Twitter screen name")
-    name                    = models.CharField(max_length=200, null=True)
-    contributors_enabled    = models.NullBooleanField(null=True)
-    created_at              = models.DateTimeField(null=True)
-    description             = models.TextField(null=True)
-    favorites_count         = models.IntegerField(null=True)
-    followers_count         = models.IntegerField(null=True)
-    followings_count        = models.IntegerField(null=True)
-    is_private              = models.BooleanField(default=False)
-    is_verified             = models.NullBooleanField(null=True)
-    listed_count            = models.IntegerField(null=True)
-    profile_image_url       = models.TextField(null=True)
-    status                  = models.TextField(null=True)
-    statuses_count          = models.IntegerField(null=True)
-    urls                    = ArrayField(models.CharField(max_length=300), default=list)
-    location                = models.CharField(max_length=512, null=True)
-    twitter_error_code      = models.IntegerField(null=True)
-    json                    = JSONField(null=True, default=dict)
+    screen_name = models.CharField(
+        max_length=100, db_index=True, null=True, help_text="Twitter screen name"
+    )
+    created_at = models.DateTimeField(null=True)
+    twitter_error_code = models.IntegerField(null=True)
 
     """
     AUTO-CREATED RELATIONSHIPS:
@@ -308,71 +306,6 @@ class AbstractTwitterProfile(
             if self.screen_name
             else self.twitter_id
         )
-
-    def update_from_json(self, profile_data=None):
-
-        if not profile_data:
-            profile_data = self.json
-
-        if not hasattr(profile_data, "keys"):
-            while not hasattr(profile_data, "keys"):
-                profile_data = json.loads(profile_data)
-
-        if profile_data:
-            for db_name, *api_name in (
-                ('name',),
-                ('contributors_enabled',),
-                ('description',),
-                ('followers_count',),
-                ('followings_count', 'friends_count'),
-                ('is_verified', 'verified'),
-                ('listed_count',),
-                ('location',),
-                ('profile_image_url',),
-                ('statuses_count',),
-            ):
-                if len(api_name) < 1:
-                    api_name = db_name
-
-                else:
-                    api_name = api_name[:1][0]
-
-                if api_name in profile_data:
-                    setattr(self, db_name, profile_data[api_name])
-
-            self.created_at = date_parse(profile_data["created_at"])
-            self.screen_name = profile_data["screen_name"].lower()
-            self.favorites_count = (
-                profile_data["favorites_count"]
-                if "favorites_count" in list(profile_data.keys())
-                else profile_data["favourites_count"]
-            )
-            self.status = (
-                profile_data["status"]["text"]
-                if "status" in list(profile_data.keys())
-                else None
-            )
-
-            if "url" in list(profile_data.get("entities", {}).keys()):
-                urls = [
-                    url["expanded_url"]
-                    for url in profile_data.get("entities", {})
-                    .get("url", {})
-                    .get("urls", [])
-                    if url["expanded_url"]
-                ]
-            else:
-                urls = [profile_data.get("url", "")]
-            urls = [u for u in urls if is_not_null(u)]
-            self.urls = urls
-            self.json = profile_data
-            try:
-                self.save()
-            except (django.db.utils.IntegrityError, ValueError):
-                self.description = decode_text(self.description)
-                self.screen_name = decode_text(self.screen_name)
-                self.status = decode_text(self.status)
-                self.save()
 
     def url(self):
         return "http://www.twitter.com/intent/user?user_id={0}".format(
@@ -408,6 +341,118 @@ class AbstractTwitterProfile(
             return scores[0]
         else:
             return None
+
+    def most_recent_snapshot(self):
+
+        if self.snapshots.count() > 0:
+            return self.snapshots.order_by("-timestamp")[0]
+        else:
+            return None
+
+
+class AbstractTwitterProfileSnapshot(
+    with_metaclass(AbstractTwitterBase, AbstractTwitterObject)
+):
+    class Meta(object):
+        abstract = True
+
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    screen_name = models.CharField(
+        max_length=100, db_index=True, null=True, help_text="Twitter screen name"
+    )
+    name = models.CharField(max_length=200, null=True)
+    contributors_enabled = models.NullBooleanField(null=True)
+    description = models.TextField(null=True)
+    favorites_count = models.IntegerField(null=True)
+    followers_count = models.IntegerField(null=True)
+    followings_count = models.IntegerField(null=True)
+    is_private = models.BooleanField(default=False)
+    is_verified = models.NullBooleanField(null=True)
+    listed_count = models.IntegerField(null=True)
+    profile_image_url = models.TextField(null=True)
+    status = models.TextField(null=True)
+    statuses_count = models.IntegerField(null=True)
+    urls = ArrayField(models.CharField(max_length=300), default=list)
+    location = models.CharField(max_length=512, null=True)
+    json = JSONField(null=True, default=dict)
+
+    """
+    AUTO-CREATED RELATIONSHIPS:
+    profile = models.ForeignKey(your_app.TwitterProfileModel, related_name="snapshots")
+    """
+
+    def __str__(self):
+
+        return "{} AS OF {}".format(str(self.profile), self.timestamp)
+
+    def update_from_json(self, profile_data=None):
+
+        if not profile_data:
+            profile_data = self.json
+
+        if not hasattr(profile_data, "keys"):
+            while not hasattr(profile_data, "keys"):
+                profile_data = json.loads(profile_data)
+
+        if profile_data:
+            for db_name, api_name in [
+                ("name", None),
+                ("contributors_enabled", None),
+                ("description", None),
+                ("followers_count", None),
+                ("followings_count", "friends_count"),
+                ("is_verified", "verified"),
+                ("listed_count", None),
+                ("location", None),
+                ("profile_image_url", None),
+                ("statuses_count", None),
+            ]:
+                if not api_name or len(api_name) < 1:
+                    api_name = db_name
+
+                else:
+                    api_name = api_name[:1][0]
+
+                if api_name in profile_data:
+                    setattr(self, db_name, profile_data[api_name])
+
+            self.profile.created_at = date_parse(profile_data["created_at"])
+            self.profile.screen_name = profile_data["screen_name"].lower()
+            self.profile.save()
+
+            self.screen_name = profile_data["screen_name"].lower()
+            self.favorites_count = (
+                profile_data["favorites_count"]
+                if "favorites_count" in list(profile_data.keys())
+                else profile_data["favourites_count"]
+            )
+            self.status = (
+                profile_data["status"]["text"]
+                if "status" in list(profile_data.keys())
+                else None
+            )
+
+            if "url" in list(profile_data.get("entities", {}).keys()):
+                urls = [
+                    url["expanded_url"]
+                    for url in profile_data.get("entities", {})
+                    .get("url", {})
+                    .get("urls", [])
+                    if url["expanded_url"]
+                ]
+            else:
+                urls = [profile_data.get("url", "")]
+            urls = [u for u in urls if is_not_null(u)]
+            self.urls = urls
+            self.json = profile_data
+            try:
+                self.save()
+            except (django.db.utils.IntegrityError, ValueError):
+                self.description = decode_text(self.description)
+                self.screen_name = decode_text(self.screen_name)
+                self.status = decode_text(self.status)
+                self.save()
 
 
 class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
@@ -469,6 +514,7 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
 
         Tweet = get_concrete_model("AbstractTweet")
         TwitterProfile = get_concrete_model("AbstractTwitterProfile")
+        TwitterProfileSnapshot = get_concrete_model("AbstractTwitterProfileSnapshot")
         TwitterHashtag = get_concrete_model("AbstractTwitterHashtag")
 
         def _consolidate_duplicate_tweets(twitter_id):
@@ -493,7 +539,10 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
 
             # PROFILE
             author = get_twitter_profile(tweet_data["user"]["id_str"], create=True)
-            author.update_from_json(tweet_data["user"])
+            snapshot = TwitterProfileSnapshot.objects.create(
+                profile=author, json=tweet_data["user"]
+            )
+            snapshot.update_from_json()
             self.profile = author
 
             # PROFILE MENTIONS
@@ -635,13 +684,15 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
 
                 if text and additional_text:
                     # Examples of RTs: 1116460554237902849, 1116460554237902849, 1084731566423715841
-                    if text.endswith("\u2026") or text.endswith(u"\u2026"):
+                    if text.endswith("\u2026") or text.endswith("\u2026"):
                         text = re.sub(text[-1], "", text)
                         s = SequenceMatcher(None, additional_text, text, autojunk=True)
                         for block in s.get_matching_blocks():
                             if block.size > 1:
-                                overlap = additional_text[block.a: (block.a + block.size)]
-                                additional_text = additional_text.replace(overlap, '')
+                                overlap = additional_text[
+                                    block.a : (block.a + block.size)
+                                ]
+                                additional_text = additional_text.replace(overlap, "")
                         text = "".join([text, additional_text])
 
                 elif not text and additional_text:
@@ -844,6 +895,9 @@ class AbstractTwitterProfileSet(with_metaclass(AbstractTwitterBase, models.Model
 if settings.TWITTER_APP == "django_twitter":
 
     class TwitterProfile(AbstractTwitterProfile):
+        pass
+
+    class TwitterProfileSnapshot(AbstractTwitterProfileSnapshot):
         pass
 
     class Tweet(AbstractTweet):

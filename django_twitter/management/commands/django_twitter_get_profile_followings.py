@@ -49,6 +49,10 @@ class Command(BaseCommand):
         twitter_json = get_twitter_profile_json(options["twitter_id"], self.twitter)
         if twitter_json:
             follower = get_twitter_profile(twitter_json.id_str, create=True)
+            snapshot = get_concrete_model(
+                "AbstractTwitterProfileSnapshot"
+            ).objects.create(profile=follower)
+            snapshot.update_from_json(twitter_json._json)
             try:
                 run_id = (
                     TwitterRelationship.objects.filter(follower=follower)
