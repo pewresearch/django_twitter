@@ -71,6 +71,10 @@ class Command(BaseCommand):
         twitter_json = get_twitter_profile_json(options["twitter_id"], self.twitter)
         if twitter_json:
             twitter_profile = get_twitter_profile(twitter_json.id_str)
+            snapshot = get_concrete_model(
+                "AbstractTwitterProfileSnapshot"
+            ).objects.create(profile=twitter_profile)
+            snapshot.update_from_json(twitter_json._json)
 
             Tweet = get_concrete_model("AbstractTweet")
             # Get list of current tweets
