@@ -475,7 +475,13 @@ class AbstractTwitterProfile(
             stats = pd.concat([stats, pd.DataFrame([{"history_date": start_date}])])
         if stats['history_date'].max() < end_date:
             stats = pd.concat([stats, pd.DataFrame([{"history_date": end_date}])])
+
         stats = stats.set_index("history_date").resample("D").max()
+        # Resampling drops null columns so we're adding them back in
+        for col in columns:
+            if col not in ["history_date", "json"] and col not in stats.columns:
+                stats[col] = None
+
         for col in ["followers_count", "favorites_count", "followings_count", "listed_count", "statuses_count"]:
             stats[col] = stats[col].interpolate(limit_area="inside", limit_direction="forward",
                                                                             method="linear")
