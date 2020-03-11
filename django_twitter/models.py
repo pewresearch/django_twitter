@@ -319,23 +319,20 @@ class AbstractTwitterProfile(
                 profile_data = json.loads(profile_data)
 
         if profile_data:
-            for db_name, *api_name in (
-                ('name',),
-                ('contributors_enabled',),
-                ('description',),
-                ('followers_count',),
+            for db_name, api_name in (
+                ('name', None),
+                ('contributors_enabled', None),
+                ('description', None),
+                ('followers_count', None),
                 ('followings_count', 'friends_count'),
                 ('is_verified', 'verified'),
-                ('listed_count',),
-                ('location',),
-                ('profile_image_url',),
-                ('statuses_count',),
+                ('listed_count', None),
+                ('location', None),
+                ('profile_image_url', None),
+                ('statuses_count', None),
             ):
-                if len(api_name) < 1:
+                if not api_name:
                     api_name = db_name
-
-                else:
-                    api_name = api_name[:1][0]
 
                 if api_name in profile_data:
                     setattr(self, db_name, profile_data[api_name])
