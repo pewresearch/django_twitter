@@ -455,10 +455,16 @@ class AbstractTwitterProfile(
             stats = pd.DataFrame(columns=columns)
 
         stats["json"] = stats["json"].map(lambda x: str(x))
-        stats["history_date"] = (
-            pd.to_datetime(stats["history_date"])
-                .dt.tz_convert(tz="US/Eastern")
-        )
+        try:
+            stats["history_date"] = (
+                pd.to_datetime(stats["history_date"])
+                    .dt.tz_convert(tz="US/Eastern")
+            )
+        except TypeError:
+            stats["history_date"] = (
+                pd.to_datetime(stats["history_date"])
+                    .dt.tz_localize(tz="US/Eastern")
+            )
         # Since history objects get created any time ANYTHING changes on a model, they don't necessarily represent handshakes with the API
         # So by de-duping like so:
         stats = stats.sort_values("history_date").drop_duplicates(subset=["json"])
