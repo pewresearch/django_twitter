@@ -7,6 +7,9 @@ import re
 import json
 import simple_history
 import django
+import pytz
+import datetime
+import pandas as pd
 
 from django.db import models
 from django.contrib.postgres.fields import ArrayField, JSONField
@@ -417,6 +420,72 @@ class AbstractTwitterProfile(
             return scores[0]
         else:
             return None
+
+    def get_snapshots(self, start_date, end_date, *extra_values):
+
+        start_date = datetime.datetime(start_date.year, start_date.month, start_date.day, 0, 0, 0,
+                                       tzinfo=pytz.timezone("US/Eastern"))
+        end_date = datetime.datetime(end_date.year, end_date.month, end_date.day, 0, 0, 0,
+                                     tzinfo=pytz.timezone("US/Eastern")) + datetime.timedelta(days=1)
+        columns = [
+            "json",
+            "description",
+            "history_date",
+            "followers_count",
+            "favorites_count",
+            "followings_count",
+            "listed_count",
+            "statuses_count",
+            "name",
+            "screen_name",
+            "status",
+            "is_verified",
+            "is_private",
+            "created_at",
+            "location",
+            "language",
+            "twitter_error_code",
+        ]
+        columns.extend(extra_values)
+        stats = pd.DataFrame.\
+            from_records(
+            self.history.filter(json__isnull=False).values(*columns)
+        )
+        if len(stats) == 0:
+            stats = pd.DataFrame(columns=columns)
+
+        stats["json"] = stats["json"].map(lambda x: str(x))
+        stats["history_date"] = (
+            pd.to_datetime(stats["history_date"])
+                .dt.tz_convert(tz="US/Eastern")
+        )
+        # Since history objects get created any time ANYTHING changes on a model, they don't necessarily represent handshakes with the API
+        # So by de-duping like so:
+        stats = stats.sort_values("history_date").drop_duplicates(subset=["json"])
+        # We can isolate those handshakes by filtering down to timestamps when the stats values changed
+        # Which could only have occurred via an API update
+        del stats["json"]
+        if stats['history_date'].min() > start_date:
+            stats = pd.concat([stats, pd.DataFrame([{"history_date": start_date}])])
+        if stats['history_date'].max() < end_date:
+            stats = pd.concat([stats, pd.DataFrame([{"history_date": end_date}])])
+        stats = stats.set_index("history_date").resample("D").max()
+        for col in ["followers_count", "favorites_count", "followings_count", "listed_count", "statuses_count"]:
+            stats[col] = stats[col].interpolate(limit_area="inside", limit_direction="forward",
+                                                                            method="linear")
+        for col in ["description", "name", "screen_name", "status", "is_verified", "is_private", "created_at", "location", "language", "twitter_error_code"]:
+            stats[col] = stats[col].interpolate(limit_area="inside", limit_direction="forward",
+                                                                    method="pad")
+        for col in extra_values:
+            stats[col] = stats[col].interpolate(limit_area="inside", limit_direction="forward",
+                                                method="pad")
+        stats = stats.reset_index().rename(columns={"history_date": "date"})
+        stats["date"] = stats["date"].map(lambda x: x.date())
+        stats = stats[(stats["date"] >= start_date.date()) & (stats["date"] <= end_date.date())]
+
+        stats["twitter_id"] = self.twitter_id
+
+        return stats
 
 
 class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
