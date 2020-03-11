@@ -125,9 +125,15 @@ class Command(BaseCommand):
                         and tweet_json.id_str in existing_tweets
                         and not options["ignore_backfill"]
                     ):
-                        # Only stop if the account has been backfilled and you encounter an existing tweet
-                        print("Encountered existing tweet, stopping now")
-                        keep_pulling = False
+                        if tweet_json.id_str in existing_tweets \
+                                and Tweet.objects.get(twitter_id=tweet_json.id_str).replies.count() == 0:
+                            # Only stop if the account has been backfilled and you encounter an existing tweet
+                            # With one exception: if another profile replied to a tweet produced by this one
+                            # It may exist in the database and be associated with this profile
+                            # So if the tweet exists and has replies in the database, it's not useful for determining
+                            # Whether we've previously backfilled this profile
+                            print("Encountered existing tweet, stopping now")
+                            keep_pulling = False
                     elif max_backfill_date:
                         timestamp = date_parse(
                             tweet_json._json["created_at"], ignoretz=True
