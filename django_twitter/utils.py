@@ -378,14 +378,9 @@ def get_tweet_dataframe(profiles, start_date, end_date, *extra_values, **kwargs)
             "quoted_status__twitter_id": "quoted_status",
         }
     )
-    df["created_at"] = pd.to_datetime(df["created_at"]).dt.tz_convert(tz="US/Eastern")
-    df["last_update_time"] = pd.to_datetime(df["last_update_time"]).dt.tz_convert(
-        tz="US/Eastern"
-    )
-    df["date"] = (
-        pd.to_datetime(df["created_at"])
-        .dt.tz_convert(tz="US/Eastern")
-        .map(lambda x: x.date())
-    )
+    for date_field in ["created_at", "last_update_time"]:
+        try: df[date_field] = pd.to_datetime(df[date_field]).dt.tz_convert(tz="US/Eastern")
+        except TypeError: df[date_field] = pd.to_datetime(df[date_field]).dt.tz_localize(tz="US/Eastern")
+    df["date"] = df["created_at"].map(lambda x: x.date())
 
     return df
