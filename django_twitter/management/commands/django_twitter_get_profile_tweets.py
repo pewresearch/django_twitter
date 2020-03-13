@@ -105,6 +105,7 @@ class Command(BaseCommand):
                 else:
 
                     scanned_count += 1
+                    existing_related = 0
                     if options["overwrite"] or (
                         tweet_json.id_str not in existing_tweets
                     ):
@@ -116,6 +117,12 @@ class Command(BaseCommand):
                         if tweet_set:
                             tweet_set.tweets.add(tweet)
                         updated_count += 1
+                        # Check to see if there are already existing relations that were created by another tweet
+                        existing_related += (
+                            tweet.replies.count()
+                            + tweet.retweets.count()
+                            + tweet.replies.count()
+                        )
                         if not tweet.text:
                             import pdb
 
@@ -125,13 +132,13 @@ class Command(BaseCommand):
                         and tweet_json.id_str in existing_tweets
                         and not options["ignore_backfill"]
                     ):
-                        if tweet_json.id_str in existing_tweets \
-                                and Tweet.objects.get(twitter_id=tweet_json.id_str).replies.count() == 0:
+                        if existing_related == 0:
                             # Only stop if the account has been backfilled and you encounter an existing tweet
-                            # With one exception: if another profile replied to a tweet produced by this one
-                            # It may exist in the database and be associated with this profile
-                            # So if the tweet exists and has replies in the database, it's not useful for determining
-                            # Whether we've previously backfilled this profile
+                            # With one exception: if another profile replied to, retweeted, or quoted this tweet
+                            # Then it may have already existed in the database even though we didn't necessarily
+                            # collect it when we were iterating over this user's timeline.
+                            # So if references to this tweet already exist in the database, it's not useful for
+                            # determining whether we've previously backfilled this profile
                             print("Encountered existing tweet, stopping now")
                             keep_pulling = False
                     elif max_backfill_date:
