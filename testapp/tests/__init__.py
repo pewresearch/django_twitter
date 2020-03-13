@@ -59,6 +59,10 @@ class DjangoTwitterTests(DjangoTestCase):
             self.assertIsNotNone(snapshot.followers_count)
             self.assertIsNotNone(snapshot.description)
             self.assertIsNotNone(snapshot.favorites_count)
+        self.assertIsNotNone(profile.most_recent_snapshot)
+        profile.most_recent_snapshot.delete()
+        profile.refresh_from_db()
+        self.assertIsNotNone(profile.pk)
 
         call_command(
             "django_twitter_get_profile_set",
