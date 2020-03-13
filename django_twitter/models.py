@@ -157,7 +157,16 @@ class AbstractTwitterBase(models.base.ModelBase):
                     "TwitterRelationshipModel",
                     False,
                     None,
-                )
+                ),
+                (
+                    models.ForeignKey,
+                    "TwitterProfileSnapshotModel",
+                    "most_recent_snapshot",
+                    "+",
+                    None,
+                    True,
+                    models.SET_NULL,
+                ),
             ],
             "TwitterProfileSnapshotModel": [
                 (
@@ -297,6 +306,7 @@ class AbstractTwitterProfile(
     """
     AUTO-CREATED RELATIONSHIPS:
     followers = models.ManyToManyField(your_app.TwitterProfileModel, related_name="followings")
+    most_recent_snapshot = models.ForeignKey(your_app.TwitterProfileSnapshot, related_name="+")
     """
 
     def __str__(self):
@@ -306,6 +316,12 @@ class AbstractTwitterProfile(
             if self.screen_name
             else self.twitter_id
         )
+
+    def save(self, *args, **kwargs):
+
+        if self.snapshots.count() > 0:
+            self.most_recent_snapshot = self.snapshots.order_by("-timestamp")[0]
+        super(AbstractTwitterProfile, self).save(*args, **kwargs)
 
     def url(self):
         return "http://www.twitter.com/intent/user?user_id={0}".format(
@@ -339,13 +355,6 @@ class AbstractTwitterProfile(
         scores = self.botometer_scores.order_by("-timestamp")
         if scores.count() > 0:
             return scores[0]
-        else:
-            return None
-
-    def most_recent_snapshot(self):
-
-        if self.snapshots.count() > 0:
-            return self.snapshots.order_by("-timestamp")[0]
         else:
             return None
 
