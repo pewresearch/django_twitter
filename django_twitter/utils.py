@@ -198,7 +198,7 @@ def get_monthly_twitter_activity(profiles, min_date, max_date=None):
         profiles.values("pk", "screen_name", "created_at")
     )
     profiles["name"] = profiles["pk"].map(
-        lambda x: TwitterProfile.objects.get(pk=x).most_recent_snapshot().name
+        lambda x: TwitterProfile.objects.get(pk=x).most_recent_snapshot.name
     )
     tweets = Tweet.objects.filter(profile_id__in=profiles["pk"].values).filter(
         created_at__gte=min_date
