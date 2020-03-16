@@ -425,8 +425,8 @@ class AbstractTwitterProfile(
 
         start_date = datetime.datetime(start_date.year, start_date.month, start_date.day, 0, 0, 0,
                                        tzinfo=pytz.timezone("US/Eastern"))
-        end_date = datetime.datetime(end_date.year, end_date.month, end_date.day, 0, 0, 0,
-                                     tzinfo=pytz.timezone("US/Eastern")) + datetime.timedelta(days=1)
+        end_date = datetime.datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59,
+                                     tzinfo=pytz.timezone("US/Eastern"))
         columns = [
             "json",
             "description",
