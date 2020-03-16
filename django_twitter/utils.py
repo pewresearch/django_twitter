@@ -353,7 +353,7 @@ def get_tweet_dataframe(profiles, start_date, end_date, *extra_values, **kwargs)
     Tweet = get_concrete_model("AbstractTweet")
     tweets = (
         Tweet.objects.filter(profile__in=profiles)
-        .filter(created_at__lte=end_date)
+        .filter(created_at__lte=datetime.datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59))
         .filter(created_at__gte=start_date)
         .values(
             "twitter_id",
