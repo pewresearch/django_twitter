@@ -380,7 +380,7 @@ def get_tweet_dataframe(profiles, start_date, end_date, *extra_values, **kwargs)
     )
     for date_field in ["created_at", "last_update_time"]:
         try: df[date_field] = pd.to_datetime(df[date_field]).dt.tz_convert(tz="US/Eastern")
-        except TypeError: df[date_field] = pd.to_datetime(df[date_field]).dt.tz_localize(tz="US/Eastern")
+        except TypeError: df[date_field] = pd.to_datetime(df[date_field]).dt.tz_localize(tz="US/Eastern", ambiguous='infer')
     df["date"] = df["created_at"].map(lambda x: x.date())
 
     return df
