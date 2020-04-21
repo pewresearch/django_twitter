@@ -331,7 +331,7 @@ def get_twitter_profile_dataframe(profiles, start_date, end_date, *extra_values)
     """
 
     stats = []
-    for profile in profiles:
+    for profile in tqdm(profiles, desc="Extracting Twitter profile snapshots"):
         stats.append(profile.get_snapshots(start_date, end_date, *extra_values))
     return pd.concat(stats)
 
