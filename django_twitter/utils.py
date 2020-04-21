@@ -382,5 +382,6 @@ def get_tweet_dataframe(profiles, start_date, end_date, *extra_values, **kwargs)
         try: df[date_field] = pd.to_datetime(df[date_field]).dt.tz_convert(tz="US/Eastern")
         except TypeError: df[date_field] = pd.to_datetime(df[date_field]).dt.tz_localize(tz="US/Eastern", ambiguous=True)
     df["date"] = df["created_at"].map(lambda x: x.date())
+    df['text'] = df['text'].fillna("").apply(lambda x: x.replace("\r", " "))
 
     return df
