@@ -473,8 +473,14 @@ class AbstractTwitterProfile(
         del stats["json"]
         if stats['history_date'].min() > start_date:
             stats = pd.concat([stats, pd.DataFrame([{"history_date": start_date}])])
+        else:
+            min_date = stats[stats['history_date'] <= start_date]['history_date'].max()
+            stats = stats[stats['history_date'] >= min_date]
         if stats['history_date'].max() < end_date:
             stats = pd.concat([stats, pd.DataFrame([{"history_date": end_date}])])
+        else:
+            max_date = stats[stats['history_date'] >= end_date]['history_date'].min()
+            stats = stats[stats['history_date'] <= max_date]
 
         stats = stats.sort_values("history_date", ascending=False).set_index("history_date").resample("D").first()
         # Resampling drops null columns so we're adding them back in
