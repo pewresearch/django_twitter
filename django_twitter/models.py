@@ -502,6 +502,8 @@ class AbstractTwitterProfile(
         stats = stats[(stats["date"] >= start_date.date()) & (stats["date"] <= end_date.date())]
 
         stats["twitter_id"] = self.twitter_id
+        stats[['description', 'name', 'screen_name', 'status', 'location', 'language']] = stats[['description', 'name', 'screen_name', 'status', 'location', 'language']].fillna("").apply(
+            lambda x: x.str.replace("\r", " "))
 
         return stats
 
