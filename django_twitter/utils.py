@@ -356,6 +356,7 @@ def get_tweet_dataframe(profiles, start_date, end_date, *extra_values, **kwargs)
         .filter(created_at__lte=datetime.datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59))
         .filter(created_at__gte=start_date)
         .values(
+            "pk",
             "twitter_id",
             "last_update_time",
             "historical",
