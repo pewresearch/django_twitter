@@ -431,7 +431,6 @@ class AbstractTwitterProfile(
             "is_private",
             "created_at",
             "location",
-            "language",
             "twitter_error_code",
         ]
         columns.extend(extra_values)
@@ -479,7 +478,7 @@ class AbstractTwitterProfile(
         for col in ["followers_count", "favorites_count", "followings_count", "listed_count", "statuses_count"]:
             stats[col] = stats[col].interpolate(limit_area="inside", limit_direction="forward",
                                                                             method="linear")
-        for col in ["description", "name", "screen_name", "status", "is_verified", "is_private", "created_at", "location", "language", "twitter_error_code"]:
+        for col in ["description", "name", "screen_name", "status", "is_verified", "is_private", "created_at", "location", "twitter_error_code"]:
             stats[col] = stats[col].interpolate(limit_area="inside", limit_direction="forward",
                                                                     method="pad")
         for col in extra_values:
@@ -490,7 +489,7 @@ class AbstractTwitterProfile(
         stats = stats[(stats["date"] >= start_date.date()) & (stats["date"] <= end_date.date())]
 
         stats["twitter_id"] = self.twitter_id
-        stats[['description', 'name', 'screen_name', 'status', 'location', 'language']] = stats[['description', 'name', 'screen_name', 'status', 'location', 'language']].fillna("").apply(
+        stats[['description', 'name', 'screen_name', 'status', 'location']] = stats[['description', 'name', 'screen_name', 'status', 'location']].fillna("").apply(
             lambda x: x.str.replace("\r", " "))
 
         return stats
