@@ -166,9 +166,16 @@ def identify_unusual_profiles_by_descriptions(profiles):
     """
 
     descriptions = pd.DataFrame.from_records(
-        profiles.values("twitter_id", "description")
+        profiles.values("twitter_id", "snapshots__description", "snapshots__timestamp")
     )
-    return _identify_unusual_text(descriptions, "description")
+    descriptions = (
+        descriptions.sort_values("snapshots__timestamp", ascending=False)
+        .groupby("twitter_id")
+        .first()
+        .reset_index()
+    )
+    del descriptions["snapshots__timestamp"]
+    return _identify_unusual_text(descriptions, "snapshots__description")
 
 
 def get_monthly_twitter_activity(profiles, min_date, max_date=None):
@@ -186,8 +193,12 @@ def get_monthly_twitter_activity(profiles, min_date, max_date=None):
     """
 
     Tweet = get_concrete_model("AbstractTweet")
+    TwitterProfile = get_concrete_model("AbstractTwitterProfile")
     profiles = pd.DataFrame.from_records(
-        profiles.values("pk", "name", "screen_name", "created_at")
+        profiles.values("pk", "screen_name", "created_at")
+    )
+    profiles["name"] = profiles["pk"].map(
+        lambda x: TwitterProfile.objects.get(pk=x).most_recent_snapshot.name
     )
     tweets = Tweet.objects.filter(profile_id__in=profiles["pk"].values).filter(
         created_at__gte=min_date

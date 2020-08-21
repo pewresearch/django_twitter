@@ -29,6 +29,9 @@ class DjangoTwitterTests(DjangoTestCase):
         from django_twitter.utils import get_concrete_model
 
         self.TwitterProfile = get_concrete_model("AbstractTwitterProfile")
+        self.TwitterProfileSnapshot = get_concrete_model(
+            "AbstractTwitterProfileSnapshot"
+        )
         self.TwitterProfileSet = get_concrete_model("AbstractTwitterProfileSet")
         self.Tweet = get_concrete_model("AbstractTweet")
         self.TweetSet = get_concrete_model("AbstractTweetSet")
@@ -45,15 +48,21 @@ class DjangoTwitterTests(DjangoTestCase):
             self.TwitterProfile.objects.filter(screen_name="pvankessel").count(), 1
         )
         profile = self.TwitterProfile.objects.get(screen_name="pvankessel")
-        profile.json = json.dumps(profile.json)
-        profile.save()
-        profile.update_from_json()
         self.assertIsNotNone(profile.twitter_id)
         self.assertIsNotNone(profile.created_at)
-        self.assertIsNotNone(profile.followers_count)
-        self.assertIsNotNone(profile.description)
-        self.assertIsNotNone(profile.favorites_count)
         self.assertIsNotNone(profile.screen_name)
+        self.assertGreater(profile.snapshots.count(), 0)
+        for snapshot in profile.snapshots.all():
+            snapshot.json = json.dumps(snapshot.json)
+            snapshot.save()
+            snapshot.update_from_json()
+            self.assertIsNotNone(snapshot.followers_count)
+            self.assertIsNotNone(snapshot.description)
+            self.assertIsNotNone(snapshot.favorites_count)
+        self.assertIsNotNone(profile.most_recent_snapshot)
+        profile.most_recent_snapshot.delete()
+        profile.refresh_from_db()
+        self.assertIsNotNone(profile.pk)
 
         call_command(
             "django_twitter_get_profile_set",
