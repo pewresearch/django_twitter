@@ -131,34 +131,63 @@ class AbstractTwitterBase(models.base.ModelBase):
                     models.CASCADE,
                 )
             ],
-            "TwitterRelationshipModel": [
+            # "TwitterRelationshipModel": [
+            #     (
+            #         models.ForeignKey,
+            #         "TwitterProfileModel",
+            #         "following",
+            #         "follower_details",
+            #         None,
+            #         True,
+            #         models.CASCADE,
+            #     ),
+            #     (
+            #         models.ForeignKey,
+            #         "TwitterProfileModel",
+            #         "follower",
+            #         "following_details",
+            #         None,
+            #         True,
+            #         models.CASCADE,
+            #     ),
+            # ],
+            "TwitterFollowerListModel": [
                 (
                     models.ForeignKey,
                     "TwitterProfileModel",
-                    "following",
-                    "follower_details",
+                    "profile",
+                    "follower_lists",
                     None,
                     True,
                     models.CASCADE,
                 ),
-                (
-                    models.ForeignKey,
-                    "TwitterProfileModel",
-                    "follower",
-                    "following_details",
-                    None,
-                    True,
-                    models.CASCADE,
-                ),
-            ],
-            "TwitterProfileModel": [
                 (
                     models.ManyToManyField,
                     "TwitterProfileModel",
                     "followers",
+                    None,
+                    None,
+                    True,
+                    None,
+                ),
+            ],
+            "TwitterFollowingListModel": [
+                (
+                    models.ForeignKey,
+                    "TwitterProfileModel",
+                    "profile",
+                    "following_lists",
+                    None,
+                    True,
+                    models.CASCADE,
+                ),
+                (
+                    models.ManyToManyField,
+                    "TwitterProfileModel",
                     "followings",
-                    "TwitterRelationshipModel",
-                    False,
+                    None,
+                    None,
+                    True,
                     None,
                 ),
                 (
@@ -182,6 +211,17 @@ class AbstractTwitterBase(models.base.ModelBase):
                     models.CASCADE,
                 )
             ],
+            # "TwitterProfileModel": [
+            #     (
+            #         models.ManyToManyField,
+            #         "TwitterProfileModel",
+            #         "followers",
+            #         "followings",
+            #         "TwitterRelationshipModel",
+            #         False,
+            #         None,
+            #     )
+            # ],
             "TweetSetModel": [
                 (
                     models.ManyToManyField,
@@ -398,6 +438,20 @@ class AbstractTwitterProfileSnapshot(
 
         return "{} AS OF {}".format(str(self.profile), self.timestamp)
 
+    @property
+    def followers(self):
+        follower_list = self.follower_lists.filter(finish_time__isnull=False).order_by(
+            "-finish_time"
+        )[0]
+        return follower_list.followers.all()
+
+    @property
+    def followings(self):
+        following_list = self.following_lists.filter(
+            finish_time__isnull=False
+        ).order_by("-finish_time")[0]
+        return following_list.followings.all()
+
     def update_from_json(self, profile_data=None):
 
         if not profile_data:
@@ -467,28 +521,6 @@ class AbstractTwitterProfileSnapshot(
         return "http://www.twitter.com/intent/user?user_id={0}".format(
             self.twitter_id
         )  # Can we verify this? Never seen it
-
-    def current_followers(self):
-
-        try:
-            max_run = self.follower_details.order_by("-run_id")[0].run_id
-        except IndexError:
-            max_run = None
-        follower_ids = self.follower_details.filter(run_id=max_run).values_list(
-            "follower_id", flat=True
-        )
-        return self.followers.filter(pk__in=follower_ids).distinct()
-
-    def current_followings(self):
-
-        try:
-            max_run = self.following_details.order_by("-run_id")[0].run_id
-        except IndexError:
-            max_run = None
-        following_ids = self.following_details.filter(run_id=max_run).values_list(
-            "following_id", flat=True
-        )
-        return self.followings.filter(pk__in=following_ids).distinct()
 
     def most_recent_botometer_score(self):
 
@@ -611,12 +643,6 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
     favorite_count = models.IntegerField(null=True)
 
     json = JSONField(null=True, default=dict)
-
-    # latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True)
-    # longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True)
-
-    # source = type of device. Removing this because it seems like it would be rarely used (will be in the json)
-    # source = models.CharField(max_length=255, null=True)
 
     """
     AUTO-CREATED RELATIONSHIPS:
@@ -925,21 +951,24 @@ class AbstractBotometerScore(with_metaclass(AbstractTwitterBase, models.Model)):
             self.save()
 
 
-class AbstractTwitterRelationship(with_metaclass(AbstractTwitterBase, models.Model)):
+class AbstractTwitterFollowerList(with_metaclass(AbstractTwitterBase, models.Model)):
     class Meta(object):
         abstract = True
 
-    date = models.DateField(auto_now=True)
-    run_id = models.IntegerField(null=True)
+    # profile = models.ForeignKey("TwitterProfile", related_name="follower_lists")
+    # followers = models.ManyToManyField("TwitterProfile", related_name=None)
+    start_time = models.DateTimeField(auto_now_add=True)
+    finish_time = models.DateTimeField(null=True)
 
-    """
-    AUTO-CREATED RELATIONSHIPS:
-    follower = models.ForeignKey(your_app.TwitterProfileModel, related_name="following_details")
-    following = models.ForeignKey(your_app.TwitterProfileModel, related_name="follower_details")
-    """
 
-    def __str__(self):
-        return "{} following {}".format(self.follower, self.following)
+class AbstractTwitterFollowingList(with_metaclass(AbstractTwitterBase, models.Model)):
+    class Meta(object):
+        abstract = True
+
+    # profile = models.ForeignKey("TwitterProfile", related_name="following_lists")
+    # followings = models.ManyToManyField("TwitterProfile", related_name=None)
+    start_time = models.DateTimeField(auto_now_add=True)
+    finish_time = models.DateTimeField(null=True)
 
 
 class AbstractTwitterHashtag(with_metaclass(AbstractTwitterBase, models.Model)):

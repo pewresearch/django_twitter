@@ -1,5 +1,7 @@
 from __future__ import print_function
 
+import datetime
+
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.apps import apps
@@ -39,7 +41,7 @@ class Command(BaseCommand):
             access_secret=options["access_secret"],
         )
 
-        TwitterRelationship = get_concrete_model("AbstractTwitterRelationship")
+        TwitterFollowingList = get_concrete_model("AbstractTwitterFollowingList")
 
         if options["add_to_profile_set"]:
             profile_set = get_twitter_profile_set(options["add_to_profile_set"])
@@ -53,21 +55,13 @@ class Command(BaseCommand):
                 "AbstractTwitterProfileSnapshot"
             ).objects.create(profile=follower)
             snapshot.update_from_json(twitter_json._json)
-            try:
-                run_id = (
-                    TwitterRelationship.objects.filter(follower=follower)
-                    .order_by("-run_id")[0]
-                    .run_id
-                    + 1
-                )
-            except IndexError:
-                run_id = 1
+            following_list = TwitterFollowingList.objects.create(profile=follower)
 
             try:
 
                 # Iterate through all tweets in timeline
                 iterator = self.twitter.iterate_profile_followings(
-                    follower.twitter_id,
+                    profile.twitter_id,
                     hydrate_profiles=options["hydrate"],
                     limit=options["limit"],
                 )
@@ -76,7 +70,7 @@ class Command(BaseCommand):
                     iterator = tqdm(
                         iterator,
                         desc="Retrieving friends for user {}".format(
-                            follower.screen_name
+                            profile.screen_name
                         ),
                     )
 
@@ -88,14 +82,13 @@ class Command(BaseCommand):
                             following_data._json["id_str"], create=True
                         )
                         following.update_from_json(following_data._json)
-                    relationship = TwitterRelationship.objects.create(
-                        following=following, follower=follower, run_id=run_id
-                    )
+                    following_list.followings.add(following)
                     if profile_set:
                         profile_set.profiles.add(following)
 
+                following_list.finish_time = datetime.datetime.now()
+                following_list.save()
+
             except Exception as e:
                 print("Encountered an error: {}".format(e))
-                TwitterRelationship.objects.filter(
-                    follower=follower, run_id=run_id
-                ).delete()
+                following_list.delete()
