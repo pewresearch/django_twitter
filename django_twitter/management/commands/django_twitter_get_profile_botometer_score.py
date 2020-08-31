@@ -43,6 +43,10 @@ class Command(BaseCommand):
         if twitter_json:
 
             twitter_profile = get_twitter_profile(twitter_json.id_str, create=True)
+            snapshot = get_concrete_model(
+                "AbstractTwitterProfileSnapshot"
+            ).objects.create(profile=twitter_profile)
+            snapshot.update_from_json(twitter_json._json)
             botometer_scores = self.twitter.get_profile_botometer_score(
                 options["twitter_id"]
             )
