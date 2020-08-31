@@ -20,6 +20,10 @@ if settings.TWITTER_APP == "testapp":
             on_delete=models.SET_NULL,
         )
 
+    class TwitterProfileSnapshot(AbstractTwitterProfileSnapshot):
+
+        pass
+
     class Tweet(AbstractTweet):
 
         pass

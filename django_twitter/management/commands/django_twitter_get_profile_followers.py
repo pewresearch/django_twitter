@@ -50,6 +50,10 @@ class Command(BaseCommand):
         if twitter_json:
 
             following = get_twitter_profile(twitter_json.id_str, create=True)
+            snapshot = get_concrete_model(
+                "AbstractTwitterProfileSnapshot"
+            ).objects.create(profile=following)
+            snapshot.update_from_json(twitter_json._json)
             try:
                 run_id = (
                     TwitterRelationship.objects.filter(following=following)
