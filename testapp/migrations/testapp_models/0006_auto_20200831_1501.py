@@ -40,7 +40,7 @@ def migrate_followings(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('testapp', '0001_initial'),
+        ('testapp', '0005_auto_20200225_1406'),
     ]
 
     operations = [
@@ -79,9 +79,6 @@ class Migration(migrations.Migration):
         migrations.RemoveField(
             model_name='twitterprofile',
             name='followers',
-        ),
-        migrations.DeleteModel(
-            name='HistoricalTwitterProfile',
         ),
         migrations.DeleteModel(
             name='TwitterRelationship',
