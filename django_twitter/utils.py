@@ -353,7 +353,11 @@ def get_tweet_dataframe(profiles, start_date, end_date, *extra_values, **kwargs)
     Tweet = get_concrete_model("AbstractTweet")
     tweets = (
         Tweet.objects.filter(profile__in=profiles)
-        .filter(created_at__lte=datetime.datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59))
+        .filter(
+            created_at__lte=datetime.datetime(
+                end_date.year, end_date.month, end_date.day, 23, 59, 59
+            )
+        )
         .filter(created_at__gte=start_date)
         .values(
             "pk",
@@ -380,9 +384,15 @@ def get_tweet_dataframe(profiles, start_date, end_date, *extra_values, **kwargs)
         }
     )
     for date_field in ["created_at", "last_update_time"]:
-        try: df[date_field] = pd.to_datetime(df[date_field]).dt.tz_convert(tz="US/Eastern")
-        except TypeError: df[date_field] = pd.to_datetime(df[date_field]).dt.tz_localize(tz="US/Eastern", ambiguous=True)
+        try:
+            df[date_field] = pd.to_datetime(df[date_field]).dt.tz_convert(
+                tz="US/Eastern"
+            )
+        except TypeError:
+            df[date_field] = pd.to_datetime(df[date_field]).dt.tz_localize(
+                tz="US/Eastern", ambiguous=True
+            )
     df["date"] = df["created_at"].map(lambda x: x.date())
-    df['text'] = df['text'].fillna("").apply(lambda x: x.replace("\r", " "))
+    df["text"] = df["text"].fillna("").apply(lambda x: x.replace("\r", " "))
 
     return df
