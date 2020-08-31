@@ -28,6 +28,7 @@ def populate_snapshots(apps, schema_editor):
         for profile in TwitterProfileModel.objects.exclude(json={}).exclude(json__isnull=True):
             history = pd.DataFrame.from_records(profile.history.values())
             history["json_str"] = history["json"].astype(str)
+            history = history[history['json_str']!='{}']
             history = history.sort_values("history_date").groupby("json_str").first().reset_index()
             for index, row in history.iterrows():
                 snapshot = get_concrete_model("AbstractTwitterProfileSnapshot").objects.create(profile=profile, json=row["json"])
