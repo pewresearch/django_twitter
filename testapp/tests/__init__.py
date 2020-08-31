@@ -241,6 +241,8 @@ class DjangoTwitterTests(DjangoTestCase):
             identify_unusual_profiles_by_tweet_text,
             get_monthly_twitter_activity,
             find_missing_date_ranges,
+            get_twitter_profile_dataframe,
+            get_tweet_dataframe,
         )
 
         # We're going to assume that Justin Bieber will always be quite distinctive from the Pew accounts
@@ -318,6 +320,20 @@ class DjangoTwitterTests(DjangoTestCase):
                 results[results["twitter_id"] == profile.twitter_id]["range"].max(),
                 min_missing,
             )
+
+        df = get_twitter_profile_dataframe(
+            profiles, datetime.datetime(2018, 1, 1), datetime.datetime.now()
+        )
+        self.assertEqual(df["date"].min(), datetime.date(2018, 1, 1))
+        self.assertEqual(df["date"].max(), datetime.datetime.now().date())
+        df = df.dropna(subset=["followers_count"])
+        self.assertEqual(profiles.count(), len(df))
+
+        df = get_tweet_dataframe(
+            profiles, datetime.datetime(2018, 1, 1), datetime.datetime.now()
+        )
+        counts = df.groupby("profile")["pk"].count()
+        self.assertEqual(profiles.count(), len(counts))
 
     def test_stream_command(self):
 
