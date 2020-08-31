@@ -280,24 +280,26 @@ class AbstractTwitterProfile(
         tweet the next time it runs.",
     )
 
-    screen_name             = models.CharField(max_length=100, db_index=True, null=True, help_text="Twitter screen name")
-    name                    = models.CharField(max_length=200, null=True)
-    contributors_enabled    = models.NullBooleanField(null=True)
-    created_at              = models.DateTimeField(null=True)
-    description             = models.TextField(null=True)
-    favorites_count         = models.IntegerField(null=True)
-    followers_count         = models.IntegerField(null=True)
-    followings_count        = models.IntegerField(null=True)
-    is_private              = models.BooleanField(default=False)
-    is_verified             = models.NullBooleanField(null=True)
-    listed_count            = models.IntegerField(null=True)
-    profile_image_url       = models.TextField(null=True)
-    status                  = models.TextField(null=True)
-    statuses_count          = models.IntegerField(null=True)
-    urls                    = ArrayField(models.CharField(max_length=300), default=list)
-    location                = models.CharField(max_length=512, null=True)
-    twitter_error_code      = models.IntegerField(null=True)
-    json                    = JSONField(null=True, default=dict)
+    screen_name = models.CharField(
+        max_length=100, db_index=True, null=True, help_text="Twitter screen name"
+    )
+    name = models.CharField(max_length=200, null=True)
+    contributors_enabled = models.NullBooleanField(null=True)
+    created_at = models.DateTimeField(null=True)
+    description = models.TextField(null=True)
+    favorites_count = models.IntegerField(null=True)
+    followers_count = models.IntegerField(null=True)
+    followings_count = models.IntegerField(null=True)
+    is_private = models.BooleanField(default=False)
+    is_verified = models.NullBooleanField(null=True)
+    listed_count = models.IntegerField(null=True)
+    profile_image_url = models.TextField(null=True)
+    status = models.TextField(null=True)
+    statuses_count = models.IntegerField(null=True)
+    urls = ArrayField(models.CharField(max_length=300), default=list)
+    location = models.CharField(max_length=512, null=True)
+    twitter_error_code = models.IntegerField(null=True)
+    json = JSONField(null=True, default=dict)
 
     """
     AUTO-CREATED RELATIONSHIPS:
@@ -323,16 +325,16 @@ class AbstractTwitterProfile(
 
         if profile_data:
             for db_name, api_name in (
-                ('name', None),
-                ('contributors_enabled', None),
-                ('description', None),
-                ('followers_count', None),
-                ('followings_count', 'friends_count'),
-                ('is_verified', 'verified'),
-                ('listed_count', None),
-                ('location', None),
-                ('profile_image_url', None),
-                ('statuses_count', None),
+                ("name", None),
+                ("contributors_enabled", None),
+                ("description", None),
+                ("followers_count", None),
+                ("followings_count", "friends_count"),
+                ("is_verified", "verified"),
+                ("listed_count", None),
+                ("location", None),
+                ("profile_image_url", None),
+                ("statuses_count", None),
             ):
                 if not api_name:
                     api_name = db_name
@@ -411,10 +413,24 @@ class AbstractTwitterProfile(
 
     def get_snapshots(self, start_date, end_date, *extra_values):
 
-        start_date = datetime.datetime(start_date.year, start_date.month, start_date.day, 0, 0, 0,
-                                       tzinfo=pytz.timezone("US/Eastern"))
-        end_date = datetime.datetime(end_date.year, end_date.month, end_date.day, 23, 59, 59,
-                                     tzinfo=pytz.timezone("US/Eastern"))
+        start_date = datetime.datetime(
+            start_date.year,
+            start_date.month,
+            start_date.day,
+            0,
+            0,
+            0,
+            tzinfo=pytz.timezone("US/Eastern"),
+        )
+        end_date = datetime.datetime(
+            end_date.year,
+            end_date.month,
+            end_date.day,
+            23,
+            59,
+            59,
+            tzinfo=pytz.timezone("US/Eastern"),
+        )
         columns = [
             "json",
             "description",
@@ -434,63 +450,90 @@ class AbstractTwitterProfile(
             "twitter_error_code",
         ]
         columns.extend(extra_values)
-        stats = pd.DataFrame.\
-            from_records(
+        stats = pd.DataFrame.from_records(
             self.history.filter(json__isnull=False).values(*columns)
         )
         if len(stats) == 0:
             stats = pd.DataFrame(columns=columns)
 
         stats["json"] = stats["json"].map(lambda x: str(x))
+        stats = stats[stats["json"] != "{}"]
         try:
-            stats["history_date"] = (
-                pd.to_datetime(stats["history_date"])
-                    .dt.tz_convert(tz="US/Eastern")
+            stats["history_date"] = pd.to_datetime(stats["history_date"]).dt.tz_convert(
+                tz="US/Eastern"
             )
         except TypeError:
-            stats["history_date"] = (
-                pd.to_datetime(stats["history_date"])
-                    .dt.tz_localize(tz="US/Eastern")
-            )
+            stats["history_date"] = pd.to_datetime(
+                stats["history_date"]
+            ).dt.tz_localize(tz="US/Eastern")
         # Since history objects get created any time ANYTHING changes on a model, they don't necessarily represent handshakes with the API
         # So by de-duping like so:
         stats = stats.sort_values("history_date").drop_duplicates(subset=["json"])
         # We can isolate those handshakes by filtering down to timestamps when the stats values changed
         # Which could only have occurred via an API update
         del stats["json"]
-        if stats['history_date'].min() > start_date:
+        if stats["history_date"].min() > start_date:
             stats = pd.concat([stats, pd.DataFrame([{"history_date": start_date}])])
         else:
-            min_date = stats[stats['history_date'] <= start_date]['history_date'].max()
-            stats = stats[stats['history_date'] >= min_date]
-        if stats['history_date'].max() < end_date:
+            min_date = stats[stats["history_date"] <= start_date]["history_date"].max()
+            stats = stats[stats["history_date"] >= min_date]
+        if stats["history_date"].max() < end_date:
             stats = pd.concat([stats, pd.DataFrame([{"history_date": end_date}])])
         else:
-            max_date = stats[stats['history_date'] >= end_date]['history_date'].min()
-            stats = stats[stats['history_date'] <= max_date]
+            max_date = stats[stats["history_date"] >= end_date]["history_date"].min()
+            stats = stats[stats["history_date"] <= max_date]
 
-        stats = stats.sort_values("history_date", ascending=False).set_index("history_date").resample("D").first()
+        stats = (
+            stats.sort_values("history_date", ascending=False)
+            .set_index("history_date")
+            .resample("D")
+            .first()
+        )
         # Resampling drops null columns so we're adding them back in
         for col in columns:
             if col not in ["history_date", "json"] and col not in stats.columns:
                 stats[col] = None
 
-        for col in ["followers_count", "favorites_count", "followings_count", "listed_count", "statuses_count"]:
-            stats[col] = stats[col].interpolate(limit_area="inside", limit_direction="forward",
-                                                                            method="linear")
-        for col in ["description", "name", "screen_name", "status", "is_verified", "is_private", "created_at", "location", "twitter_error_code"]:
-            stats[col] = stats[col].interpolate(limit_area="inside", limit_direction="forward",
-                                                                    method="pad")
+        for col in [
+            "followers_count",
+            "favorites_count",
+            "followings_count",
+            "listed_count",
+            "statuses_count",
+        ]:
+            stats[col] = stats[col].interpolate(
+                limit_area="inside", limit_direction="forward", method="linear"
+            )
+        for col in [
+            "description",
+            "name",
+            "screen_name",
+            "status",
+            "is_verified",
+            "is_private",
+            "created_at",
+            "location",
+            "twitter_error_code",
+        ]:
+            stats[col] = stats[col].interpolate(
+                limit_area="inside", limit_direction="forward", method="pad"
+            )
         for col in extra_values:
-            stats[col] = stats[col].interpolate(limit_area="inside", limit_direction="forward",
-                                                method="pad")
+            stats[col] = stats[col].interpolate(
+                limit_area="inside", limit_direction="forward", method="pad"
+            )
         stats = stats.reset_index().rename(columns={"history_date": "date"})
         stats["date"] = stats["date"].map(lambda x: x.date())
-        stats = stats[(stats["date"] >= start_date.date()) & (stats["date"] <= end_date.date())]
+        stats = stats[
+            (stats["date"] >= start_date.date()) & (stats["date"] <= end_date.date())
+        ]
 
         stats["twitter_id"] = self.twitter_id
-        stats[['description', 'name', 'screen_name', 'status', 'location']] = stats[['description', 'name', 'screen_name', 'status', 'location']].fillna("").apply(
-            lambda x: x.str.replace("\r", " "))
+        stats[["description", "name", "screen_name", "status", "location"]] = (
+            stats[["description", "name", "screen_name", "status", "location"]]
+            .fillna("")
+            .apply(lambda x: x.str.replace("\r", " "))
+        )
 
         return stats
 
@@ -720,13 +763,15 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
 
                 if text and additional_text:
                     # Examples of RTs: 1116460554237902849, 1116460554237902849, 1084731566423715841
-                    if text.endswith("\u2026") or text.endswith(u"\u2026"):
+                    if text.endswith("\u2026") or text.endswith("\u2026"):
                         text = re.sub(text[-1], "", text)
                         s = SequenceMatcher(None, additional_text, text, autojunk=True)
                         for block in s.get_matching_blocks():
                             if block.size > 1:
-                                overlap = additional_text[block.a: (block.a + block.size)]
-                                additional_text = additional_text.replace(overlap, '')
+                                overlap = additional_text[
+                                    block.a : (block.a + block.size)
+                                ]
+                                additional_text = additional_text.replace(overlap, "")
                         text = "".join([text, additional_text])
 
                 elif not text and additional_text:
