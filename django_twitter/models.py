@@ -190,15 +190,6 @@ class AbstractTwitterBase(models.base.ModelBase):
                     True,
                     None,
                 ),
-                (
-                    models.ForeignKey,
-                    "TwitterProfileSnapshotModel",
-                    "most_recent_snapshot",
-                    "+",
-                    None,
-                    True,
-                    models.SET_NULL,
-                ),
             ],
             "TwitterProfileSnapshotModel": [
                 (
@@ -211,17 +202,26 @@ class AbstractTwitterBase(models.base.ModelBase):
                     models.CASCADE,
                 )
             ],
-            # "TwitterProfileModel": [
-            #     (
-            #         models.ManyToManyField,
-            #         "TwitterProfileModel",
-            #         "followers",
-            #         "followings",
-            #         "TwitterRelationshipModel",
-            #         False,
-            #         None,
-            #     )
-            # ],
+            "TwitterProfileModel": [
+                # (
+                #     models.ManyToManyField,
+                #     "TwitterProfileModel",
+                #     "followers",
+                #     "followings",
+                #     "TwitterRelationshipModel",
+                #     False,
+                #     None,
+                # )
+                (
+                    models.ForeignKey,
+                    "TwitterProfileSnapshotModel",
+                    "most_recent_snapshot",
+                    "+",
+                    None,
+                    True,
+                    models.SET_NULL,
+                )
+            ],
             "TweetSetModel": [
                 (
                     models.ManyToManyField,
@@ -245,7 +245,7 @@ class AbstractTwitterBase(models.base.ModelBase):
                 )
             ],
         }
-        throughs = ["TwitterRelationshipModel"]
+        throughs = []
         for owner_model in list(fields_to_add.keys()):
             for (
                 relationship_type,
@@ -503,24 +503,42 @@ class AbstractTwitterProfile(
     def current_followers(self):
 
         try:
-            max_run = self.follower_details.order_by("-run_id")[0].run_id
+            followers = self.follower_lists.filter(finish_time__isnull=False).order_by(
+                "-finish_time"
+            )[0]
         except IndexError:
-            max_run = None
-        follower_ids = self.follower_details.filter(run_id=max_run).values_list(
-            "follower_id", flat=True
-        )
-        return self.followers.filter(pk__in=follower_ids).distinct()
+            followers = None
+        return followers.followers.all()
+
+    def current_follower_list(self):
+
+        try:
+            followers = self.follower_lists.filter(finish_time__isnull=False).order_by(
+                "-finish_time"
+            )[0]
+        except IndexError:
+            followers = None
+        return followers
 
     def current_followings(self):
 
         try:
-            max_run = self.following_details.order_by("-run_id")[0].run_id
+            followings = self.following_lists.filter(
+                finish_time__isnull=False
+            ).order_by("-finish_time")[0]
         except IndexError:
-            max_run = None
-        following_ids = self.following_details.filter(run_id=max_run).values_list(
-            "following_id", flat=True
-        )
-        return self.followings.filter(pk__in=following_ids).distinct()
+            followings = None
+        return followings.followings.all()
+
+    def current_following_list(self):
+
+        try:
+            followings = self.following_lists.filter(
+                finish_time__isnull=False
+            ).order_by("-finish_time")[0]
+        except IndexError:
+            followings = None
+        return followings
 
     def most_recent_botometer_score(self):
 
@@ -1106,9 +1124,6 @@ if settings.TWITTER_APP == "django_twitter":
         pass
 
     class BotometerScore(AbstractBotometerScore):
-        pass
-
-    class TwitterRelationship(AbstractTwitterRelationship):
         pass
 
     class TwitterHashtag(AbstractTwitterHashtag):
