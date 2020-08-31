@@ -331,6 +331,135 @@ class AbstractTwitterProfile(
             self.twitter_id
         )  # Can we verify this? Never seen it
 
+    def get_snapshots(self, start_date, end_date, *extra_values):
+
+        start_date = datetime.datetime(
+            start_date.year,
+            start_date.month,
+            start_date.day,
+            0,
+            0,
+            0,
+            tzinfo=pytz.timezone("US/Eastern"),
+        )
+        end_date = datetime.datetime(
+            end_date.year,
+            end_date.month,
+            end_date.day,
+            23,
+            59,
+            59,
+            tzinfo=pytz.timezone("US/Eastern"),
+        )
+        columns = [
+            "json",
+            "description",
+            "timestamp",
+            "followers_count",
+            "favorites_count",
+            "followings_count",
+            "listed_count",
+            "statuses_count",
+            "name",
+            "screen_name",
+            "status",
+            "is_verified",
+            "is_private",
+            "profile__created_at",
+            "location",
+            "profile__twitter_error_code",
+        ]
+        columns.extend(extra_values)
+        stats = pd.DataFrame.from_records(self.snapshots.values(*columns)).rename(
+            columns={
+                "profile__created_at": "created_at",
+                "profile__twitter_error_code": "twitter_error_code",
+            }
+        )
+        if len(stats) == 0:
+            stats = pd.DataFrame(columns=columns)
+
+        stats["json"] = stats["json"].map(lambda x: str(x))
+        stats = stats[stats["json"] != "{}"]
+        try:
+            stats["timestamp"] = pd.to_datetime(stats["timestamp"]).dt.tz_convert(
+                tz="US/Eastern"
+            )
+        except TypeError:
+            stats["timestamp"] = pd.to_datetime(stats["timestamp"]).dt.tz_localize(
+                tz="US/Eastern"
+            )
+        # Since history objects get created any time ANYTHING changes on a model, they don't necessarily represent handshakes with the API
+        # So by de-duping like so:
+        stats = stats.sort_values("timestamp").drop_duplicates(subset=["json"])
+        # We can isolate those handshakes by filtering down to timestamps when the stats values changed
+        # Which could only have occurred via an API update
+        del stats["json"]
+        if stats["timestamp"].min() > start_date:
+            stats = pd.concat([stats, pd.DataFrame([{"timestamp": start_date}])])
+        else:
+            min_date = stats[stats["timestamp"] <= start_date]["timestamp"].max()
+            stats = stats[stats["timestamp"] >= min_date]
+        if stats["timestamp"].max() < end_date:
+            stats = pd.concat([stats, pd.DataFrame([{"timestamp": end_date}])])
+        else:
+            max_date = stats[stats["timestamp"] >= end_date]["timestamp"].min()
+            stats = stats[stats["timestamp"] <= max_date]
+
+        stats = (
+            stats.sort_values("timestamp", ascending=False)
+            .set_index("timestamp")
+            .resample("D")
+            .first()
+        )
+        # Resampling drops null columns so we're adding them back in
+        for col in columns:
+            if col not in ["timestamp", "json"] and col not in stats.columns:
+                stats[col] = None
+
+        for col in [
+            "followers_count",
+            "favorites_count",
+            "followings_count",
+            "listed_count",
+            "statuses_count",
+        ]:
+            stats[col] = stats[col].interpolate(
+                limit_area="inside", limit_direction="forward", method="linear"
+            )
+        for col in [
+            "description",
+            "name",
+            "screen_name",
+            "status",
+            "is_verified",
+            "is_private",
+            "created_at",
+            "location",
+            "twitter_error_code",
+        ]:
+            stats[col] = stats[col].interpolate(
+                limit_area="inside", limit_direction="forward", method="pad"
+            )
+        for col in extra_values:
+            stats[col] = stats[col].interpolate(
+                limit_area="inside", limit_direction="forward", method="pad"
+            )
+        stats = stats.reset_index().rename(columns={"timestamp": "date"})
+        stats["date"] = stats["date"].map(lambda x: x.date())
+        stats = stats[
+            (stats["date"] >= start_date.date()) & (stats["date"] <= end_date.date())
+        ]
+
+        stats["twitter_id"] = self.twitter_id
+        stats[["description", "name", "screen_name", "status", "location"]] = (
+            stats[["description", "name", "screen_name", "status", "location"]]
+            .fillna("")
+            .apply(lambda x: x.str.replace("\r", " "))
+        )
+
+        return stats
+
     def current_followers(self):
 
         try:
