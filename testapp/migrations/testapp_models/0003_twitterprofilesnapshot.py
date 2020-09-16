@@ -6,6 +6,7 @@ import django.contrib.postgres.fields.jsonb
 from django.db import migrations, models
 import django.db.models.deletion
 import simple_history.models
+from tqdm import tqdm
 
 
 def populate_snapshots(apps, schema_editor):
@@ -19,20 +20,23 @@ def populate_snapshots(apps, schema_editor):
     model = get_concrete_model("AbstractTwitterProfile")
     if model:
         TwitterProfileModel = apps.get_model(model._meta.app_label, model._meta.model_name)
+        HistoricalTwitterProfileModel = apps.get_model(model._meta.app_label, "historicaltwitterprofile")
     model = get_concrete_model("AbstractTwitterProfileSnapshot")
     if model:
         TwitterProfileSnapshotModel = apps.get_model(model._meta.app_label, model._meta.model_name)
 
     # If our app has both of these models, we'll transfer the data
-    if TwitterProfileModel and TwitterProfileSnapshotModel:
-        for profile in TwitterProfileModel.objects.exclude(json={}).exclude(json__isnull=True):
-            history = pd.DataFrame.from_records(profile.history.values())
+    if TwitterProfileModel and TwitterProfileSnapshotModel and HistoricalTwitterProfileModel:
+        for profile in tqdm(TwitterProfileModel.objects.exclude(json={}).exclude(json__isnull=True),
+                            desc="Migrating to profile snapshots"):
+            history = pd.DataFrame.from_records(HistoricalTwitterProfileModel.objects.filter(id=profile.pk).values())
             history["json_str"] = history["json"].astype(str)
-            history = history[history['json_str']!='{}']
+            history = history[history['json_str'] != '{}']
             history = history.sort_values("history_date").groupby("json_str").first().reset_index()
             for index, row in history.iterrows():
-                snapshot = get_concrete_model("AbstractTwitterProfileSnapshot").objects.create(profile=profile, json=row["json"])
-                snapshot.update_from_json()
+                snapshot = TwitterProfileSnapshotModel.objects.create(profile_id=profile.pk, json=row["json"])
+                snapshot.update_from_json = model.update_from_json
+                snapshot.update_from_json(snapshot)
 
 
 class Migration(migrations.Migration):
@@ -124,5 +128,138 @@ class Migration(migrations.Migration):
             },
             bases=(simple_history.models.HistoricalChanges, models.Model),
         ),
+        migrations.AddField(
+            model_name='historicaltwitterprofile',
+            name='most_recent_snapshot',
+            field=models.ForeignKey(blank=True, db_constraint=False, null=True,
+                                    on_delete=django.db.models.deletion.DO_NOTHING, related_name='+',
+                                    to='testapp.TwitterProfileSnapshot'),
+        ),
+        migrations.AddField(
+            model_name='twitterprofile',
+            name='most_recent_snapshot',
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+',
+                                    to='testapp.TwitterProfileSnapshot'),
+        ),
         migrations.RunPython(populate_snapshots, migrations.RunPython.noop),
+        migrations.RemoveField(
+            model_name='historicaltwitterprofile',
+            name='contributors_enabled',
+        ),
+        migrations.RemoveField(
+            model_name='historicaltwitterprofile',
+            name='description',
+        ),
+        migrations.RemoveField(
+            model_name='historicaltwitterprofile',
+            name='favorites_count',
+        ),
+        migrations.RemoveField(
+            model_name='historicaltwitterprofile',
+            name='followers_count',
+        ),
+        migrations.RemoveField(
+            model_name='historicaltwitterprofile',
+            name='followings_count',
+        ),
+        migrations.RemoveField(
+            model_name='historicaltwitterprofile',
+            name='is_private',
+        ),
+        migrations.RemoveField(
+            model_name='historicaltwitterprofile',
+            name='is_verified',
+        ),
+        migrations.RemoveField(
+            model_name='historicaltwitterprofile',
+            name='json',
+        ),
+        migrations.RemoveField(
+            model_name='historicaltwitterprofile',
+            name='listed_count',
+        ),
+        migrations.RemoveField(
+            model_name='historicaltwitterprofile',
+            name='location',
+        ),
+        migrations.RemoveField(
+            model_name='historicaltwitterprofile',
+            name='name',
+        ),
+        migrations.RemoveField(
+            model_name='historicaltwitterprofile',
+            name='profile_image_url',
+        ),
+        migrations.RemoveField(
+            model_name='historicaltwitterprofile',
+            name='status',
+        ),
+        migrations.RemoveField(
+            model_name='historicaltwitterprofile',
+            name='statuses_count',
+        ),
+        migrations.RemoveField(
+            model_name='historicaltwitterprofile',
+            name='urls',
+        ),
+        migrations.RemoveField(
+            model_name='twitterprofile',
+            name='contributors_enabled',
+        ),
+        migrations.RemoveField(
+            model_name='twitterprofile',
+            name='description',
+        ),
+        migrations.RemoveField(
+            model_name='twitterprofile',
+            name='favorites_count',
+        ),
+        migrations.RemoveField(
+            model_name='twitterprofile',
+            name='followers_count',
+        ),
+        migrations.RemoveField(
+            model_name='twitterprofile',
+            name='followings_count',
+        ),
+        migrations.RemoveField(
+            model_name='twitterprofile',
+            name='is_private',
+        ),
+        migrations.RemoveField(
+            model_name='twitterprofile',
+            name='is_verified',
+        ),
+        migrations.RemoveField(
+            model_name='twitterprofile',
+            name='json',
+        ),
+        migrations.RemoveField(
+            model_name='twitterprofile',
+            name='listed_count',
+        ),
+        migrations.RemoveField(
+            model_name='twitterprofile',
+            name='location',
+        ),
+        migrations.RemoveField(
+            model_name='twitterprofile',
+            name='name',
+        ),
+        migrations.RemoveField(
+            model_name='twitterprofile',
+            name='profile_image_url',
+        ),
+        migrations.RemoveField(
+            model_name='twitterprofile',
+            name='status',
+        ),
+        migrations.RemoveField(
+            model_name='twitterprofile',
+            name='statuses_count',
+        ),
+        migrations.RemoveField(
+            model_name='twitterprofile',
+            name='urls',
+        ),
     ]
