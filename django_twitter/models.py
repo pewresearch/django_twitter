@@ -492,6 +492,7 @@ class AbstractTwitterProfile(
         ]
 
         stats["twitter_id"] = self.twitter_id
+        stats["pk"] = self.pk
         stats[["description", "name", "screen_name", "status", "location"]] = (
             stats[["description", "name", "screen_name", "status", "location"]]
             .fillna("")
