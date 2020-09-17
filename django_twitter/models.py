@@ -371,7 +371,9 @@ class AbstractTwitterProfile(
             self.twitter_id
         )  # Can we verify this? Never seen it
 
-    def get_snapshots(self, start_date, end_date, *extra_values):
+    def get_snapshots(self, start_date, end_date, *extra_values, **kwargs):
+
+        skip_interpolation = kwargs.get("skip_interpolation", False)
 
         start_date = datetime.datetime(
             start_date.year,
@@ -457,34 +459,35 @@ class AbstractTwitterProfile(
             if col not in ["timestamp", "json"] and col not in stats.columns:
                 stats[col] = None
 
-        for col in [
-            "followers_count",
-            "favorites_count",
-            "followings_count",
-            "listed_count",
-            "statuses_count",
-        ]:
-            stats[col] = stats[col].interpolate(
-                limit_area="inside", limit_direction="forward", method="linear"
-            )
-        for col in [
-            "description",
-            "name",
-            "screen_name",
-            "status",
-            "is_verified",
-            "is_private",
-            "created_at",
-            "location",
-            "twitter_error_code",
-        ]:
-            stats[col] = stats[col].interpolate(
-                limit_area="inside", limit_direction="forward", method="pad"
-            )
-        for col in extra_values:
-            stats[col] = stats[col].interpolate(
-                limit_area="inside", limit_direction="forward", method="pad"
-            )
+        if not skip_interpolation:
+            for col in [
+                "followers_count",
+                "favorites_count",
+                "followings_count",
+                "listed_count",
+                "statuses_count",
+            ]:
+                stats[col] = stats[col].interpolate(
+                    limit_area="inside", limit_direction="forward", method="linear"
+                )
+            for col in [
+                "description",
+                "name",
+                "screen_name",
+                "status",
+                "is_verified",
+                "is_private",
+                "created_at",
+                "location",
+                "twitter_error_code",
+            ]:
+                stats[col] = stats[col].interpolate(
+                    limit_area="inside", limit_direction="forward", method="pad"
+                )
+            for col in extra_values:
+                stats[col] = stats[col].interpolate(
+                    limit_area="inside", limit_direction="forward", method="pad"
+                )
         stats = stats.reset_index().rename(columns={"timestamp": "date"})
         stats["date"] = stats["date"].map(lambda x: x.date())
         stats = stats[
