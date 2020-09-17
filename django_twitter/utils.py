@@ -326,7 +326,9 @@ def find_missing_date_ranges(
     return missing_dates
 
 
-def get_twitter_profile_dataframe(profiles, start_date, end_date, *extra_values):
+def get_twitter_profile_dataframe(
+    profiles, start_date, end_date, *extra_values, **kwargs
+):
     """
     Given a QuerySet of TwitterProfile objects, a start date, and an end date, returns a dataframe of profile snapshots.
     The resulting dataframe will contain a row for every date and profile, along with profile data as it appeared on
@@ -338,12 +340,16 @@ def get_twitter_profile_dataframe(profiles, start_date, end_date, *extra_values)
     :param end_date: The function will attempt to return profiles as they appeared over the timeframe
     :param extra_values: Additional arguments can be used to select additional fields to return (operates the same as
     requesting fields via `TwitterProfile.objects.values(field1, field2)`
+    :param skip_interpolation: If you pass `skip_interpolation=True` as a kwarg, values will only be returned for the \
+    specific dates that have snapshots. By default, values will be interpolated for missing dates.
     :return: A DataFrame representing the TwitterProfiles at every point in time in the range requested
     """
 
     stats = []
     for profile in tqdm(profiles, desc="Extracting Twitter profile snapshots"):
-        stats.append(profile.get_snapshots(start_date, end_date, *extra_values))
+        stats.append(
+            profile.get_snapshots(start_date, end_date, *extra_values, **kwargs)
+        )
     return pd.concat(stats)
 
 
