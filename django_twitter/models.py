@@ -394,7 +394,6 @@ class AbstractTwitterProfile(
             tzinfo=pytz.timezone("US/Eastern"),
         )
         columns = [
-            "json",
             "description",
             "timestamp",
             "followers_count",
@@ -421,8 +420,6 @@ class AbstractTwitterProfile(
         if len(stats) == 0:
             stats = pd.DataFrame(columns=columns)
 
-        stats["json"] = stats["json"].map(lambda x: str(x))
-        stats = stats[stats["json"] != "{}"]
         try:
             stats["timestamp"] = pd.to_datetime(stats["timestamp"]).dt.tz_convert(
                 tz="US/Eastern"
@@ -431,12 +428,7 @@ class AbstractTwitterProfile(
             stats["timestamp"] = pd.to_datetime(stats["timestamp"]).dt.tz_localize(
                 tz="US/Eastern"
             )
-        # Since history objects get created any time ANYTHING changes on a model, they don't necessarily represent handshakes with the API
-        # So by de-duping like so:
-        stats = stats.sort_values("timestamp").drop_duplicates(subset=["json"])
-        # We can isolate those handshakes by filtering down to timestamps when the stats values changed
-        # Which could only have occurred via an API update
-        del stats["json"]
+
         if stats["timestamp"].min() > start_date:
             stats = pd.concat([stats, pd.DataFrame([{"timestamp": start_date}])])
         else:
@@ -456,7 +448,8 @@ class AbstractTwitterProfile(
         )
         # Resampling drops null columns so we're adding them back in
         for col in columns:
-            if col not in ["timestamp", "json"] and col not in stats.columns:
+            if col not in ["timestamp", "profile__created_at", "profile__twitter_error_code"] \
+                    and col not in stats.columns:
                 stats[col] = None
 
         if not skip_interpolation:
