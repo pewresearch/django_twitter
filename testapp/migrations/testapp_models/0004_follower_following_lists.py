@@ -16,7 +16,7 @@ def migrate_followers(apps, schema_editor):
     list_model = get_concrete_model("AbstractTwitterFollowerList")
     TwitterFollowerListModel = apps.get_model(list_model._meta.app_label, list_model._meta.model_name)
 
-    for profile_id in tqdm(list(TwitterProfileModel.objects.profiles.values_list("pk", flat=True)),
+    for profile_id in tqdm(list(TwitterProfileModel.objects.values_list("pk", flat=True)),
                            desc="Migrating to follower lists"):
         profile = TwitterProfileModel.objects.get(pk=profile_id)
         for run_id in profile.follower_details.values_list("run_id", flat=True).distinct():
