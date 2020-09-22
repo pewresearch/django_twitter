@@ -75,7 +75,8 @@ class Command(BaseCommand):
                 "AbstractTwitterProfileSnapshot"
             ).objects.create(profile=twitter_profile)
             snapshot.update_from_json(twitter_json._json)
-
+            twitter_profile.twitter_error_code = None
+            twitter_profile.save()
             Tweet = get_concrete_model("AbstractTweet")
             # Get list of current tweets
             existing_tweets = list(

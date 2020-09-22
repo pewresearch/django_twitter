@@ -47,6 +47,8 @@ class Command(BaseCommand):
                 "AbstractTwitterProfileSnapshot"
             ).objects.create(profile=twitter_profile)
             snapshot.update_from_json(twitter_json._json)
+            twitter_profile.twitter_error_code = None
+            twitter_profile.save()
             if profile_set:
                 profile_set.profiles.add(twitter_profile)
             print("Successfully saved profile data for {}".format(str(twitter_profile)))

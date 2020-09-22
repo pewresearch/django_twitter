@@ -52,6 +52,8 @@ class Command(BaseCommand):
         if twitter_json:
 
             profile = get_twitter_profile(twitter_json.id_str, create=True)
+            profile.twitter_error_code = None
+            profile.save()
             following_list = TwitterFollowingList.objects.create(profile=profile)
 
             try:
