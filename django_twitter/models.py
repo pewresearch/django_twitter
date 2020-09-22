@@ -418,7 +418,12 @@ class AbstractTwitterProfile(
             }
         )
         if len(stats) == 0:
-            stats = pd.DataFrame(columns=columns)
+            stats = pd.DataFrame(columns=columns).rename(
+                columns={
+                    "profile__created_at": "created_at",
+                    "profile__twitter_error_code": "twitter_error_code",
+                }
+            )
 
         try:
             stats["timestamp"] = pd.to_datetime(stats["timestamp"]).dt.tz_convert(
