@@ -47,6 +47,8 @@ class Command(BaseCommand):
                 "AbstractTwitterProfileSnapshot"
             ).objects.create(profile=twitter_profile)
             snapshot.update_from_json(twitter_json._json)
+            twitter_profile.twitter_error_code = None
+            twitter_profile.save()
             botometer_scores = self.twitter.get_profile_botometer_score(
                 options["twitter_id"]
             )
