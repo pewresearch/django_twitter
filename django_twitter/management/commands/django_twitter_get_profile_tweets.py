@@ -102,8 +102,6 @@ class Command(BaseCommand):
             keep_pulling = True
             for tweet_json in iterator:
                 if type(tweet_json) == int:
-                    twitter_profile.is_private = True
-                    twitter_profile.save()
                     print("User {} is private".format(twitter_profile.screen_name))
                     break
                 else:

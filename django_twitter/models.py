@@ -405,23 +405,23 @@ class AbstractTwitterProfile(
             "screen_name",
             "status",
             "is_verified",
-            "is_private",
-            "profile__created_at",
+            "is_protected",
             "location",
+            "profile__created_at",
             "profile__twitter_error_code",
         ]
         columns.extend(extra_values)
         stats = pd.DataFrame.from_records(self.snapshots.values(*columns)).rename(
             columns={
                 "profile__created_at": "created_at",
-                "profile__twitter_error_code": "twitter_error_code",
+                "profile__twitter_error_code": "twitter_error_code"
             }
         )
         if len(stats) == 0:
             stats = pd.DataFrame(columns=columns).rename(
                 columns={
                     "profile__created_at": "created_at",
-                    "profile__twitter_error_code": "twitter_error_code",
+                    "profile__twitter_error_code": "twitter_error_code"
                 }
             )
 
@@ -474,7 +474,7 @@ class AbstractTwitterProfile(
                 "screen_name",
                 "status",
                 "is_verified",
-                "is_private",
+                "is_protected",
                 "created_at",
                 "location",
                 "twitter_error_code",
@@ -568,8 +568,8 @@ class AbstractTwitterProfileSnapshot(
     favorites_count = models.IntegerField(null=True)
     followers_count = models.IntegerField(null=True)
     followings_count = models.IntegerField(null=True)
-    is_private = models.BooleanField(default=False)
     is_verified = models.NullBooleanField(null=True)
+    is_protected = models.NullBooleanField(null=True)
     listed_count = models.IntegerField(null=True)
     profile_image_url = models.TextField(null=True)
     status = models.TextField(null=True)
@@ -618,6 +618,7 @@ class AbstractTwitterProfileSnapshot(
                 ("followers_count", None),
                 ("followings_count", "friends_count"),
                 ("is_verified", "verified"),
+                ("is_protected", "protected"),
                 ("listed_count", None),
                 ("location", None),
                 ("profile_image_url", None),
