@@ -7,6 +7,7 @@ from django.apps import apps
 from pewhooks.twitter import TwitterAPIHandler
 
 from django_twitter.utils import (
+    get_concrete_model,
     get_twitter_profile_json,
     get_twitter_profile,
     get_twitter_profile_set,
@@ -42,7 +43,12 @@ class Command(BaseCommand):
         twitter_json = get_twitter_profile_json(options["twitter_id"], self.twitter)
         if twitter_json:
             twitter_profile = get_twitter_profile(twitter_json.id_str, create=True)
-            twitter_profile.update_from_json(twitter_json._json)
+            snapshot = get_concrete_model(
+                "AbstractTwitterProfileSnapshot"
+            ).objects.create(profile=twitter_profile)
+            snapshot.update_from_json(twitter_json._json)
+            twitter_profile.twitter_error_code = None
+            twitter_profile.save()
             if profile_set:
                 profile_set.profiles.add(twitter_profile)
             print("Successfully saved profile data for {}".format(str(twitter_profile)))

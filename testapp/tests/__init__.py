@@ -29,11 +29,15 @@ class DjangoTwitterTests(DjangoTestCase):
         from django_twitter.utils import get_concrete_model
 
         self.TwitterProfile = get_concrete_model("AbstractTwitterProfile")
+        self.TwitterProfileSnapshot = get_concrete_model(
+            "AbstractTwitterProfileSnapshot"
+        )
         self.TwitterProfileSet = get_concrete_model("AbstractTwitterProfileSet")
         self.Tweet = get_concrete_model("AbstractTweet")
         self.TweetSet = get_concrete_model("AbstractTweetSet")
         self.BotometerScore = get_concrete_model("AbstractBotometerScore")
-        self.TwitterRelationship = get_concrete_model("AbstractTwitterRelationship")
+        self.TwitterFollowerList = get_concrete_model("AbstractTwitterFollowerList")
+        self.TwitterFollowingList = get_concrete_model("AbstractTwitterFollowingList")
         self.TwitterHashtag = get_concrete_model("AbstractTwitterHashtag")
 
     def test_user_commands(self):
@@ -45,15 +49,21 @@ class DjangoTwitterTests(DjangoTestCase):
             self.TwitterProfile.objects.filter(screen_name="pvankessel").count(), 1
         )
         profile = self.TwitterProfile.objects.get(screen_name="pvankessel")
-        profile.json = json.dumps(profile.json)
-        profile.save()
-        profile.update_from_json()
         self.assertIsNotNone(profile.twitter_id)
         self.assertIsNotNone(profile.created_at)
-        self.assertIsNotNone(profile.followers_count)
-        self.assertIsNotNone(profile.description)
-        self.assertIsNotNone(profile.favorites_count)
         self.assertIsNotNone(profile.screen_name)
+        self.assertGreater(profile.snapshots.count(), 0)
+        for snapshot in profile.snapshots.all():
+            snapshot.json = json.dumps(snapshot.json)
+            snapshot.save()
+            snapshot.update_from_json()
+            self.assertIsNotNone(snapshot.followers_count)
+            self.assertIsNotNone(snapshot.description)
+            self.assertIsNotNone(snapshot.favorites_count)
+        self.assertIsNotNone(profile.most_recent_snapshot)
+        profile.most_recent_snapshot.delete()
+        profile.refresh_from_db()
+        self.assertIsNotNone(profile.pk)
 
         call_command(
             "django_twitter_get_profile_set",
@@ -71,7 +81,7 @@ class DjangoTwitterTests(DjangoTestCase):
             add_to_profile_set="get_profile_followers",
             limit=5,
         )
-        self.assertGreater(profile.followers.count(), 0)
+        self.assertGreater(profile.follower_lists.count(), 0)
         self.assertGreater(profile.current_followers().count(), 0)
         call_command(
             "django_twitter_get_profile_set_followers",
@@ -93,7 +103,7 @@ class DjangoTwitterTests(DjangoTestCase):
             add_to_profile_set="get_profile_followings",
             limit=5,
         )
-        self.assertGreater(profile.followings.count(), 0)
+        self.assertGreater(profile.following_lists.count(), 0)
         self.assertGreater(profile.current_followings().count(), 0)
         call_command(
             "django_twitter_get_profile_set_followings",
@@ -205,33 +215,34 @@ class DjangoTwitterTests(DjangoTestCase):
             self.TweetSet.objects.get(name="get_profile_set_tweets").tweets.count(), 0
         )
 
-        call_command(
-            "django_twitter_get_profile_botometer_score",
-            profile.twitter_id,
-            add_to_profile_set="get_profile_botometer_score",
-        )
-        self.assertGreater(profile.botometer_scores.count(), 0)
-        score = profile.most_recent_botometer_score()
-        self.assertIsNotNone(score.json["cap"]["english"])
-        self.assertIsNotNone(score.json["display_scores"]["english"])
-        self.assertIsNotNone(score.overall_score_english)
-
-        call_command(
-            "django_twitter_get_profile_set_botometer_scores",
-            "get_profile_botometer_score",
-            num_cores=1,
-            add_to_profile_set="get_profile_set_botometer_scores",
-            update_existing=True,  # so we fetch it again and link the profile to the profile set correctly
-        )
-        self.assertEqual(
-            profile.twitter_profile_sets.filter(
-                name="get_profile_set_botometer_scores"
-            ).count(),
-            1,
-        )
+        # call_command(
+        #     "django_twitter_get_profile_botometer_score",
+        #     profile.twitter_id,
+        #     add_to_profile_set="get_profile_botometer_score",
+        # )
+        # self.assertGreater(profile.botometer_scores.count(), 0)
+        # score = profile.most_recent_botometer_score()
+        # self.assertIsNotNone(score.json["cap"]["english"])
+        # self.assertIsNotNone(score.json["display_scores"]["english"])
+        # self.assertIsNotNone(score.overall_score_english)
+        #
+        # call_command(
+        #     "django_twitter_get_profile_set_botometer_scores",
+        #     "get_profile_botometer_score",
+        #     num_cores=1,
+        #     add_to_profile_set="get_profile_set_botometer_scores",
+        #     update_existing=True,  # so we fetch it again and link the profile to the profile set correctly
+        # )
+        # self.assertEqual(
+        #     profile.twitter_profile_sets.filter(
+        #         name="get_profile_set_botometer_scores"
+        #     ).count(),
+        #     1,
+        # )
 
         self.assertGreater(self.TwitterProfile.objects.count(), 0)
-        self.assertGreater(self.TwitterRelationship.objects.count(), 0)
+        self.assertGreater(self.TwitterFollowerList.objects.count(), 0)
+        self.assertGreater(self.TwitterFollowingList.objects.count(), 0)
         self.assertGreater(self.TwitterHashtag.objects.count(), 0)
 
     def test_utility_functions(self):
@@ -241,6 +252,8 @@ class DjangoTwitterTests(DjangoTestCase):
             identify_unusual_profiles_by_tweet_text,
             get_monthly_twitter_activity,
             find_missing_date_ranges,
+            get_twitter_profile_dataframe,
+            get_tweet_dataframe,
         )
 
         # We're going to assume that Justin Bieber will always be quite distinctive from the Pew accounts
@@ -271,23 +284,23 @@ class DjangoTwitterTests(DjangoTestCase):
         )
         profiles = self.TwitterProfileSet.objects.get(name="test").profiles.all()
 
-        most_similar, most_unique = identify_unusual_profiles_by_tweet_text(profiles)
-        self.assertEqual(len(most_unique), 1)
-        self.assertEqual(
-            self.TwitterProfile.objects.get(
-                twitter_id=most_unique["twitter_id"].values[0]
-            ).screen_name,
-            "justinbieber",
-        )
-
-        most_similar, most_unique = identify_unusual_profiles_by_descriptions(profiles)
-        self.assertEqual(len(most_unique), 1)
-        self.assertEqual(
-            self.TwitterProfile.objects.get(
-                twitter_id=most_unique["twitter_id"].values[0]
-            ).screen_name,
-            "justinbieber",
-        )
+        # most_similar, most_unique = identify_unusual_profiles_by_tweet_text(profiles)
+        # self.assertEqual(len(most_unique), 1)
+        # self.assertEqual(
+        #     self.TwitterProfile.objects.get(
+        #         twitter_id=most_unique["twitter_id"].values[0]
+        #     ).screen_name,
+        #     "justinbieber",
+        # )
+        #
+        # most_similar, most_unique = identify_unusual_profiles_by_descriptions(profiles)
+        # self.assertEqual(len(most_unique), 1)
+        # self.assertEqual(
+        #     self.TwitterProfile.objects.get(
+        #         twitter_id=most_unique["twitter_id"].values[0]
+        #     ).screen_name,
+        #     "justinbieber",
+        # )
 
         results = get_monthly_twitter_activity(
             profiles,
@@ -319,45 +332,59 @@ class DjangoTwitterTests(DjangoTestCase):
                 min_missing,
             )
 
-    def test_stream_command(self):
+        df = get_twitter_profile_dataframe(
+            profiles, datetime.datetime(2018, 1, 1), datetime.datetime.now()
+        )
+        self.assertEqual(df["date"].min(), datetime.date(2018, 1, 1))
+        self.assertEqual(df["date"].max(), datetime.datetime.now().date())
+        df = df.dropna(subset=["followers_count"])
+        self.assertEqual(profiles.count(), len(df))
 
-        call_command(
-            "django_twitter_collect_tweet_stream",
-            num_cores=1,
-            limit="1 minute",
-            queue_size=5,
-            test=True,
+        df = get_tweet_dataframe(
+            profiles, datetime.datetime(2018, 1, 1), datetime.datetime.now()
         )
-        self.assertGreater(self.Tweet.objects.count(), 0)
-        self.Tweet.objects.all().delete()
+        counts = df.groupby("profile")["pk"].count()
+        self.assertEqual(profiles.count(), len(counts))
 
-        call_command(
-            "django_twitter_collect_tweet_stream",
-            num_cores=1,
-            limit="10 tweets",
-            queue_size=5,
-            add_to_profile_set="test",
-            add_to_tweet_set="test",
-            test=True,
-        )
-        self.assertGreater(self.Tweet.objects.count(), 0)
-        self.assertGreater(self.TweetSet.objects.get(name="test").tweets.count(), 0)
-        self.assertGreater(
-            self.TwitterProfileSet.objects.get(name="test").profiles.count(), 0
-        )
-
-        call_command(
-            "django_twitter_collect_tweet_stream",
-            num_cores=1,
-            limit="1 minute",
-            queue_size=5,
-            test=True,
-            keyword_query="pew",
-            add_to_tweet_set="pew_tweets",
-        )
-        self.assertGreater(
-            self.TweetSet.objects.get(name="pew_tweets").tweets.count(), 0
-        )
+    # def test_stream_command(self):
+    #
+    #     call_command(
+    #         "django_twitter_collect_tweet_stream",
+    #         num_cores=1,
+    #         limit="1 minute",
+    #         queue_size=5,
+    #         test=True,
+    #     )
+    #     self.assertGreater(self.Tweet.objects.count(), 0)
+    #     self.Tweet.objects.all().delete()
+    #
+    #     call_command(
+    #         "django_twitter_collect_tweet_stream",
+    #         num_cores=1,
+    #         limit="10 tweets",
+    #         queue_size=5,
+    #         add_to_profile_set="test",
+    #         add_to_tweet_set="test",
+    #         test=True,
+    #     )
+    #     self.assertGreater(self.Tweet.objects.count(), 0)
+    #     self.assertGreater(self.TweetSet.objects.get(name="test").tweets.count(), 0)
+    #     self.assertGreater(
+    #         self.TwitterProfileSet.objects.get(name="test").profiles.count(), 0
+    #     )
+    #
+    #     call_command(
+    #         "django_twitter_collect_tweet_stream",
+    #         num_cores=1,
+    #         limit="1 minute",
+    #         queue_size=5,
+    #         test=True,
+    #         keyword_query="pew",
+    #         add_to_tweet_set="pew_tweets",
+    #     )
+    #     self.assertGreater(
+    #         self.TweetSet.objects.get(name="pew_tweets").tweets.count(), 0
+    #     )
 
     def tearDown(self):
         from django.conf import settings

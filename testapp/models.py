@@ -20,6 +20,10 @@ if settings.TWITTER_APP == "testapp":
             on_delete=models.SET_NULL,
         )
 
+    class TwitterProfileSnapshot(AbstractTwitterProfileSnapshot):
+
+        pass
+
     class Tweet(AbstractTweet):
 
         pass
@@ -28,7 +32,11 @@ if settings.TWITTER_APP == "testapp":
 
         pass
 
-    class TwitterRelationship(AbstractTwitterRelationship):
+    class TwitterFollowerList(AbstractTwitterFollowerList):
+
+        pass
+
+    class TwitterFollowingList(AbstractTwitterFollowingList):
 
         pass
 

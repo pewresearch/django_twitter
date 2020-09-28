@@ -166,9 +166,16 @@ def identify_unusual_profiles_by_descriptions(profiles):
     """
 
     descriptions = pd.DataFrame.from_records(
-        profiles.values("twitter_id", "description")
+        profiles.values("twitter_id", "snapshots__description", "snapshots__timestamp")
     )
-    return _identify_unusual_text(descriptions, "description")
+    descriptions = (
+        descriptions.sort_values("snapshots__timestamp", ascending=False)
+        .groupby("twitter_id")
+        .first()
+        .reset_index()
+    )
+    del descriptions["snapshots__timestamp"]
+    return _identify_unusual_text(descriptions, "snapshots__description")
 
 
 def get_monthly_twitter_activity(profiles, min_date, max_date=None):
@@ -186,8 +193,12 @@ def get_monthly_twitter_activity(profiles, min_date, max_date=None):
     """
 
     Tweet = get_concrete_model("AbstractTweet")
+    TwitterProfile = get_concrete_model("AbstractTwitterProfile")
     profiles = pd.DataFrame.from_records(
-        profiles.values("pk", "name", "screen_name", "created_at")
+        profiles.values("pk", "screen_name", "created_at")
+    )
+    profiles["name"] = profiles["pk"].map(
+        lambda x: TwitterProfile.objects.get(pk=x).most_recent_snapshot.name
     )
     tweets = Tweet.objects.filter(profile_id__in=profiles["pk"].values).filter(
         created_at__gte=min_date
@@ -315,85 +326,31 @@ def find_missing_date_ranges(
     return missing_dates
 
 
-def get_twitter_profile_dataframe(profiles, date, *extra_values):
+def get_twitter_profile_dataframe(
+    profiles, start_date, end_date, *extra_values, **kwargs
+):
     """
-    Given a QuerySet of TwitterProfile objects and a date, returns a dataframe of the profiles. The date is used to
-    scan each profile's historical records and find the snapshot closest to the date requested, without exceeding the
-    date.  For example, if you pass in `datetime(2019, 12, 31)`, and a profile has history for 11/1/19 and 1/1/20, the
-    former will be returned. The exact date of the snapshot is provided in the `history_date` column.
+    Given a QuerySet of TwitterProfile objects, a start date, and an end date, returns a dataframe of profile snapshots.
+    The resulting dataframe will contain a row for every date and profile, along with profile data as it appeared on
+    that date, based on the available snapshots.  Profile statistics, like follower counts, are linearly interpolated
+    between snapshots.  Dates for which no snapshot yet existed will have null values.
 
     :param profiles: A QuerySet of TwitterProfile objects
-    :param date: The function will attempt to return profiles as they appeared as of the date provided
+    :param start_date: The function will attempt to return profiles as they appeared over the timeframe
+    :param end_date: The function will attempt to return profiles as they appeared over the timeframe
     :param extra_values: Additional arguments can be used to select additional fields to return (operates the same as
     requesting fields via `TwitterProfile.objects.values(field1, field2)`
-    :return: A DataFrame representing the TwitterProfiles at a certain point in time
+    :param skip_interpolation: If you pass `skip_interpolation=True` as a kwarg, values will only be returned for the \
+    specific dates that have snapshots. By default, values will be interpolated for missing dates.
+    :return: A DataFrame representing the TwitterProfiles at every point in time in the range requested
     """
 
-    rows = []
-    for profile in profiles:
-
-        lt_history = profile.history.filter(history_date__lte=date).order_by(
-            "-history_date"
+    stats = []
+    for profile in tqdm(profiles, desc="Extracting Twitter profile snapshots"):
+        stats.append(
+            profile.get_snapshots(start_date, end_date, *extra_values, **kwargs)
         )
-        gt_history = profile.history.filter(history_date__gte=date).order_by(
-            "history_date"
-        )
-
-        if isinstance(date, datetime.date):
-            date = datetime.datetime(
-                date.year, date.month, date.day, tzinfo=pytz.timezone("US/Eastern")
-            )
-
-        if lt_history.count() > 0 and gt_history.count() > 0:
-            lt_diff = date - (lt_history[0].history_date)
-            gt_diff = (gt_history[0].history_date) - date
-            if gt_diff > lt_diff:
-                history = gt_history
-            else:
-                history = lt_history
-        elif lt_history.count() > 0:
-            history = lt_history
-        elif gt_history.count() > 0:
-            history = gt_history
-        else:
-            history = None
-
-        if history:
-            row = history.values(
-                "twitter_id",
-                "last_update_time",
-                "historical",
-                "name",
-                "screen_name",
-                "description",
-                "status",
-                "is_verified",
-                "is_private",
-                "created_at",
-                "location",
-                "language",
-                "twitter_error_code",
-                "history_date",
-                *extra_values
-            )[0]
-            row["most_recent_history"] = profile.history.order_by("-history_date")[
-                0
-            ].history_date
-            row["earliest_history"] = profile.history.order_by("history_date")[
-                0
-            ].history_date
-            rows.append(row)
-    df = pd.DataFrame(rows)
-    if len(rows) > 0:
-        df["created_at"] = df["created_at"].dt.tz_convert(tz="US/Eastern")
-        df["last_update_time"] = df["last_update_time"].dt.tz_convert(tz="US/Eastern")
-        df["history_date"] = df["history_date"].dt.tz_convert(tz="US/Eastern")
-        df["most_recent_history"] = df["most_recent_history"].dt.tz_convert(
-            tz="US/Eastern"
-        )
-        df["earliest_history"] = df["earliest_history"].dt.tz_convert(tz="US/Eastern")
-
-    return df
+    return pd.concat(stats)
 
 
 def get_tweet_dataframe(profiles, start_date, end_date, *extra_values, **kwargs):
@@ -407,16 +364,20 @@ def get_tweet_dataframe(profiles, start_date, end_date, *extra_values, **kwargs)
     :param end_date: Returns tweets created on or before this date
     :param extra_values: Additional arguments can be used to select additional fields to return (operates the same as
     requesting fields via `Tweet.objects.values(field1, field2)`
-    :include_profile_stats: Whether or not to interpolate profile statistics like follower counts over time based on available snapshots (default is False)
     :return:
     """
 
     Tweet = get_concrete_model("AbstractTweet")
     tweets = (
         Tweet.objects.filter(profile__in=profiles)
-        .filter(created_at__lte=end_date)
+        .filter(
+            created_at__lte=datetime.datetime(
+                end_date.year, end_date.month, end_date.day, 23, 59, 59
+            )
+        )
         .filter(created_at__gte=start_date)
         .values(
+            "pk",
             "twitter_id",
             "last_update_time",
             "historical",
@@ -439,70 +400,16 @@ def get_tweet_dataframe(profiles, start_date, end_date, *extra_values, **kwargs)
             "quoted_status__twitter_id": "quoted_status",
         }
     )
-    df["created_at"] = pd.to_datetime(df["created_at"]).dt.tz_convert(tz="US/Eastern")
-    df["last_update_time"] = pd.to_datetime(df["last_update_time"]).dt.tz_convert(
-        tz="US/Eastern"
-    )
-    df["date"] = (
-        pd.to_datetime(df["created_at"])
-        .dt.tz_convert(tz="US/Eastern")
-        .map(lambda x: x.date())
-    )
-
-    if "include_profile_stats" in kwargs.keys() and kwargs["include_profile_stats"]:
-        all_stats = []
-        for twitter_id in df["profile"].unique():
-            profile = get_concrete_model("AbstractTwitterProfile").objects.get(
-                twitter_id=twitter_id
+    for date_field in ["created_at", "last_update_time"]:
+        try:
+            df[date_field] = pd.to_datetime(df[date_field]).dt.tz_convert(
+                tz="US/Eastern"
             )
-            stats = pd.DataFrame.from_records(
-                profile.history.values(
-                    "history_date",
-                    "followers_count",
-                    "favorites_count",
-                    "followings_count",
-                    "listed_count",
-                    "statuses_count",
-                )
+        except TypeError:
+            df[date_field] = pd.to_datetime(df[date_field]).dt.tz_localize(
+                tz="US/Eastern", ambiguous=True
             )
-            # Since history objects get created any time ANYTHING changes on a model, they don't necessarily represent handshakes with the API
-            # So by de-duping like so:
-            stats = stats.sort_values("history_date").drop_duplicates(
-                subset=[
-                    "followers_count",
-                    "favorites_count",
-                    "followings_count",
-                    "listed_count",
-                    "statuses_count",
-                ]
-            )
-            # We can isolate those handshakes by filtering down to timestamps when the stats values changed
-            # Which could only have occurred via an API update
-            stats = stats.set_index("history_date").resample("D").max()
-            stats["followers_count"] = stats["followers_count"].interpolate(
-                limit_area="inside"
-            )
-            stats["favorites_count"] = stats["favorites_count"].interpolate(
-                limit_area="inside"
-            )
-            stats["followings_count"] = stats["followings_count"].interpolate(
-                limit_area="inside"
-            )
-            stats["listed_count"] = stats["listed_count"].interpolate(
-                limit_area="inside"
-            )
-            stats["statuses_count"] = stats["statuses_count"].interpolate(
-                limit_area="inside"
-            )
-            stats["profile"] = twitter_id
-            stats = stats.reset_index().rename(columns={"history_date": "date"})
-            stats["date"] = stats["date"].map(lambda x: x.date())
-            all_stats.append(stats)
-        all_stats = pd.concat(all_stats)
-        all_stats.columns = [
-            "profile_{}".format(c) if c not in ["profile", "date"] else c
-            for c in all_stats.columns
-        ]
-        df = df.merge(all_stats, how="left", on=("profile", "date"))
+    df["date"] = df["created_at"].map(lambda x: x.date())
+    df["text"] = df["text"].fillna("").apply(lambda x: x.replace("\r", " "))
 
     return df

@@ -71,7 +71,12 @@ class Command(BaseCommand):
         twitter_json = get_twitter_profile_json(options["twitter_id"], self.twitter)
         if twitter_json:
             twitter_profile = get_twitter_profile(twitter_json.id_str)
-
+            snapshot = get_concrete_model(
+                "AbstractTwitterProfileSnapshot"
+            ).objects.create(profile=twitter_profile)
+            snapshot.update_from_json(twitter_json._json)
+            twitter_profile.twitter_error_code = None
+            twitter_profile.save()
             Tweet = get_concrete_model("AbstractTweet")
             # Get list of current tweets
             existing_tweets = list(
@@ -98,8 +103,6 @@ class Command(BaseCommand):
             keep_pulling = True
             for tweet_json in iterator:
                 if type(tweet_json) == int:
-                    twitter_profile.is_private = True
-                    twitter_profile.save()
                     print("User {} is private".format(twitter_profile.screen_name))
                     break
                 else:
