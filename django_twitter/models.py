@@ -694,6 +694,12 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
         null=True,
         help_text="Links contained in the tweet",
     )
+    media_links = ArrayField(
+        models.CharField(max_length=400),
+        default=list,
+        null=True,
+        help_text="Media links contained in the tweet",
+    )
     text = models.CharField(
         max_length=1024, null=True
     )  # Could change to 280 - no need to be so long
@@ -923,6 +929,7 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
             self.text = get_text(tweet_data)
             self.text = "{}".format(self.text)
 
+            ### LINKS
             try:
                 links = set(self.links)
 
@@ -939,6 +946,17 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
                     links.add(link)
 
             self.links = list(links)
+
+            ### MEDIA LINKS
+
+            media_links = []
+            if "extended_entities" in tweet_data.keys():
+                for entity in tweet_data.get('extended_entities', {}).get('media', []):
+                    media_link = entity['media_url_https']
+                    if is_not_null(media_link):
+                        media_links.append(media_link)
+            self.media_links = list(media_links)
+
             self.json = tweet_data
 
             try:
