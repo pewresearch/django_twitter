@@ -63,14 +63,14 @@ class Migration(migrations.Migration):
             model_name='historicaltweet',
             name='media',
             field=django.contrib.postgres.fields.ArrayField(
-                base_field=django.contrib.postgres.fields.jsonb.JSONField(default=dict, null=True), default=list,
+                base_field=django.contrib.postgres.fields.jsonb.JSONField(null=True),
                 help_text='Media contained in the tweet', null=True, size=None),
         ),
         migrations.AddField(
             model_name='tweet',
             name='media',
             field=django.contrib.postgres.fields.ArrayField(
-                base_field=django.contrib.postgres.fields.jsonb.JSONField(default=dict, null=True), default=list,
+                base_field=django.contrib.postgres.fields.jsonb.JSONField(null=True),
                 help_text='Media contained in the tweet', null=True, size=None),
         ),
         migrations.RunPython(populate_media, migrations.RunPython.noop),
