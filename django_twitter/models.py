@@ -691,14 +691,12 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
     )
     links = ArrayField(
         models.CharField(max_length=400),
-        default=list,
         null=True,
         help_text="Links contained in the tweet",
     )
 
     media = ArrayField(
-        JSONField(null=True, default=dict),
-        default=list,
+        JSONField(null=True),
         null=True,
         help_text="Media contained in the tweet"
     )
