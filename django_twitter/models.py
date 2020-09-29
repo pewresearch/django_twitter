@@ -696,7 +696,12 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
         help_text="Links contained in the tweet",
     )
 
-    media = ArrayField(JSONField(null=True, default=dict))
+    media = ArrayField(
+        JSONField(null=True, default=dict),
+        default=list,
+        null=True,
+        help_text="Media contained in the tweet"
+    )
 
     text = models.CharField(
         max_length=1024, null=True
@@ -927,6 +932,7 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
             self.text = get_text(tweet_data)
             self.text = "{}".format(self.text)
 
+            ### LINKS
             try:
                 links = set(self.links)
 
@@ -944,12 +950,9 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
 
             self.links = list(links)
 
-            try:
-                media = set(self.media)
+            ### MEDIA
 
-            except TypeError:
-                media = set()
-
+            media = []
             for m in tweet_data.get("extended_entities", {}).get("media", []):
                 try:
                     if m['type'] == 'video':
