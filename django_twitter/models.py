@@ -10,6 +10,7 @@ import django
 import pytz
 import datetime
 import pandas as pd
+import traceback
 
 from django.db import models
 from django.contrib.postgres.fields import ArrayField, JSONField
@@ -580,7 +581,7 @@ class AbstractTwitterProfileSnapshot(
 
     """
     AUTO-CREATED RELATIONSHIPS:
-    profile = models.ForeignKey(your_app.TwitterProfileModel, related_name="snapshots") 
+    profile = models.ForeignKey(your_app.TwitterProfileModel, related_name="snapshots")
     """
 
     def __str__(self):
@@ -694,6 +695,9 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
         null=True,
         help_text="Links contained in the tweet",
     )
+
+    media = ArrayField(JSONField(null=True, default=dict))
+
     text = models.CharField(
         max_length=1024, null=True
     )  # Could change to 280 - no need to be so long
@@ -939,6 +943,39 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
                     links.add(link)
 
             self.links = list(links)
+
+            try:
+                media = set(self.media)
+
+            except TypeError:
+                media = set()
+
+            for m in tweet_data.get("extended_entities", {}).get("media", []):
+                try:
+                    if m['type'] == 'video':
+                        element = sorted(
+                            m['video_info']['variants'],
+                            key = lambda v: v['bitrate'] if 'bitrate' in v else 0,
+                            reverse = True
+                        )[0]
+
+                        element['duration'] = m['duration_millis']
+                        element['aspect_ratio'] = ':'.join(m['video_info']['aspect_ratio'])
+
+                    else:
+                        element = {"url": m['media_url_https']}
+                        element['width'] = m['sizes']['large']['w']
+                        element['height'] = m['sizes']['large']['h']
+                        element['type'] = 'image/gif' if m['type'] == 'animated_gif' else 'image'
+
+                except:
+                    print(traceback.format_exc())
+                    element = m
+
+                media.add(element)
+
+            self.media = list(media)
+
             self.json = tweet_data
 
             try:
