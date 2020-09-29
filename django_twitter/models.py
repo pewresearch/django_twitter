@@ -933,6 +933,7 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
             self.text = "{}".format(self.text)
 
             ### LINKS
+
             try:
                 links = set(self.links)
 
@@ -956,14 +957,15 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
             for m in tweet_data.get("extended_entities", {}).get("media", []):
                 try:
                     if m['type'] == 'video':
-                        element = sorted(
-                            m['video_info']['variants'],
-                            key = lambda v: v['bitrate'] if 'bitrate' in v else 0,
-                            reverse = True
-                        )[0]
-
-                        element['duration'] = m['duration_millis']
-                        element['aspect_ratio'] = ':'.join(m['video_info']['aspect_ratio'])
+                        element = {"url": None, "bitrate": None, "type": None, "duration": None, "aspect_ratio": None}
+                        if 'aspect_ratio' in m['video_info']:
+                            element['aspect_ratio'] = ':'.join([str(a) for a in m['video_info']['aspect_ratio']])
+                        if 'duration_millis' in m['video_info']:
+                            element['duration'] = m['video_info']['duration_millis']
+                        v = sorted(m['video_info']['variants'], key=lambda x: x['bitrate'] if 'bitrate' in x else 0, reverse=True)[0]
+                        element['url'] = v['url']
+                        element['bitrate'] = v['bitrate']
+                        element['type'] = v['content_type']
 
                     else:
                         element = {"url": m['media_url_https']}
@@ -975,7 +977,7 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
                     print(traceback.format_exc())
                     element = m
 
-                media.add(element)
+                media.append(element)
 
             self.media = list(media)
 
