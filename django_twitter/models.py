@@ -10,6 +10,7 @@ import django
 import pytz
 import datetime
 import pandas as pd
+import traceback
 
 from django.db import models
 from django.contrib.postgres.fields import ArrayField, JSONField
@@ -580,7 +581,7 @@ class AbstractTwitterProfileSnapshot(
 
     """
     AUTO-CREATED RELATIONSHIPS:
-    profile = models.ForeignKey(your_app.TwitterProfileModel, related_name="snapshots") 
+    profile = models.ForeignKey(your_app.TwitterProfileModel, related_name="snapshots")
     """
 
     def __str__(self):
@@ -690,10 +691,16 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
     )
     links = ArrayField(
         models.CharField(max_length=400),
-        default=list,
         null=True,
         help_text="Links contained in the tweet",
     )
+
+    media = ArrayField(
+        JSONField(null=True),
+        null=True,
+        help_text="Media contained in the tweet"
+    )
+
     text = models.CharField(
         max_length=1024, null=True
     )  # Could change to 280 - no need to be so long
@@ -923,6 +930,8 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
             self.text = get_text(tweet_data)
             self.text = "{}".format(self.text)
 
+            ### LINKS
+
             try:
                 links = set(self.links)
 
@@ -939,6 +948,37 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
                     links.add(link)
 
             self.links = list(links)
+
+            ### MEDIA
+
+            media = []
+            for m in tweet_data.get("extended_entities", {}).get("media", []):
+                try:
+                    if m['type'] == 'video':
+                        element = {"url": None, "bitrate": None, "type": None, "duration": None, "aspect_ratio": None}
+                        if 'aspect_ratio' in m['video_info']:
+                            element['aspect_ratio'] = ':'.join([str(a) for a in m['video_info']['aspect_ratio']])
+                        if 'duration_millis' in m['video_info']:
+                            element['duration'] = m['video_info']['duration_millis']
+                        v = sorted(m['video_info']['variants'], key=lambda x: x['bitrate'] if 'bitrate' in x else 0, reverse=True)[0]
+                        element['url'] = v['url']
+                        element['bitrate'] = v['bitrate']
+                        element['type'] = v['content_type']
+
+                    else:
+                        element = {"url": m['media_url_https']}
+                        element['width'] = m['sizes']['large']['w']
+                        element['height'] = m['sizes']['large']['h']
+                        element['type'] = 'image/gif' if m['type'] == 'animated_gif' else 'image'
+
+                except:
+                    print(traceback.format_exc())
+                    element = m
+
+                media.append(element)
+
+            self.media = list(media)
+
             self.json = tweet_data
 
             try:
