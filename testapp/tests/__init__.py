@@ -346,45 +346,45 @@ class DjangoTwitterTests(DjangoTestCase):
         counts = df.groupby("profile")["pk"].count()
         self.assertEqual(profiles.count(), len(counts))
 
-    # def test_stream_command(self):
-    #
-    #     call_command(
-    #         "django_twitter_collect_tweet_stream",
-    #         num_cores=1,
-    #         limit="1 minute",
-    #         queue_size=5,
-    #         test=True,
-    #     )
-    #     self.assertGreater(self.Tweet.objects.count(), 0)
-    #     self.Tweet.objects.all().delete()
-    #
-    #     call_command(
-    #         "django_twitter_collect_tweet_stream",
-    #         num_cores=1,
-    #         limit="10 tweets",
-    #         queue_size=5,
-    #         add_to_profile_set="test",
-    #         add_to_tweet_set="test",
-    #         test=True,
-    #     )
-    #     self.assertGreater(self.Tweet.objects.count(), 0)
-    #     self.assertGreater(self.TweetSet.objects.get(name="test").tweets.count(), 0)
-    #     self.assertGreater(
-    #         self.TwitterProfileSet.objects.get(name="test").profiles.count(), 0
-    #     )
-    #
-    #     call_command(
-    #         "django_twitter_collect_tweet_stream",
-    #         num_cores=1,
-    #         limit="1 minute",
-    #         queue_size=5,
-    #         test=True,
-    #         keyword_query="pew",
-    #         add_to_tweet_set="pew_tweets",
-    #     )
-    #     self.assertGreater(
-    #         self.TweetSet.objects.get(name="pew_tweets").tweets.count(), 0
-    #     )
+    def test_stream_command(self):
+
+        call_command(
+            "django_twitter_collect_tweet_stream",
+            num_cores=1,
+            limit="1 minute",
+            queue_size=5,
+            test=True,
+        )
+        self.assertGreater(self.Tweet.objects.count(), 0)
+        self.Tweet.objects.all().delete()
+
+        call_command(
+            "django_twitter_collect_tweet_stream",
+            num_cores=1,
+            limit="10 tweets",
+            queue_size=5,
+            add_to_profile_set="test",
+            add_to_tweet_set="test",
+            test=True,
+        )
+        self.assertGreater(self.Tweet.objects.count(), 0)
+        self.assertGreater(self.TweetSet.objects.get(name="test").tweets.count(), 0)
+        self.assertGreater(
+            self.TwitterProfileSet.objects.get(name="test").profiles.count(), 0
+        )
+
+        call_command(
+            "django_twitter_collect_tweet_stream",
+            num_cores=1,
+            limit="1 minute",
+            queue_size=5,
+            test=True,
+            keyword_query="pew",
+            add_to_tweet_set="pew_tweets",
+        )
+        self.assertGreater(
+            self.TweetSet.objects.get(name="pew_tweets").tweets.count(), 0
+        )
 
     def tearDown(self):
         from django.conf import settings
