@@ -25,7 +25,7 @@ def populate_media(apps, schema_editor):
         for m in tweet.json.get("extended_entities", {}).get("media", []):
             try:
                 if m['type'] == 'video':
-                    element = {"url": None, "bitrate": None, "type": None, "duration": None, "aspect_ratio": None}
+                    element = {"url": None, "bitrate": None, "content_type": None, "duration": None, "aspect_ratio": None}
                     if 'aspect_ratio' in m['video_info']:
                         element['aspect_ratio'] = ':'.join([str(a) for a in m['video_info']['aspect_ratio']])
                     if 'duration_millis' in m['video_info']:
@@ -34,13 +34,13 @@ def populate_media(apps, schema_editor):
                                reverse=True)[0]
                     element['url'] = v['url']
                     element['bitrate'] = v['bitrate']
-                    element['type'] = v['content_type']
+                    element['content_type'] = v['content_type']
 
                 else:
                     element = {"url": m['media_url_https']}
                     element['width'] = m['sizes']['large']['w']
                     element['height'] = m['sizes']['large']['h']
-                    element['type'] = 'image/gif' if m['type'] == 'animated_gif' else 'image'
+                    element['content_type'] = 'image/gif' if m['content_type'] == 'animated_gif' else 'image'
 
             except:
                 print(traceback.format_exc())
