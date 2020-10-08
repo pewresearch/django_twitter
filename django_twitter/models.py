@@ -13,7 +13,7 @@ import pandas as pd
 import traceback
 
 from django.db import models
-from django.contrib.postgres.fields import ArrayField, JSONField
+from django.contrib.postgres.fields import ArrayField
 from django.utils import timezone
 from django.conf import settings
 from django.apps import apps
@@ -269,7 +269,7 @@ class AbstractTwitterBase(models.base.ModelBase):
                 ):
                     try:
                         getattr(cls, owner_model)._meta.get_field(field_name)
-                    except models.fields.FieldDoesNotExist:
+                    except django.core.exceptions.FieldDoesNotExist:
                         field_params = {"related_name": related_name}
                         if through:
                             field_params["through"] = getattr(cls, through)
@@ -564,20 +564,20 @@ class AbstractTwitterProfileSnapshot(
         max_length=100, db_index=True, null=True, help_text="Twitter screen name"
     )
     name = models.CharField(max_length=200, null=True)
-    contributors_enabled = models.NullBooleanField(null=True)
+    contributors_enabled = models.BooleanField(null=True)
     description = models.TextField(null=True)
     favorites_count = models.IntegerField(null=True)
     followers_count = models.IntegerField(null=True)
     followings_count = models.IntegerField(null=True)
-    is_verified = models.NullBooleanField(null=True)
-    is_protected = models.NullBooleanField(null=True)
+    is_verified = models.BooleanField(null=True)
+    is_protected = models.BooleanField(null=True)
     listed_count = models.IntegerField(null=True)
     profile_image_url = models.TextField(null=True)
     status = models.TextField(null=True)
     statuses_count = models.IntegerField(null=True)
     urls = ArrayField(models.CharField(max_length=300), default=list)
     location = models.CharField(max_length=512, null=True)
-    json = JSONField(null=True, default=dict)
+    json = models.JSONField(null=True, default=dict)
 
     """
     AUTO-CREATED RELATIONSHIPS:
@@ -696,7 +696,7 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
     )
 
     media = ArrayField(
-        JSONField(null=True),
+        models.JSONField(null=True),
         null=True,
         help_text="Media contained in the tweet"
     )
@@ -714,7 +714,7 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
     retweet_count = models.IntegerField(null=True)
     favorite_count = models.IntegerField(null=True)
 
-    json = JSONField(null=True, default=dict)
+    json = models.JSONField(null=True, default=dict)
 
     """
     AUTO-CREATED RELATIONSHIPS:
@@ -1016,7 +1016,7 @@ class AbstractBotometerScore(with_metaclass(AbstractTwitterBase, models.Model)):
     overall_score_english = models.FloatField(null=True)
     overall_score_universal = models.FloatField(null=True)
 
-    json = JSONField(null=True, default=dict)
+    json = models.JSONField(null=True, default=dict)
 
     """
     AUTO-CREATED RELATIONSHIPS:
