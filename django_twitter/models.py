@@ -415,14 +415,14 @@ class AbstractTwitterProfile(
         stats = pd.DataFrame.from_records(self.snapshots.values(*columns)).rename(
             columns={
                 "profile__created_at": "created_at",
-                "profile__twitter_error_code": "twitter_error_code"
+                "profile__twitter_error_code": "twitter_error_code",
             }
         )
         if len(stats) == 0:
             stats = pd.DataFrame(columns=columns).rename(
                 columns={
                     "profile__created_at": "created_at",
-                    "profile__twitter_error_code": "twitter_error_code"
+                    "profile__twitter_error_code": "twitter_error_code",
                 }
             )
 
@@ -454,8 +454,15 @@ class AbstractTwitterProfile(
         )
         # Resampling drops null columns so we're adding them back in
         for col in columns:
-            if col not in ["timestamp", "profile__created_at", "profile__twitter_error_code"] \
-                    and col not in stats.columns:
+            if (
+                col
+                not in [
+                    "timestamp",
+                    "profile__created_at",
+                    "profile__twitter_error_code",
+                ]
+                and col not in stats.columns
+            ):
                 stats[col] = None
 
         if not skip_interpolation:
@@ -696,9 +703,7 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
     )
 
     media = ArrayField(
-        models.JSONField(null=True),
-        null=True,
-        help_text="Media contained in the tweet"
+        models.JSONField(null=True), null=True, help_text="Media contained in the tweet"
     )
 
     text = models.CharField(
@@ -954,22 +959,36 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
             media = []
             for m in tweet_data.get("extended_entities", {}).get("media", []):
                 try:
-                    if m['type'] == 'video':
-                        element = {"url": None, "bitrate": None, "content_type": None, "duration": None, "aspect_ratio": None}
-                        if 'aspect_ratio' in m['video_info']:
-                            element['aspect_ratio'] = ':'.join([str(a) for a in m['video_info']['aspect_ratio']])
-                        if 'duration_millis' in m['video_info']:
-                            element['duration'] = m['video_info']['duration_millis']
-                        v = sorted(m['video_info']['variants'], key=lambda x: x['bitrate'] if 'bitrate' in x else 0, reverse=True)[0]
-                        element['url'] = v['url']
-                        element['bitrate'] = v['bitrate']
-                        element['content_type'] = v['content_type']
+                    if m["type"] == "video":
+                        element = {
+                            "url": None,
+                            "bitrate": None,
+                            "content_type": None,
+                            "duration": None,
+                            "aspect_ratio": None,
+                        }
+                        if "aspect_ratio" in m["video_info"]:
+                            element["aspect_ratio"] = ":".join(
+                                [str(a) for a in m["video_info"]["aspect_ratio"]]
+                            )
+                        if "duration_millis" in m["video_info"]:
+                            element["duration"] = m["video_info"]["duration_millis"]
+                        v = sorted(
+                            m["video_info"]["variants"],
+                            key=lambda x: x["bitrate"] if "bitrate" in x else 0,
+                            reverse=True,
+                        )[0]
+                        element["url"] = v["url"]
+                        element["bitrate"] = v["bitrate"]
+                        element["content_type"] = v["content_type"]
 
                     else:
-                        element = {"url": m['media_url_https']}
-                        element['width'] = m['sizes']['large']['w']
-                        element['height'] = m['sizes']['large']['h']
-                        element['content_type'] = 'image/gif' if m['type'] == 'animated_gif' else 'image'
+                        element = {"url": m["media_url_https"]}
+                        element["width"] = m["sizes"]["large"]["w"]
+                        element["height"] = m["sizes"]["large"]["h"]
+                        element["content_type"] = (
+                            "image/gif" if m["type"] == "animated_gif" else "image"
+                        )
 
                 except:
                     print(traceback.format_exc())
