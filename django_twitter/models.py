@@ -433,9 +433,14 @@ class AbstractTwitterProfile(
                 tz="US/Eastern"
             )
         except TypeError:
-            stats["timestamp"] = pd.to_datetime(stats["timestamp"]).dt.tz_localize(
-                tz="US/Eastern"
-            )
+            try:
+                stats["timestamp"] = pd.to_datetime(stats["timestamp"]).dt.tz_localize(
+                    tz="US/Eastern"
+                )
+            except:
+                stats["timestamp"] = pd.to_datetime(stats["timestamp"]).dt.tz_localize(
+                    tz="US/Eastern", ambiguous=True
+                )
 
         if stats["timestamp"].min() > start_date:
             stats = pd.concat([stats, pd.DataFrame([{"timestamp": start_date}])])
