@@ -412,4 +412,10 @@ def get_tweet_dataframe(profiles, start_date, end_date, *extra_values, **kwargs)
     df["date"] = df["created_at"].map(lambda x: x.date())
     df["text"] = df["text"].fillna("").apply(lambda x: x.replace("\r", " "))
 
+    df["text"] = df["text"].str.strip()
+
+    # Clear out retweet and favorite counts for retweets since they reflect the original tweet
+    df.loc[~df["retweeted_status"].isnull(), "retweet_count"] = None
+    df.loc[~df["retweeted_status"].isnull(), "favorite_count"] = None
+
     return df
