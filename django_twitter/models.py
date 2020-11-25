@@ -922,7 +922,6 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
                     for text in all_text
                 ]
                 if len(all_text) > 1:
-                    print(all_text)
                     new_all_text = copy.deepcopy(all_text)
                     for text, additional_text in itertools.permutations(all_text, 2):
                         s = SequenceMatcher(None, additional_text, text, autojunk=True)
