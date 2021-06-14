@@ -469,6 +469,7 @@ class AbstractTwitterProfile(
 
         return stats
 
+    # TODO: these should be renamed "most_recent_followers" etc. because that's more accurate
     def current_followers(self):
 
         try:
@@ -546,19 +547,20 @@ class AbstractTwitterProfileSnapshot(
 
         return "{} AS OF {}".format(str(self.profile), self.timestamp)
 
-    @property
-    def followers(self):
-        follower_list = self.follower_lists.filter(finish_time__isnull=False).order_by(
-            "-finish_time"
-        )[0]
-        return follower_list.followers.all()
-
-    @property
-    def followings(self):
-        following_list = self.following_lists.filter(
-            finish_time__isnull=False
-        ).order_by("-finish_time")[0]
-        return following_list.followings.all()
+    # TODO: these should actually try to grab the lists that are closest to the snapshot's timestamp
+    # @property
+    # def followers(self):
+    #     follower_list = self.follower_lists.filter(finish_time__isnull=False).order_by(
+    #         "-finish_time"
+    #     )[0]
+    #     return follower_list.followers.all()
+    #
+    # @property
+    # def followings(self):
+    #     following_list = self.following_lists.filter(
+    #         finish_time__isnull=False
+    #     ).order_by("-finish_time")[0]
+    #     return following_list.followings.all()
 
     def update_from_json(self, profile_data=None):
 
