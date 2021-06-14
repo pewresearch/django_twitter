@@ -121,37 +121,6 @@ class AbstractTwitterBase(models.base.ModelBase):
                     models.SET_NULL,
                 ),
             ],
-            "BotometerScoreModel": [
-                (
-                    models.ForeignKey,
-                    "TwitterProfileModel",
-                    "profile",
-                    "botometer_scores",
-                    None,
-                    True,
-                    models.CASCADE,
-                )
-            ],
-            # "TwitterRelationshipModel": [
-            #     (
-            #         models.ForeignKey,
-            #         "TwitterProfileModel",
-            #         "following",
-            #         "follower_details",
-            #         None,
-            #         True,
-            #         models.CASCADE,
-            #     ),
-            #     (
-            #         models.ForeignKey,
-            #         "TwitterProfileModel",
-            #         "follower",
-            #         "following_details",
-            #         None,
-            #         True,
-            #         models.CASCADE,
-            #     ),
-            # ],
             "TwitterFollowerListModel": [
                 (
                     models.ForeignKey,
@@ -204,15 +173,6 @@ class AbstractTwitterBase(models.base.ModelBase):
                 )
             ],
             "TwitterProfileModel": [
-                # (
-                #     models.ManyToManyField,
-                #     "TwitterProfileModel",
-                #     "followers",
-                #     "followings",
-                #     "TwitterRelationshipModel",
-                #     False,
-                #     None,
-                # )
                 (
                     models.ForeignKey,
                     "TwitterProfileSnapshotModel",
@@ -320,7 +280,6 @@ class AbstractTwitterObject(models.Model):
     twitter_id = models.CharField(max_length=150, db_index=True)
     last_update_time = models.DateTimeField(auto_now=True)
     historical = models.BooleanField(default=False)
-    # TODO: add historical_twitter_ids
 
     def save(self, *args, **kwargs):
         self.twitter_id = str(self.twitter_id).lower()
@@ -550,14 +509,6 @@ class AbstractTwitterProfile(
             followings = None
         return followings
 
-    def most_recent_botometer_score(self):
-
-        scores = self.botometer_scores.order_by("-timestamp")
-        if scores.count() > 0:
-            return scores[0]
-        else:
-            return None
-
 
 class AbstractTwitterProfileSnapshot(
     with_metaclass(AbstractTwitterBase, AbstractTwitterObject)
@@ -679,14 +630,6 @@ class AbstractTwitterProfileSnapshot(
         return "http://www.twitter.com/intent/user?user_id={0}".format(
             self.twitter_id
         )  # Can we verify this? Never seen it
-
-    def most_recent_botometer_score(self):
-
-        scores = self.botometer_scores.order_by("-timestamp")
-        if scores.count() > 0:
-            return scores[0]
-        else:
-            return None
 
 
 class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
@@ -1016,65 +959,6 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
         return "http://www.twitter.com/statuses/{0}".format(self.twitter_id)
 
 
-class AbstractBotometerScore(with_metaclass(AbstractTwitterBase, models.Model)):
-    class Meta(object):
-        abstract = True
-
-    timestamp = models.DateTimeField(auto_now_add=True)
-
-    api_version = models.FloatField(null=True)
-    error = models.CharField(max_length=100, null=True)
-    automation_probability_english = models.FloatField(null=True)
-    automation_probability_universal = models.FloatField(null=True)
-    content_score = models.FloatField(null=True)
-    friend_score = models.FloatField(null=True)
-    network_score = models.FloatField(null=True)
-    sentiment_score = models.FloatField(null=True)
-    temporal_score = models.FloatField(null=True)
-    user_score = models.FloatField(null=True)
-    overall_score_english = models.FloatField(null=True)
-    overall_score_universal = models.FloatField(null=True)
-
-    json = models.JSONField(null=True, default=dict)
-
-    """
-    AUTO-CREATED RELATIONSHIPS:
-    profile = models.ForeignKey(your_app.TwitterProfileModel, related_name="botometer_scores")
-    """
-
-    def update_from_json(self, score_data=None, api_version=None):
-
-        if not score_data:
-            self.error = "No data"
-        if score_data:
-            self.automation_probability_english = score_data.get("cap", {}).get(
-                "english", 0
-            )
-            self.automation_probability_universal = score_data.get("cap", {}).get(
-                "universal", 0
-            )
-            self.content_score = score_data.get("display_scores", {}).get("content", 0)
-            self.friend_score = score_data.get("display_scores", {}).get("friend", 0)
-            self.network_score = score_data.get("display_scores", {}).get("network", 0)
-            self.sentiment_score = score_data.get("display_scores", {}).get(
-                "sentiment", 0
-            )
-            self.temporal_score = score_data.get("display_scores", {}).get(
-                "temporal", 0
-            )
-            self.user_score = score_data.get("display_scores", {}).get("user", 0)
-            self.overall_score_english = score_data.get("display_scores", {}).get(
-                "english", 0
-            )
-            self.overall_score_universal = score_data.get("display_scores", {}).get(
-                "universal", 0
-            )
-            self.json = score_data
-            if api_version:
-                self.api_version = api_version
-            self.save()
-
-
 class AbstractTwitterFollowerList(with_metaclass(AbstractTwitterBase, models.Model)):
     class Meta(object):
         abstract = True
@@ -1183,9 +1067,6 @@ if settings.TWITTER_APP == "django_twitter":
         pass
 
     class Tweet(AbstractTweet):
-        pass
-
-    class BotometerScore(AbstractBotometerScore):
         pass
 
     class TwitterHashtag(AbstractTwitterHashtag):

@@ -35,7 +35,6 @@ class DjangoTwitterTests(DjangoTestCase):
         self.TwitterProfileSet = get_concrete_model("AbstractTwitterProfileSet")
         self.Tweet = get_concrete_model("AbstractTweet")
         self.TweetSet = get_concrete_model("AbstractTweetSet")
-        self.BotometerScore = get_concrete_model("AbstractBotometerScore")
         self.TwitterFollowerList = get_concrete_model("AbstractTwitterFollowerList")
         self.TwitterFollowingList = get_concrete_model("AbstractTwitterFollowingList")
         self.TwitterHashtag = get_concrete_model("AbstractTwitterHashtag")
@@ -214,31 +213,6 @@ class DjangoTwitterTests(DjangoTestCase):
         self.assertGreater(
             self.TweetSet.objects.get(name="get_profile_set_tweets").tweets.count(), 0
         )
-
-        # call_command(
-        #     "django_twitter_get_profile_botometer_score",
-        #     profile.twitter_id,
-        #     add_to_profile_set="get_profile_botometer_score",
-        # )
-        # self.assertGreater(profile.botometer_scores.count(), 0)
-        # score = profile.most_recent_botometer_score()
-        # self.assertIsNotNone(score.json["cap"]["english"])
-        # self.assertIsNotNone(score.json["display_scores"]["english"])
-        # self.assertIsNotNone(score.overall_score_english)
-        #
-        # call_command(
-        #     "django_twitter_get_profile_set_botometer_scores",
-        #     "get_profile_botometer_score",
-        #     num_cores=1,
-        #     add_to_profile_set="get_profile_set_botometer_scores",
-        #     update_existing=True,  # so we fetch it again and link the profile to the profile set correctly
-        # )
-        # self.assertEqual(
-        #     profile.twitter_profile_sets.filter(
-        #         name="get_profile_set_botometer_scores"
-        #     ).count(),
-        #     1,
-        # )
 
         self.assertGreater(self.TwitterProfile.objects.count(), 0)
         self.assertGreater(self.TwitterFollowerList.objects.count(), 0)
