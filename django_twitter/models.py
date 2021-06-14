@@ -706,9 +706,9 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
         models.JSONField(null=True), null=True, help_text="Media contained in the tweet"
     )
 
-    text = models.CharField(
-        max_length=1024, null=True
-    )  # Could change to 280 - no need to be so long
+    text = models.CharField(max_length=1500, null=True)
+    # The reason this is so long is because we concatenate truncated text from quoted/RT'ed tweets
+    # and they can occasionally get quite long if there's a big chain of quotes
 
     profile_mentions_raw = ArrayField(
         models.CharField(max_length=280), default=list, null=True
