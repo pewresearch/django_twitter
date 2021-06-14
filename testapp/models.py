@@ -9,49 +9,51 @@ class Politician(models.Model):
     pass
 
 
-if settings.TWITTER_APP == "testapp":
+class TwitterProfile(AbstractTwitterProfile):
 
-    class TwitterProfile(AbstractTwitterProfile):
+    politician = models.ForeignKey(
+        "testapp.Politician",
+        related_name="twitter_profiles",
+        null=True,
+        on_delete=models.SET_NULL,
+    )
 
-        politician = models.ForeignKey(
-            "testapp.Politician",
-            related_name="twitter_profiles",
-            null=True,
-            on_delete=models.SET_NULL,
-        )
 
-    class TwitterProfileSnapshot(AbstractTwitterProfileSnapshot):
+class TwitterProfileSnapshot(AbstractTwitterProfileSnapshot):
 
-        pass
+    pass
 
-    class Tweet(AbstractTweet):
 
-        pass
+class Tweet(AbstractTweet):
 
-    class BotometerScore(AbstractBotometerScore):
+    pass
 
-        pass
 
-    class TwitterFollowerList(AbstractTwitterFollowerList):
+class TwitterFollowerList(AbstractTwitterFollowerList):
 
-        pass
+    pass
 
-    class TwitterFollowingList(AbstractTwitterFollowingList):
 
-        pass
+class TwitterFollowingList(AbstractTwitterFollowingList):
 
-    class TwitterHashtag(AbstractTwitterHashtag):
+    pass
 
-        pass
 
-    class TwitterPlace(AbstractTwitterPlace):
+class TwitterHashtag(AbstractTwitterHashtag):
 
-        pass
+    pass
 
-    class TweetSet(AbstractTweetSet):
 
-        pass
+class TwitterPlace(AbstractTwitterPlace):
 
-    class TwitterProfileSet(AbstractTwitterProfileSet):
+    pass
 
-        pass
+
+class TweetSet(AbstractTweetSet):
+
+    pass
+
+
+class TwitterProfileSet(AbstractTwitterProfileSet):
+
+    pass
