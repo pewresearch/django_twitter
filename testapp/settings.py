@@ -27,8 +27,4 @@ DATABASES = {
 
 SECRET_KEY = "testing"
 
-# NOTE: right now, you can only test the concrete vs. abstract models by switching the settings below manually
-# TWITTER_APP = "django_twitter"
-# MIGRATION_MODULES = {"testapp": "testapp.migrations.django_twitter_models"}
 TWITTER_APP = "testapp"
-MIGRATION_MODULES = {"testapp": "testapp.migrations.testapp_models"}
