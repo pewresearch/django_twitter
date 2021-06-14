@@ -258,23 +258,23 @@ class DjangoTwitterTests(DjangoTestCase):
         )
         profiles = self.TwitterProfileSet.objects.get(name="test").profiles.all()
 
-        # most_similar, most_unique = identify_unusual_profiles_by_tweet_text(profiles)
-        # self.assertEqual(len(most_unique), 1)
-        # self.assertEqual(
-        #     self.TwitterProfile.objects.get(
-        #         twitter_id=most_unique["twitter_id"].values[0]
-        #     ).screen_name,
-        #     "justinbieber",
-        # )
-        #
-        # most_similar, most_unique = identify_unusual_profiles_by_descriptions(profiles)
-        # self.assertEqual(len(most_unique), 1)
-        # self.assertEqual(
-        #     self.TwitterProfile.objects.get(
-        #         twitter_id=most_unique["twitter_id"].values[0]
-        #     ).screen_name,
-        #     "justinbieber",
-        # )
+        most_similar, most_unique = identify_unusual_profiles_by_tweet_text(profiles)
+        self.assertEqual(len(most_unique), 1)
+        self.assertEqual(
+            self.TwitterProfile.objects.get(
+                twitter_id=most_unique["twitter_id"].values[0]
+            ).screen_name,
+            "justinbieber",
+        )
+
+        most_similar, most_unique = identify_unusual_profiles_by_descriptions(profiles)
+        self.assertEqual(len(most_unique), 1)
+        self.assertEqual(
+            self.TwitterProfile.objects.get(
+                twitter_id=most_unique["twitter_id"].values[0]
+            ).screen_name,
+            "justinbieber",
+        )
 
         results = get_monthly_twitter_activity(
             profiles,
