@@ -4,15 +4,24 @@ from django.conf import settings
 from django_twitter.models import *
 
 
-class Politician(models.Model):
+class Person(models.Model):
+    name = models.CharField(max_length=250)
 
-    pass
+
+class Organization(models.Model):
+    name = models.CharField(max_length=250)
 
 
 class TwitterProfile(AbstractTwitterProfile):
 
-    politician = models.ForeignKey(
-        "testapp.Politician",
+    person = models.ForeignKey(
+        "testapp.Person",
+        related_name="twitter_profiles",
+        null=True,
+        on_delete=models.SET_NULL,
+    )
+    organization = models.ForeignKey(
+        "testapp.Organization",
         related_name="twitter_profiles",
         null=True,
         on_delete=models.SET_NULL,
