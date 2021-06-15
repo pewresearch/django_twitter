@@ -80,7 +80,10 @@ class Command(BaseCommand):
                         following = get_twitter_profile(
                             following_data._json["id_str"], create=True
                         )
-                        following.update_from_json(following_data._json)
+                        snapshot = get_concrete_model(
+                            "AbstractTwitterProfileSnapshot"
+                        ).objects.create(profile=following)
+                        snapshot.update_from_json(following_data._json)
                     following_list.followings.add(following)
                     if profile_set:
                         profile_set.profiles.add(following)
