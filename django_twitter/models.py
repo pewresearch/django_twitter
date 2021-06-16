@@ -29,7 +29,7 @@ from pewtils import decode_text, is_not_null, is_null
 from django_pewtils import consolidate_objects
 from future.utils import with_metaclass
 
-from django_twitter.utils import get_twitter_profile, get_concrete_model
+from django_twitter.utils import get_concrete_model, safe_get_or_create
 
 
 class AbstractTwitterBase(models.base.ModelBase):
@@ -274,10 +274,15 @@ class AbstractTwitterBase(models.base.ModelBase):
 
 
 class AbstractTwitterObject(models.Model):
+    """
+    A base class for all Twitter models, including a unique Twitter ID and a
+    timestamp reflecting when the object was last updated.
+    """
+
     class Meta(object):
         abstract = True
 
-    twitter_id = models.CharField(max_length=150, db_index=True)
+    twitter_id = models.CharField(max_length=150, db_index=True, unique=True)
     last_update_time = models.DateTimeField(auto_now=True)
     historical = models.BooleanField(default=False)
 
@@ -290,6 +295,10 @@ class AbstractTwitterObject(models.Model):
 class AbstractTwitterProfile(
     with_metaclass(AbstractTwitterBase, AbstractTwitterObject)
 ):
+    """
+
+    """
+
     class Meta(object):
         abstract = True
 
@@ -308,7 +317,6 @@ class AbstractTwitterProfile(
 
     """
     AUTO-CREATED RELATIONSHIPS:
-    followers = models.ManyToManyField(your_app.TwitterProfileModel, related_name="followings")
     most_recent_snapshot = models.ForeignKey(your_app.TwitterProfileSnapshot, related_name="+")
     """
 
@@ -511,9 +519,7 @@ class AbstractTwitterProfile(
         return followings
 
 
-class AbstractTwitterProfileSnapshot(
-    with_metaclass(AbstractTwitterBase, AbstractTwitterObject)
-):
+class AbstractTwitterProfileSnapshot(with_metaclass(AbstractTwitterBase, models.Model)):
     class Meta(object):
         abstract = True
 
@@ -715,7 +721,12 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
                 self.refresh_from_db()
 
             # PROFILE
-            author = get_twitter_profile(tweet_data["user"]["id_str"], create=True)
+            author = safe_get_or_create(
+                "AbstractTwitterProfile",
+                "twitter_id",
+                tweet_data["user"]["id_str"],
+                create=True,
+            )
             snapshot = TwitterProfileSnapshot.objects.create(
                 profile=author, json=tweet_data["user"]
             )
@@ -727,57 +738,44 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
             for profile_mention in tweet_data.get("entities", {}).get(
                 "user_mentions", []
             ):
-                existing_profiles = TwitterProfile.objects.filter(
-                    twitter_id=profile_mention["id_str"]
+                mentioned_profile = safe_get_or_create(
+                    "AbstractTwitterProfile",
+                    "twitter_id",
+                    profile_mention["id_str"],
+                    create=True,
                 )
-                if existing_profiles.count() > 1:
-                    print(
-                        "Warning: multiple profiles found for {}".format(
-                            profile_mention["id_str"]
-                        )
-                    )
-                    print(
-                        "For flexibility, Django Twitter does not enforce a unique constraint on twitter_id"
-                    )
-                    print(
-                        "But in this case it can't tell which profile to use, so it's associating this tweet with all"
-                    )
-                    for existing in existing_profiles:
-                        profile_mentions.append(existing)
-                elif existing_profiles.count() == 1:
-                    profile_mentions.append(existing_profiles[0])
-                else:
-                    mentioned_profile, created = TwitterProfile.objects.get_or_create(
-                        twitter_id=profile_mention["id_str"]
-                    )
-                    profile_mentions.append(mentioned_profile)
+                profile_mentions.append(mentioned_profile)
             self.profile_mentions.set(profile_mentions)
 
             # HASHTAGS
             hashtags = []
             for hashtag in tweet_data.get("entities", {}).get("hashtags", []):
-                hashtag_obj, created = TwitterHashtag.objects.get_or_create(
-                    name=hashtag["text"].lower()
+                hashtag_obj = safe_get_or_create(
+                    "AbstractTwitterHashtag",
+                    "name",
+                    hashtag["text"].lower(),
+                    create=True,
                 )
                 hashtags.append(hashtag_obj)
             self.hashtags.set(hashtags)
 
             # REPLY TO STATUS
             if tweet_data.get("in_reply_to_status_id", None):
-                try:
-                    tweet_obj, created = Tweet.objects.get_or_create(
-                        twitter_id=tweet_data["in_reply_to_status_id_str"].lower()
-                    )
-                except Tweet.MultipleObjectsReturned:
-                    tweet_obj = _consolidate_duplicate_tweets(
-                        tweet_data["in_reply_to_status_id_str"].lower()
-                    )
+                tweet_obj = safe_get_or_create(
+                    "AbstractTweet",
+                    "twitter_id",
+                    tweet_data["in_reply_to_status_id_str"].lower(),
+                    create=True,
+                )
                 tweet_obj.refresh_from_db()
                 if not tweet_obj.profile and tweet_data.get(
                     "in_reply_to_user_id_str", None
                 ):
-                    reply_author_obj = get_twitter_profile(
-                        tweet_data["in_reply_to_user_id_str"].lower(), create=True
+                    reply_author_obj = safe_get_or_create(
+                        "AbstractTwitterProfile",
+                        "twitter_id",
+                        tweet_data["in_reply_to_user_id_str"].lower(),
+                        create=True,
                     )
                     tweet_obj.profile = reply_author_obj
                     tweet_obj.save()
@@ -785,28 +783,24 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
 
             # QUOTE STATUS
             if tweet_data.get("quoted_status", None):
-                try:
-                    tweet_obj, created = Tweet.objects.get_or_create(
-                        twitter_id=tweet_data["quoted_status"]["id_str"].lower()
-                    )
-                except Tweet.MultipleObjectsReturned:
-                    tweet_obj = _consolidate_duplicate_tweets(
-                        tweet_data["quoted_status"]["id_str"].lower()
-                    )
+                tweet_obj = safe_get_or_create(
+                    "AbstractTweet",
+                    "twitter_id",
+                    tweet_data["quoted_status"]["id_str"].lower(),
+                    create=True,
+                )
                 tweet_obj.refresh_from_db()
                 tweet_obj.update_from_json(tweet_data["quoted_status"])
                 self.quoted_status = tweet_obj
 
             # RETWEETED STATUS
             if tweet_data.get("retweeted_status", None):
-                try:
-                    tweet_obj, created = Tweet.objects.get_or_create(
-                        twitter_id=tweet_data["retweeted_status"]["id_str"].lower()
-                    )
-                except Tweet.MultipleObjectsReturned:
-                    tweet_obj = _consolidate_duplicate_tweets(
-                        tweet_data["retweeted_status"]["id_str"].lower()
-                    )
+                tweet_obj = safe_get_or_create(
+                    "AbstractTweet",
+                    "twitter_id",
+                    tweet_data["retweeted_status"]["id_str"].lower(),
+                    create=True,
+                )
                 tweet_obj.refresh_from_db()
                 tweet_obj.update_from_json(tweet_data["retweeted_status"])
                 self.retweeted_status = tweet_obj

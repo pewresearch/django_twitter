@@ -11,11 +11,7 @@ from tqdm import tqdm
 from django_pewtils import reset_django_connection, reset_django_connection_wrapper
 from pewhooks.twitter import TwitterAPIHandler
 
-from django_twitter.utils import (
-    get_twitter_profile_set,
-    get_tweet_set,
-    get_concrete_model,
-)
+from django_twitter.utils import get_concrete_model, safe_get_or_create
 
 
 allowable_limit_types = {
@@ -262,15 +258,19 @@ def save_tweets(tweets, tweet_set, profile_set, test):
 
     Tweet = get_concrete_model("AbstractTweet")
     if tweet_set:
-        tweet_set = get_tweet_set(tweet_set)
+        tweet_set = safe_get_or_create(
+            "AbstractTweetSet", "name", tweet_set, create=True
+        )
     if profile_set:
-        profile_set = get_twitter_profile_set(profile_set)
+        profile_set = safe_get_or_create(
+            "AbstractTwitterProfileSet", "name", profile_set, create=True
+        )
 
     success, error = 0, 0
     for tweet_json in tweets:
         try:
-            tweet, created = Tweet.objects.get_or_create(
-                twitter_id=tweet_json["id_str"]
+            tweet = safe_get_or_create(
+                "AbstractTweet", "twitter_id", tweet_json["id_str"], create=True
             )
             tweet.update_from_json(tweet_json)
             if tweet_set:
