@@ -9,11 +9,11 @@ from django.apps import apps
 from tqdm import tqdm
 
 from pewhooks.twitter import TwitterAPIHandler
+from django_pewtils import reset_django_connection
 
 from django_twitter.utils import (
     get_twitter_profile_json,
-    get_twitter_profile,
-    get_twitter_profile_set,
+    safe_get_or_create,
     get_concrete_model,
 )
 
@@ -34,6 +34,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
+        reset_django_connection()
+
         self.twitter = TwitterAPIHandler(
             api_key=options["api_key"],
             api_secret=options["api_secret"],
@@ -44,14 +46,21 @@ class Command(BaseCommand):
         TwitterFollowingList = get_concrete_model("AbstractTwitterFollowingList")
 
         if options["add_to_profile_set"]:
-            profile_set = get_twitter_profile_set(options["add_to_profile_set"])
+            profile_set = safe_get_or_create(
+                "AbstractTwitterProfileSet",
+                "name",
+                options["add_to_profile_set"],
+                create=True,
+            )
         else:
             profile_set = None
 
         twitter_json = get_twitter_profile_json(options["twitter_id"], self.twitter)
         if twitter_json:
 
-            profile = get_twitter_profile(twitter_json.id_str, create=True)
+            profile = safe_get_or_create(
+                "AbstractTwitterProfile", "twitter_id", twitter_json.id_str, create=True
+            )
             profile.twitter_error_code = None
             profile.save()
             following_list = TwitterFollowingList.objects.create(profile=profile)
@@ -75,10 +84,18 @@ class Command(BaseCommand):
 
                 for following_data in iterator:
                     if not options["hydrate"]:
-                        following = get_twitter_profile(following_data, create=True)
+                        following = safe_get_or_create(
+                            "AbstractTwitterProfile",
+                            "twitter_id",
+                            following_data,
+                            create=True,
+                        )
                     else:
-                        following = get_twitter_profile(
-                            following_data._json["id_str"], create=True
+                        following = safe_get_or_create(
+                            "AbstractTwitterProfile",
+                            "twitter_id",
+                            following_data._json["id_str"],
+                            create=True,
                         )
                         snapshot = get_concrete_model(
                             "AbstractTwitterProfileSnapshot"

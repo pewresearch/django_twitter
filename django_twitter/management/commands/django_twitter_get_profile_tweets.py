@@ -11,12 +11,11 @@ from tqdm import tqdm
 from dateutil.parser import parse as date_parse
 
 from pewhooks.twitter import TwitterAPIHandler
+from django_pewtils import reset_django_connection
 
 from django_twitter.utils import (
     get_twitter_profile_json,
-    get_twitter_profile,
-    get_tweet_set,
-    get_twitter_profile_set,
+    safe_get_or_create,
     get_concrete_model,
 )
 
@@ -42,6 +41,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
+        reset_django_connection()
+
         self.twitter = TwitterAPIHandler(
             api_key=options["api_key"],
             api_secret=options["api_secret"],
@@ -61,16 +62,25 @@ class Command(BaseCommand):
             )
         tweet_set = None
         if options["add_to_tweet_set"]:
-            tweet_set = get_tweet_set(options["add_to_tweet_set"])
+            tweet_set = safe_get_or_create(
+                "AbstractTweetSet", "name", options["add_to_tweet_set"], create=True
+            )
 
         twitter_profile_set = None
         if options["add_to_profile_set"]:
-            twitter_profile_set = get_twitter_profile_set(options["add_to_profile_set"])
+            twitter_profile_set = safe_get_or_create(
+                "AbstractTwitterProfileSet",
+                "name",
+                options["add_to_profile_set"],
+                create=True,
+            )
 
         scanned_count, updated_count = 0, 0
         twitter_json = get_twitter_profile_json(options["twitter_id"], self.twitter)
         if twitter_json:
-            twitter_profile = get_twitter_profile(twitter_json.id_str)
+            twitter_profile = safe_get_or_create(
+                "AbstractTwitterProfile", "twitter_id", twitter_json.id_str
+            )
             snapshot = get_concrete_model(
                 "AbstractTwitterProfileSnapshot"
             ).objects.create(profile=twitter_profile)
@@ -113,8 +123,11 @@ class Command(BaseCommand):
                         tweet_json.id_str not in existing_tweets
                     ):
                         # Only write a tweet if you're overwriting, or it doesn't already exist
-                        tweet, created = Tweet.objects.get_or_create(
-                            twitter_id=tweet_json.id_str
+                        tweet = safe_get_or_create(
+                            "AbstractTweet",
+                            "twitter_id",
+                            tweet_json.id_str,
+                            create=True,
                         )
                         tweet.update_from_json(tweet_json._json)
                         if tweet_set:
