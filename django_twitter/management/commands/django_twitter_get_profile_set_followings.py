@@ -5,7 +5,9 @@ from django.core.management.base import BaseCommand
 from django.core.management import call_command
 from django import db
 
-from django_twitter.utils import get_twitter_profile_set
+from django_pewtils import reset_django_connection
+
+from django_twitter.utils import safe_get_or_create
 
 
 class Command(BaseCommand):
@@ -21,9 +23,11 @@ class Command(BaseCommand):
         parser.add_argument("--access_token", type=str)
         parser.add_argument("--access_secret", type=str)
 
-        parser.add_argument("--num_cores", type=int, default=1)
+        parser.add_argument("--num_cores", type=int, default=2)
 
     def handle(self, *args, **options):
+
+        reset_django_connection()
 
         kwargs = {
             "add_to_profile_set": options["add_to_profile_set"],
@@ -36,7 +40,9 @@ class Command(BaseCommand):
         }
 
         pool = Pool(processes=options["num_cores"])
-        profile_set = get_twitter_profile_set(options["profile_set"])
+        profile_set = safe_get_or_create(
+            "AbstractTwitterProfileSet", "name", options["profile_set"], create=True
+        )
         twitter_ids = profile_set.profiles.values_list("twitter_id", flat=True)
         for twitter_id in tqdm(twitter_ids, total=len(twitter_ids)):
             if options["num_cores"] > 1:
