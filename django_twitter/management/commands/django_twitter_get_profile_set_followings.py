@@ -65,7 +65,7 @@ class Command(BaseCommand):
             "add_to_profile_set": options["add_to_profile_set"],
             "hydrate": options["hydrate"],
             "limit": options["limit"],
-            "options": options["no_progress_bar"],
+            "no_progress_bar": options["no_progress_bar"],
             "api_key": options["api_key"],
             "api_secret": options["api_secret"],
             "access_token": options["access_token"],
