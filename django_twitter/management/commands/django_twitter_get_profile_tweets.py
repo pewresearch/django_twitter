@@ -21,6 +21,44 @@ from django_twitter.utils import (
 
 
 class Command(BaseCommand):
+    """
+    Download and save the tweets for a specific profile. The first time this command is run, it will loop over \
+    the profile's tweets in reverse-chronological order as far back as it can go (~3200 tweets). In subsequent \
+    calls to this command, it will break off when it encounters an existing tweet. Passing `--ignore_backfill` \
+    will override this behavior. Additionally passing `--max_backfill_date` or `--max_backfill_days` will override \
+    this behavior but only for recent tweets. By default, Django Twitter does not update data for existing tweets \
+    by default; to override this behavior you can pass `--overwrite`.
+
+    :param profile_set: The `name` of the profile set in the database
+    :param add_to_profile_set: (Optional) The name of a profile set to add the profile to. Can be \
+    any arbitrary string you want to use; if the profile set doesn't already exist, it will be created
+    :param add_to_tweet_set: (Optional) The name of a tweet set to add each tweet to. Can be \
+    any arbitrary string you want to use; if the tweet set doesn't already exist, it will be created.
+    :param ignore_backfill: (Optional) By default, Django Twitter will only iterate through a profile's full tweet \
+    timeline the first time it runs. Once it has successfully iterated through all of a profile's tweets once before, \
+    subsequent calls to this command will break off when they encounter an existing tweet. Passing \
+    `--ignore_backfill` to this command will override this behavior and force it to iterate the whole timeline.
+    :param overwrite: (Optional) By default, Django Twitter will skip over any existing tweets and will not \
+    overwrite any of their data. If you pass `--overwrite` this behavior will be overridden, and if the command \
+    encounters existing tweets (e.g. if you have also passed `--ignore_backfill`) then it will update them with \
+    the latest API data.
+    :param max_backfill_date: (Optional) A YYYY-MM-DD or MM-DD-YYYY string representing a date at which the \
+    `ignore_backfill` behavior should stop. Useful if you want to iterate over and refresh previously-collected \
+    tweets (i.e. by also passing `--ignore_backfill` and `--overwrite`) and refresh their stats, but only for \
+    recent tweets that were created after a certain date.
+    :param max_backfill_days: (Optional) Alternative to `max_backfill_date`; overrides the `--ignore_backfill` \
+    behavior but only for tweets that were created within the last N days.
+    :param no_progress_bar: (Optional) Disables the default `tqdm` progress bar.
+    :param limit: (Optional) Set a limit for the number of tweets to collect for each profile, for testing purposes.
+
+    :param api_key: (Optional) Twitter API key, if you don't have the TWITTER_API_KEY environment variable set
+    :param api_secret: (Optional) Twitter API secret, if you don't have the TWITTER_API_SECRET environment variable set
+    :param access_token: (Optional) Twitter access token, if you don't have the TWITTER_API_ACCESS_TOKEN environment \
+    variable set
+    :param api_secret: (Optional) Twitter API access secret, if you don't have the TWITTER_API_ACCESS_SECRET \
+    environment variable set
+    """
+
     def add_arguments(self, parser):
 
         parser.add_argument("twitter_id", type=str)
