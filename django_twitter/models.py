@@ -40,13 +40,16 @@ class AbstractTwitterBase(models.base.ModelBase):
     then look other django_twitter-based models in your own app that should have relationships between each other.
     django_twitter doesn't know anything about your app but if you configure your settings.py model correctly,
     it will be able to connect all your models together at runtime.
-
     """
 
     class Meta(object):
         abstract = True
 
     def __new__(cls, name, bases, attrs):
+        """
+        Overrides Django's __new__ function and uses it to auto-detect the models in your own app that implement \
+        Django Twitter's abstract models, and auto-creates relations between them at runtime.
+        """
 
         model = super(AbstractTwitterBase, cls).__new__(cls, name, bases, attrs)
         for base in bases:
@@ -276,17 +279,32 @@ class AbstractTwitterBase(models.base.ModelBase):
 class AbstractTwitterObject(models.Model):
     """
     A base class for all Twitter models, including a unique Twitter ID and a
-    timestamp reflecting when the object was last updated.
+    timestamp reflecting when the object was last updated. Also has a `historical` boolean field \
+    that you can use for your own purposes (e.g. for flagging and skipping outdated accounts during \
+    data collection, etc.)
     """
 
     class Meta(object):
         abstract = True
 
-    twitter_id = models.CharField(max_length=150, db_index=True, unique=True)
-    last_update_time = models.DateTimeField(auto_now=True)
-    historical = models.BooleanField(default=False)
+    twitter_id = models.CharField(
+        max_length=150,
+        db_index=True,
+        unique=True,
+        help_text="The object's unique Twitter ID",
+    )
+    last_update_time = models.DateTimeField(
+        auto_now=True, help_text="Last time the object was updated"
+    )
+    historical = models.BooleanField(
+        default=False,
+        help_text="Empty flag that you can use to track historical accounts",
+    )
 
     def save(self, *args, **kwargs):
+        """
+        Strings and lowercases Twitter IDs and updates `last_update_time` every time the object is saved.
+        """
         self.twitter_id = str(self.twitter_id).lower()
         self.last_update_time = timezone.now()
         super(AbstractTwitterObject, self).save(*args, **kwargs)
@@ -296,7 +314,11 @@ class AbstractTwitterProfile(
     with_metaclass(AbstractTwitterBase, AbstractTwitterObject)
 ):
     """
+    Model for storing basic Twitter profile information - it's unique Twitter ID, when it was created, whether its \
+    tweets have been backfilled, etc.
 
+    AUTO-CREATED RELATIONSHIPS:
+        - most_recent_snapshot = models.ForeignKey(your_app.TwitterProfileSnapshot, related_name="+")
     """
 
     class Meta(object):
@@ -304,21 +326,21 @@ class AbstractTwitterProfile(
 
     tweet_backfilled = models.BooleanField(
         default=False,
-        help_text="An indicator used in the sync_tweets management function; True indicates that the profile's \
+        help_text="An indicator used in the `django_twitter_get_profile` command; True indicates that the profile's \
         tweet history has been backfilled as far as possible, so the sync function will stop after it hits an existing \
-        tweet the next time it runs.",
+        tweet the next time it runs, unless you override this behavior.",
     )
 
     screen_name = models.CharField(
-        max_length=100, db_index=True, null=True, help_text="Twitter screen name"
+        max_length=100, db_index=True, null=True, help_text="The profile's screen name"
     )
-    created_at = models.DateTimeField(null=True)
-    twitter_error_code = models.IntegerField(null=True)
-
-    """
-    AUTO-CREATED RELATIONSHIPS:
-    most_recent_snapshot = models.ForeignKey(your_app.TwitterProfileSnapshot, related_name="+")
-    """
+    created_at = models.DateTimeField(
+        null=True, help_text="When the profile was created"
+    )
+    twitter_error_code = models.IntegerField(
+        null=True,
+        help_text="The latest error code encountered when attempting to collect this profile's data from the API",
+    )
 
     def __str__(self):
 
@@ -329,18 +351,38 @@ class AbstractTwitterProfile(
         )
 
     def save(self, *args, **kwargs):
+        """
+        Updates the profile's `most_recent_snapshot` relation every time the profile gets saved.
+        """
 
         if self.snapshots.count() > 0:
             self.most_recent_snapshot = self.snapshots.order_by("-timestamp")[0]
         super(AbstractTwitterProfile, self).save(*args, **kwargs)
 
     def url(self):
+        """
+        :return: A URL to the profile's Twitter page
+        """
         return "http://www.twitter.com/intent/user?user_id={0}".format(
             self.twitter_id
         )  # Can we verify this? Never seen it
 
     def get_snapshots(self, start_date, end_date, *extra_values, **kwargs):
+        """
+        Loops over the profile's snapshots for a given time range, and compiles a Pandas DataFrame of the profile's \
+        dynamic data (e.g. follower counts, description, etc.) Uses linear interpolation to fill in missing days for \
+        numeric values, and front-filling for non-numeric values.
 
+        :param start_date: The start of the date range you want to extract
+        :type start_date: `datetime.datetime` or `datetime.date`
+        :param end_date: The end of the date range you want to extract
+        :type end_date: `datetime.datetime` or `datetime.date`
+        :param extra_values: If you would like to include additional fields (e.g. foreign keys from related objects) \
+        you can pass their names as related objects (e.g. "profile__politician_id")
+        :param skip_interpolation: (Optional) Disables the default interpolation. Will keep days with missing values \
+        empty.
+        :return: Pandas DataFrame of the profile's snapshots
+        """
         skip_interpolation = kwargs.get("skip_interpolation", False)
 
         start_date = datetime.datetime(
@@ -479,6 +521,11 @@ class AbstractTwitterProfile(
 
     # TODO: these should be renamed "most_recent_followers" etc. because that's more accurate
     def current_followers(self):
+        """
+        Helper function to return a QuerySet of follower profiles from the profile's most recently collected \
+        follower list.
+        :return: QuerySet of TwitterProfiles for followers
+        """
 
         try:
             followers = self.follower_lists.filter(finish_time__isnull=False).order_by(
@@ -489,6 +536,10 @@ class AbstractTwitterProfile(
         return followers.followers.all()
 
     def current_follower_list(self):
+        """
+        Helper function to return the profile's most recently collected follower list
+        :return: TwitterFollowerList
+        """
 
         try:
             followers = self.follower_lists.filter(finish_time__isnull=False).order_by(
@@ -499,7 +550,11 @@ class AbstractTwitterProfile(
         return followers
 
     def current_followings(self):
-
+        """
+        Helper function to return a QuerySet of following profiles from the profile's most recently collected \
+        following list.
+        :return: QuerySet of TwitterProfiles for followings
+        """
         try:
             followings = self.following_lists.filter(
                 finish_time__isnull=False
@@ -509,7 +564,10 @@ class AbstractTwitterProfile(
         return followings.followings.all()
 
     def current_following_list(self):
-
+        """
+        Helper function to return the profile's most recently collected following list
+        :return: TwitterFollowingList
+        """
         try:
             followings = self.following_lists.filter(
                 finish_time__isnull=False
@@ -520,34 +578,64 @@ class AbstractTwitterProfile(
 
 
 class AbstractTwitterProfileSnapshot(with_metaclass(AbstractTwitterBase, models.Model)):
+    """
+    Stores a representation of a Twitter profile as it existed in the API at the time of data collection.
+
+    AUTO-CREATED RELATIONSHIPS:
+        - profile = models.ForeignKey(your_app.TwitterProfileModel, related_name="snapshots")
+    """
+
     class Meta(object):
         abstract = True
 
-    timestamp = models.DateTimeField(auto_now_add=True)
+    timestamp = models.DateTimeField(
+        auto_now_add=True, help_text="Timestamp indicating when the snapshot was saved"
+    )
 
     screen_name = models.CharField(
-        max_length=100, db_index=True, null=True, help_text="Twitter screen name"
+        max_length=100, db_index=True, null=True, help_text="The profile's screen name"
     )
-    name = models.CharField(max_length=200, null=True)
-    contributors_enabled = models.BooleanField(null=True)
-    description = models.TextField(null=True)
-    favorites_count = models.IntegerField(null=True)
-    followers_count = models.IntegerField(null=True)
-    followings_count = models.IntegerField(null=True)
-    is_verified = models.BooleanField(null=True)
-    is_protected = models.BooleanField(null=True)
-    listed_count = models.IntegerField(null=True)
-    profile_image_url = models.TextField(null=True)
-    status = models.TextField(null=True)
-    statuses_count = models.IntegerField(null=True)
-    urls = ArrayField(models.CharField(max_length=300), default=list)
-    location = models.CharField(max_length=512, null=True)
-    json = models.JSONField(null=True, default=dict)
-
-    """
-    AUTO-CREATED RELATIONSHIPS:
-    profile = models.ForeignKey(your_app.TwitterProfileModel, related_name="snapshots")
-    """
+    name = models.CharField(
+        max_length=200, null=True, help_text="The name of the profile"
+    )
+    contributors_enabled = models.BooleanField(
+        null=True, help_text="Whether or not the profile allows contributors"
+    )
+    description = models.TextField(null=True, help_text="The profile's description/bio")
+    favorites_count = models.IntegerField(
+        null=True, help_text="Number of favorited tweets"
+    )
+    followers_count = models.IntegerField(null=True, help_text="Number of followers")
+    followings_count = models.IntegerField(
+        null=True, help_text="Number of accounts the profile follows ('followings')"
+    )
+    is_verified = models.BooleanField(
+        null=True, help_text="Whether or not the profile is verified"
+    )
+    is_protected = models.BooleanField(
+        null=True, help_text="Whether or not the profile is protected"
+    )
+    listed_count = models.IntegerField(null=True, help_text="")
+    profile_image_url = models.TextField(
+        null=True, help_text="URL to the profile's picture"
+    )
+    status = models.TextField(null=True, help_text="The profile's current status")
+    statuses_count = models.IntegerField(
+        null=True, help_text="Number of tweets the profile has produced"
+    )
+    urls = ArrayField(
+        models.CharField(max_length=300),
+        default=list,
+        help_text="A list of URLs contained in the profile's bio",
+    )
+    location = models.CharField(
+        max_length=512, null=True, help_text="The profile's self-reported location"
+    )
+    json = models.JSONField(
+        null=True,
+        default=dict,
+        help_text="The raw JSON for the profile at the time the snapshot was collected",
+    )
 
     def __str__(self):
 
@@ -569,6 +657,12 @@ class AbstractTwitterProfileSnapshot(with_metaclass(AbstractTwitterBase, models.
     #     return following_list.followings.all()
 
     def update_from_json(self, profile_data=None):
+        """
+        Parses raw JSON collected from the Twitter API into the various fields and relations. If no new JSON is passed, \
+        the snapshot will update itself using whatever it already has stored in its `json` field.
+
+        :param profile_data: JSON from the API
+        """
 
         if not profile_data:
             profile_data = self.json
@@ -635,12 +729,28 @@ class AbstractTwitterProfileSnapshot(with_metaclass(AbstractTwitterBase, models.
                 self.save()
 
     def url(self):
+        """
+        Returns a URL to the profile's Twitter page
+        """
         return "http://www.twitter.com/intent/user?user_id={0}".format(
             self.twitter_id
         )  # Can we verify this? Never seen it
 
 
 class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
+    """
+    A template for storing data contained in a tweet.
+
+    AUTO-CREATED RELATIONSHIPS:
+        - profile = models.ForeignKey(your_app.TwitterProfileModel, related_name="tweets")
+        - hashtags = models.ManyToManyField(your_app.TwitterHashtagModel, related_name="tweets")
+        - place = models.ForeignKey(your_app.TwitterPlaceModel, related_name="tweets")
+        - profile_mentions = models.ManyToManyField(your_app.TwitterProfileModel, related_name="tweet_mentions")
+        - retweeted_status = models.ForeignKey(your_app.TweetModel, related_name="retweets")
+        - in_reply_to_status = models.ForeignKey(your_app.TweetModel, related_name="replies")
+        - quoted_status = models.ForeignKey(your_app.TweetModel, related_name="quotes")
+    """
+
     class Meta(object):
         abstract = True
 
@@ -657,31 +767,35 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
         models.JSONField(null=True), null=True, help_text="Media contained in the tweet"
     )
 
-    text = models.CharField(max_length=1500, null=True)
-    # The reason this is so long is because we concatenate truncated text from quoted/RT'ed tweets
-    # and they can occasionally get quite long if there's a big chain of quotes
-
-    profile_mentions_raw = ArrayField(
-        models.CharField(max_length=280), default=list, null=True
+    text = models.CharField(
+        max_length=1500,
+        null=True,
+        help_text="Text extracted from the tweet, including expanded text and text from tweets that it quoted or retweeted (hence why the max length is longer than the twitter size limit",
     )
 
-    language = models.CharField(max_length=255, null=True)
+    profile_mentions_raw = ArrayField(
+        models.CharField(max_length=280),
+        default=list,
+        null=True,
+        help_text="A list of profile screen names that were mentioned in the tweet",
+    )
 
-    retweet_count = models.IntegerField(null=True)
-    favorite_count = models.IntegerField(null=True)
+    language = models.CharField(
+        max_length=255, null=True, help_text="The tweet's language"
+    )
 
-    json = models.JSONField(null=True, default=dict)
+    retweet_count = models.IntegerField(
+        null=True,
+        help_text="Number of times the tweet was retweeted. Note: for tweets that are retweets (but not quote tweets), this count reflects the _original_ tweet's retweets, not just the retweeted version's retweets. When someone retweets a retweet that didn't have any additional commentary, that retweet gets redirected back to the original tweet.",
+    )
+    favorite_count = models.IntegerField(
+        null=True,
+        help_text="Number of times the tweet was favorited. Note: for tweets that are retweets (but not quote tweets), this count reflects the _original_ tweet's favorites, not just the retweeted version's favorites. When someone favorites a retweet that didn't have any additional commentary, that favorite gets redirected back to the original tweet.",
+    )
 
-    """
-    AUTO-CREATED RELATIONSHIPS:
-    profile = models.ForeignKey(your_app.TwitterProfileModel, related_name="tweets")
-    hashtags = models.ManyToManyField(your_app.TwitterHashtagModel, related_name="tweets")
-    place = models.ForeignKey(your_app.TwitterPlaceModel, related_name="tweets")
-    profile_mentions = models.ManyToManyField(your_app.TwitterProfileModel, related_name="tweet_mentions")
-    retweeted_status = models.ForeignKey(your_app.TweetModel, related_name="retweets")
-    in_reply_to_status = models.ForeignKey(your_app.TweetModel, related_name="replies")
-    quoted_status = models.ForeignKey(your_app.TweetModel, related_name="quotes")
-    """
+    json = models.JSONField(
+        null=True, default=dict, help_text="The raw JSON for the tweet"
+    )
 
     def __str__(self):
 
@@ -695,6 +809,12 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
 
     def update_from_json(self, tweet_data=None):
 
+        """
+        Parses raw JSON collected from the Twitter API into the various fields and relations. If no new JSON is passed, \
+        the tweet will update itself using whatever it already has stored in its `json` field.
+
+        :param tweet_data: JSON from the API
+        """
         Tweet = get_concrete_model("AbstractTweet")
         TwitterProfile = get_concrete_model("AbstractTwitterProfile")
         TwitterProfileSnapshot = get_concrete_model("AbstractTwitterProfileSnapshot")
@@ -952,20 +1072,43 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
                     print(e)
 
     def url(self):
+        """
+        Returns a URL for the tweet
+        """
         return "http://www.twitter.com/statuses/{0}".format(self.twitter_id)
 
 
 class AbstractTwitterFollowerList(with_metaclass(AbstractTwitterBase, models.Model)):
+    """
+    Tracks a specific run of the `django_twitter_get_profile_followers` command. Saves the start and end time of \
+    the command, stores all of the observed followers on its `followers` many-to-many relation, and associates itself \
+    with the profile it belongs to via `profile`.
+
+    AUTO-GENERATED RELATIONS:
+        - profile = models.ForeignKey("TwitterProfile", related_name="follower_lists")
+        - followers = models.ManyToManyField("TwitterProfile", related_name=None)
+
+    """
+
     class Meta(object):
         abstract = True
 
-    # profile = models.ForeignKey("TwitterProfile", related_name="follower_lists")
-    # followers = models.ManyToManyField("TwitterProfile", related_name=None)
     start_time = models.DateTimeField(auto_now_add=True)
     finish_time = models.DateTimeField(null=True)
 
 
 class AbstractTwitterFollowingList(with_metaclass(AbstractTwitterBase, models.Model)):
+    """
+    Tracks a specific run of the `django_twitter_get_profile_followings` command. Saves the start and end time of \
+    the command, stores all of the observed followings on its `followings` many-to-many relation, and associates itself \
+    with the profile it belongs to via `profile`.
+
+    AUTO-GENERATED RELATIONS:
+        - profile = models.ForeignKey("TwitterProfile", related_name="following_lists")
+        - followingss = models.ManyToManyField("TwitterProfile", related_name=None)
+
+    """
+
     class Meta(object):
         abstract = True
 
@@ -976,6 +1119,10 @@ class AbstractTwitterFollowingList(with_metaclass(AbstractTwitterBase, models.Mo
 
 
 class AbstractTwitterHashtag(with_metaclass(AbstractTwitterBase, models.Model)):
+    """
+    Twitter hashtags, represented by a unique string.
+    """
+
     class Meta(object):
         abstract = True
 
@@ -985,6 +1132,9 @@ class AbstractTwitterHashtag(with_metaclass(AbstractTwitterBase, models.Model)):
         return self.name
 
     def save(self, *args, **kwargs):
+        """
+        Lowercases the hashtag before saving
+        """
         self.name = self.name.lower()
         super(AbstractTwitterHashtag, self).save(*args, **kwargs)
 
@@ -992,14 +1142,24 @@ class AbstractTwitterHashtag(with_metaclass(AbstractTwitterBase, models.Model)):
 ####
 # Additional classes that are in Rookery that I don't think we need
 class AbstractTwitterPlace(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
+    """
+    This was once implemented but isn't anymore, and I'm not even sure it's available via the API anymore.
+    """
+
     class Meta(object):
         abstract = True
 
-    full_name = models.CharField(max_length=255)
-    name = models.CharField(max_length=255)
-    place_type = models.CharField(max_length=255)
-    country_code = models.CharField(max_length=10)
-    country = models.CharField(max_length=255)
+    full_name = models.CharField(
+        max_length=255, help_text="The full name of the location"
+    )
+    name = models.CharField(max_length=255, help_text="Short name for the location")
+    place_type = models.CharField(max_length=255, help_text="The type of location")
+    country_code = models.CharField(
+        max_length=10, help_text="The location's country code"
+    )
+    country = models.CharField(
+        max_length=255, help_text="The name of the location's country"
+    )
 
     def save(self, *args, **kwargs):
 
@@ -1023,15 +1183,23 @@ class AbstractTwitterPlace(with_metaclass(AbstractTwitterBase, AbstractTwitterOb
 
 
 class AbstractTweetSet(with_metaclass(AbstractTwitterBase, models.Model)):
+    """
+    A table simply consisting of names associated with particular sets of tweets. You can create these automatically \
+    by passing names to the various data collection commands. This allows you to easily reference a set of tweets \
+    that was collected by one or more commands.
+
+    AUTO-CREATED RELATIONSHIPS:
+        - tweets = models.ManyToManyField(your_app.TweetModel, related_name="tweet_sets")
+    """
+
     class Meta(object):
         abstract = True
 
-    name = models.CharField(max_length=256, unique=True)
-
-    """
-    AUTO-CREATED RELATIONSHIPS:
-    tweets = models.ManyToManyField(your_app.TweetModel, related_name="tweet_sets")
-    """
+    name = models.CharField(
+        max_length=256,
+        unique=True,
+        help_text="A unique name associated with a set of tweets",
+    )
 
     def __str__(self):
 
@@ -1039,15 +1207,23 @@ class AbstractTweetSet(with_metaclass(AbstractTwitterBase, models.Model)):
 
 
 class AbstractTwitterProfileSet(with_metaclass(AbstractTwitterBase, models.Model)):
+    """
+    A table simply consisting of names associated with particular sets of profiles. You can create these automatically \
+    by passing names to the various data collection commands. This allows you to easily access and run data collection \
+    commands on a set of profiles all at once.
+
+    AUTO-CREATED RELATIONSHIPS:
+        - profiles = models.ManyToManyField(your_app.TwitterProfileModel, related_name="twitter_profile_sets")
+    """
+
     class Meta(object):
         abstract = True
 
-    name = models.CharField(max_length=256, unique=True)
-
-    """
-    AUTO-CREATED RELATIONSHIPS:
-    profiles = models.ManyToManyField(your_app.TwitterProfileModel, related_name="twitter_profile_sets")
-    """
+    name = models.CharField(
+        max_length=256,
+        unique=True,
+        help_text="A unique name associated with a set of profiles",
+    )
 
     def __str__(self):
 
