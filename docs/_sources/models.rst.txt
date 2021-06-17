@@ -44,7 +44,4 @@ Other objects
 .. autoclass :: django_twitter.models.AbstractTwitterHashtag
   :members: save
 
-.. autoclass :: django_twitter.models.AbstractTwitterPlace
-  :members: save
-
 
