@@ -53,11 +53,6 @@ class TwitterHashtag(AbstractTwitterHashtag):
     pass
 
 
-class TwitterPlace(AbstractTwitterPlace):
-
-    pass
-
-
 class TweetSet(AbstractTweetSet):
 
     pass
