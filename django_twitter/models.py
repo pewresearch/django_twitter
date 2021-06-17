@@ -79,15 +79,6 @@ class AbstractTwitterBase(models.base.ModelBase):
                     None,
                 ),
                 (
-                    models.ForeignKey,
-                    "TwitterPlaceModel",
-                    "place",
-                    "tweets",
-                    None,
-                    True,
-                    models.SET_NULL,
-                ),
-                (
                     models.ManyToManyField,
                     "TwitterProfileModel",
                     "profile_mentions",
@@ -744,7 +735,6 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
     AUTO-CREATED RELATIONSHIPS:
         - profile = models.ForeignKey(your_app.TwitterProfileModel, related_name="tweets")
         - hashtags = models.ManyToManyField(your_app.TwitterHashtagModel, related_name="tweets")
-        - place = models.ForeignKey(your_app.TwitterPlaceModel, related_name="tweets")
         - profile_mentions = models.ManyToManyField(your_app.TwitterProfileModel, related_name="tweet_mentions")
         - retweeted_status = models.ForeignKey(your_app.TweetModel, related_name="retweets")
         - in_reply_to_status = models.ForeignKey(your_app.TweetModel, related_name="replies")
@@ -1137,38 +1127,6 @@ class AbstractTwitterHashtag(with_metaclass(AbstractTwitterBase, models.Model)):
         """
         self.name = self.name.lower()
         super(AbstractTwitterHashtag, self).save(*args, **kwargs)
-
-
-####
-# Additional classes that are in Rookery that I don't think we need
-class AbstractTwitterPlace(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
-    """
-    This was once implemented but isn't anymore, and I'm not even sure it's available via the API anymore.
-    """
-
-    class Meta(object):
-        abstract = True
-
-    full_name = models.CharField(
-        max_length=255, help_text="The full name of the location"
-    )
-    name = models.CharField(max_length=255, help_text="Short name for the location")
-    place_type = models.CharField(max_length=255, help_text="The type of location")
-    country_code = models.CharField(
-        max_length=10, help_text="The location's country code"
-    )
-    country = models.CharField(
-        max_length=255, help_text="The name of the location's country"
-    )
-
-    def save(self, *args, **kwargs):
-
-        if not all([self.name, self.place_type] or kwargs.get("reparse", False)):
-            self.place_type = self.json["place_type"]
-            self.country = self.json["country"]
-            self.name = self.json["name"]
-            self.full_name = self.json["full_name"]
-        super(AbstractTwitterPlace, self).save(*args, **kwargs)
 
 
 # def add_historical_records(sender, **kwargs):
