@@ -15,6 +15,21 @@ from django_twitter.utils import (
 
 
 class Command(BaseCommand):
+    """
+    Download and save data for a Twitter profile.
+
+    :param twitter_id: The profile's unique Twitter ID (or, if it's the first time you're downloading data for this \
+    profile and you don't know the Twitter ID, you can pass a screen name)
+    :param add_to_profile_set: (Optional) The name of a profile set to add the profile to. Can be \
+    any arbitrary string you want to use; if the profile set doesn't already exist, it will be created
+    :param api_key: (Optional) Twitter API key, if you don't have the TWITTER_API_KEY environment variable set
+    :param api_secret: (Optional) Twitter API secret, if you don't have the TWITTER_API_SECRET environment variable set
+    :param access_token: (Optional) Twitter access token, if you don't have the TWITTER_API_ACCESS_TOKEN environment \
+    variable set
+    :param api_secret: (Optional) Twitter API access secret, if you don't have the TWITTER_API_ACCESS_SECRET \
+    environment variable set
+    """
+
     def add_arguments(self, parser):
 
         parser.add_argument("twitter_id", type=str)

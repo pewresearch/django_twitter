@@ -19,6 +19,28 @@ from django_twitter.utils import (
 
 
 class Command(BaseCommand):
+    """
+    Download and save a Twitter account's followings (the accounts they follow, also known as "friends").
+
+    :param twitter_id: The unique Twitter ID for the account
+    :param add_to_profile_set: (Optional) The name of a profile set to add the followings to. Can be \
+    any arbitrary string you want to use; if the profile set doesn't already exist, it will be created
+    :param hydrate: (Optional) By default, this command will only download the Twitter IDs for the profile's followings. \
+    If you pass `hydrate=True`, the command will download the full profile data for each following, but this requires \
+    heavy API usage and can take a long time.
+    :param limit: (Optional) Set a limit for the number of followings to collect, for testing purposes. If a limit \
+    is passed, `finish_time` will not be set, because the data collection was forcibly aborted.
+    :param no_progress_bar: (Optional) Disables the default `tqdm` progress bar.
+
+    :param api_key: (Optional) Twitter API key, if you don't have the TWITTER_API_KEY environment variable set
+    :param api_secret: (Optional) Twitter API secret, if you don't have the TWITTER_API_SECRET environment variable set
+    :param access_token: (Optional) Twitter access token, if you don't have the TWITTER_API_ACCESS_TOKEN environment \
+    variable set
+    :param api_secret: (Optional) Twitter API access secret, if you don't have the TWITTER_API_ACCESS_SECRET \
+    environment variable set
+
+    """
+
     def add_arguments(self, parser):
 
         parser.add_argument("twitter_id", type=str)
@@ -77,7 +99,7 @@ class Command(BaseCommand):
                 if not options["no_progress_bar"]:
                     iterator = tqdm(
                         iterator,
-                        desc="Retrieving friends for user {}".format(
+                        desc="Retrieving followings for user {}".format(
                             profile.screen_name
                         ),
                     )
@@ -105,7 +127,8 @@ class Command(BaseCommand):
                     if profile_set:
                         profile_set.profiles.add(following)
 
-                following_list.finish_time = datetime.datetime.now()
+                if not options["limit"]:
+                    following_list.finish_time = datetime.datetime.now()
                 following_list.save()
 
             except Exception as e:

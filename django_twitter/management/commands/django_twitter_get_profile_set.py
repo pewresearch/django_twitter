@@ -1,4 +1,5 @@
 import datetime
+import multiprocessing
 
 from multiprocessing import Pool
 from tqdm import tqdm
@@ -7,12 +8,36 @@ from django.core.management.base import BaseCommand
 from django.core.management import call_command
 from django import db
 
+from pewtils import is_null
 from django_pewtils import reset_django_connection
 
 from django_twitter.utils import safe_get_or_create
 
 
 class Command(BaseCommand):
+    """
+    Loops over a set of profiles (as defined by an existing TwitterProfileSet's name) and \
+    downloads profile data for each profile in the set. Equivalent to looping over the sets \
+    in a profile account and running `django_twitter_get_profile`. Supports running these commands \
+    in parallel using multiprocessing and the `num_cores` parameter. Multiprocessing is enabled \
+    by default and is set to the number of cores.
+
+    :param profile_set: The `name` of the profile set in the database
+    :param add_to_profile_set: (Optional) The name of a profile set to add the profiles to. Can be \
+    any arbitrary string you want to use; if the profile set doesn't already exist, it will be created. \
+    After the command has completed, all of the profiles in the first set should also belong to the second.
+
+    :param api_key: (Optional) Twitter API key, if you don't have the TWITTER_API_KEY environment variable set
+    :param api_secret: (Optional) Twitter API secret, if you don't have the TWITTER_API_SECRET environment variable set
+    :param access_token: (Optional) Twitter access token, if you don't have the TWITTER_API_ACCESS_TOKEN environment \
+    variable set
+    :param api_secret: (Optional) Twitter API access secret, if you don't have the TWITTER_API_ACCESS_SECRET \
+    environment variable set
+
+    :param num_cores: Number of cores to use in multiprocessing. Defaults to `multiprocessing.cpu_count()`.
+
+    """
+
     def add_arguments(self, parser):
 
         parser.add_argument("profile_set", type=str)
@@ -23,7 +48,7 @@ class Command(BaseCommand):
         parser.add_argument("--access_token", type=str)
         parser.add_argument("--access_secret", type=str)
 
-        parser.add_argument("--num_cores", type=int, default=2)
+        parser.add_argument("--num_cores", type=int, default=None)
 
     def handle(self, *args, **options):
 
@@ -36,6 +61,9 @@ class Command(BaseCommand):
             "access_token": options["access_token"],
             "access_secret": options["access_secret"],
         }
+
+        if is_null(options["num_cores"]):
+            options["num_cores"] = multiprocessing.cpu_count()
 
         pool = Pool(processes=options["num_cores"])
         profile_set = safe_get_or_create(
