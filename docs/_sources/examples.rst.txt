@@ -308,24 +308,9 @@ the @pewresearch account:
 .. parsed-literal::
 
     Retrieving tweets for user pewresearch: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewresearch
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewresearch: 24it [00:02,  8.70it/s]
-
-.. parsed-literal::
-
     pewresearch: http://twitter.com/pewresearch: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
-    
 
 
 .. code:: ipython3
@@ -477,115 +462,38 @@ use the correct unique IDs automatically:
 .. parsed-literal::
 
       0%|          | 0/11 [00:00<?, ?it/s]
-
-.. parsed-literal::
-
     Collecting profile data for 1265726480
     Successfully saved profile data for facttank: http://twitter.com/facttank
-
-
-.. parsed-literal::
-
       9%|▉         | 1/11 [00:00<00:03,  3.17it/s]
-
-.. parsed-literal::
-
     Collecting profile data for 1262729180
     Successfully saved profile data for pewscience: http://twitter.com/pewscience
-
-
-.. parsed-literal::
-
      18%|█▊        | 2/11 [00:00<00:02,  3.50it/s]
-
-.. parsed-literal::
-
     Collecting profile data for 36462231
     Successfully saved profile data for pewreligion: http://twitter.com/pewreligion
-
-
-.. parsed-literal::
-
      27%|██▋       | 3/11 [00:00<00:02,  3.25it/s]
-
-.. parsed-literal::
-
     Collecting profile data for 426041590
     Successfully saved profile data for pewhispanic: http://twitter.com/pewhispanic
-
-
-.. parsed-literal::
-
      36%|███▋      | 4/11 [00:01<00:02,  2.98it/s]
-
-.. parsed-literal::
-
     Collecting profile data for 22642788
     Successfully saved profile data for pewresearch: http://twitter.com/pewresearch
-
-
-.. parsed-literal::
-
      45%|████▌     | 5/11 [00:01<00:01,  3.16it/s]
-
-.. parsed-literal::
-
     Collecting profile data for 831470472
     Successfully saved profile data for pewglobal: http://twitter.com/pewglobal
-
-
-.. parsed-literal::
-
      55%|█████▍    | 6/11 [00:01<00:01,  3.48it/s]
-
-.. parsed-literal::
-
     Collecting profile data for 3015897974
     Successfully saved profile data for pewmethods: http://twitter.com/pewmethods
-
-
-.. parsed-literal::
-
      64%|██████▎   | 7/11 [00:02<00:01,  3.74it/s]
-
-.. parsed-literal::
-
     Collecting profile data for 111339670
     Successfully saved profile data for pewjournalism: http://twitter.com/pewjournalism
-
-
-.. parsed-literal::
-
      73%|███████▎  | 8/11 [00:02<00:00,  3.68it/s]
-
-.. parsed-literal::
-
     Collecting profile data for 17071048
     Successfully saved profile data for pewinternet: http://twitter.com/pewinternet
-
-
-.. parsed-literal::
-
      82%|████████▏ | 9/11 [00:02<00:00,  3.70it/s]
-
-.. parsed-literal::
-
     Collecting profile data for 530977797
     Successfully saved profile data for pvankessel: http://twitter.com/pvankessel
-
-
-.. parsed-literal::
-
      91%|█████████ | 10/11 [00:02<00:00,  3.27it/s]
-
-.. parsed-literal::
-
     Collecting profile data for 27260086
     Successfully saved profile data for justinbieber: http://twitter.com/justinbieber
-
-
-.. parsed-literal::
-
     100%|██████████| 11/11 [00:03<00:00,  3.32it/s]
 
 
@@ -606,214 +514,49 @@ now run the ``django_twitter_get_profile_set_tweets`` command
 .. parsed-literal::
 
     Retrieving tweets for user facttank: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user facttank
-
-
-.. parsed-literal::
-
     Retrieving tweets for user facttank: 24it [00:02, 11.20it/s]
-
-
-.. parsed-literal::
-
     facttank: http://twitter.com/facttank: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewscience: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewscience
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewscience: 24it [00:02,  9.66it/s]
-
-
-.. parsed-literal::
-
     pewscience: http://twitter.com/pewscience: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewreligion: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewreligion
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewreligion: 24it [00:02, 11.89it/s]
-
-
-.. parsed-literal::
-
     pewreligion: http://twitter.com/pewreligion: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewhispanic: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewhispanic
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewhispanic: 24it [00:02,  8.59it/s]
-
-
-.. parsed-literal::
-
     pewhispanic: http://twitter.com/pewhispanic: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewresearch: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewresearch
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewresearch: 24it [00:02, 11.24it/s]
-
-
-.. parsed-literal::
-
     pewresearch: http://twitter.com/pewresearch: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewglobal: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewglobal
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewglobal: 24it [00:02, 11.29it/s]
-
-
-.. parsed-literal::
-
     pewglobal: http://twitter.com/pewglobal: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewmethods: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewmethods
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewmethods: 24it [00:02,  8.53it/s]
-
-
-.. parsed-literal::
-
     pewmethods: http://twitter.com/pewmethods: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewjournalism: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewjournalism
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewjournalism: 24it [00:01, 13.64it/s]
-
-
-.. parsed-literal::
-
     pewjournalism: http://twitter.com/pewjournalism: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewinternet: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewinternet
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewinternet: 24it [00:02, 11.88it/s]
-
-
-.. parsed-literal::
-
     pewinternet: http://twitter.com/pewinternet: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pvankessel: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pvankessel
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pvankessel: 24it [00:02,  9.78it/s]
-
-
-.. parsed-literal::
-
     pvankessel: http://twitter.com/pvankessel: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user justinbieber: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user justinbieber
-
-
-.. parsed-literal::
-
     Retrieving tweets for user justinbieber: 24it [00:03,  7.96it/s]
-
-
-.. parsed-literal::
-
     justinbieber: http://twitter.com/justinbieber: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     100%|██████████| 11/11 [00:29<00:00,  2.67s/it]
 
 
@@ -835,214 +578,49 @@ command, by passing it a label for a tweet set:
 .. parsed-literal::
 
     Retrieving tweets for user pewscience: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewscience
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewscience: 24it [00:02, 11.05it/s]
-
-
-.. parsed-literal::
-
     pewscience: http://twitter.com/pewscience: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewreligion: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewreligion
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewreligion: 24it [00:02, 10.83it/s]
-
-
-.. parsed-literal::
-
     pewreligion: http://twitter.com/pewreligion: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user facttank: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user facttank
-
-
-.. parsed-literal::
-
     Retrieving tweets for user facttank: 24it [00:01, 13.98it/s]
-
-
-.. parsed-literal::
-
     facttank: http://twitter.com/facttank: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewhispanic: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewhispanic
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewhispanic: 24it [00:02,  8.88it/s]
-
-
-.. parsed-literal::
-
     pewhispanic: http://twitter.com/pewhispanic: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewglobal: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewglobal
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewglobal: 24it [00:01, 12.44it/s]
-
-
-.. parsed-literal::
-
     pewglobal: http://twitter.com/pewglobal: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewmethods: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewmethods
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewmethods: 24it [00:02, 10.44it/s]
-
-
-.. parsed-literal::
-
     pewmethods: http://twitter.com/pewmethods: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewjournalism: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewjournalism
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewjournalism: 24it [00:02, 10.42it/s]
-
-
-.. parsed-literal::
-
     pewjournalism: http://twitter.com/pewjournalism: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewinternet: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewinternet
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewinternet: 24it [00:02, 10.88it/s]
-
-
-.. parsed-literal::
-
     pewinternet: http://twitter.com/pewinternet: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewresearch: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewresearch
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewresearch: 24it [00:02, 10.47it/s]
-
-
-.. parsed-literal::
-
     pewresearch: http://twitter.com/pewresearch: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pvankessel: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pvankessel
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pvankessel: 24it [00:02, 10.83it/s]
-
-
-.. parsed-literal::
-
     pvankessel: http://twitter.com/pvankessel: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user justinbieber: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user justinbieber
-
-
-.. parsed-literal::
-
     Retrieving tweets for user justinbieber: 24it [00:02,  9.07it/s]
-
-
-.. parsed-literal::
-
     justinbieber: http://twitter.com/justinbieber: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     100%|██████████| 11/11 [00:28<00:00,  2.56s/it]
 
 
@@ -1075,218 +653,52 @@ keep track of data collection, for example.
         add_to_profile_set="my_second_profile_set",
     )
 
-
 .. parsed-literal::
 
     Retrieving tweets for user pewreligion: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewreligion
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewreligion: 24it [00:02,  9.12it/s]
-
-
-.. parsed-literal::
-
     pewreligion: http://twitter.com/pewreligion: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user facttank: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user facttank
-
-
-.. parsed-literal::
-
     Retrieving tweets for user facttank: 24it [00:01, 13.87it/s]
-
-
-.. parsed-literal::
-
     facttank: http://twitter.com/facttank: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewhispanic: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewhispanic
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewhispanic: 24it [00:02,  9.02it/s]
-
-
-.. parsed-literal::
-
     pewhispanic: http://twitter.com/pewhispanic: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewglobal: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewglobal
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewglobal: 24it [00:01, 12.75it/s]
-
-
-.. parsed-literal::
-
     pewglobal: http://twitter.com/pewglobal: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewinternet: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewinternet
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewinternet: 24it [00:02, 11.19it/s]
-
-
-.. parsed-literal::
-
     pewinternet: http://twitter.com/pewinternet: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewmethods: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewmethods
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewmethods: 24it [00:02, 11.62it/s]
-
-
-.. parsed-literal::
-
     pewmethods: http://twitter.com/pewmethods: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewscience: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewscience
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewscience: 24it [00:02,  9.99it/s]
-
-
-.. parsed-literal::
-
     pewscience: http://twitter.com/pewscience: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewjournalism: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewjournalism
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewjournalism: 24it [00:01, 14.20it/s]
-
-
-.. parsed-literal::
-
     pewjournalism: http://twitter.com/pewjournalism: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewresearch: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pewresearch
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pewresearch: 24it [00:02, 11.25it/s]
-
-
-.. parsed-literal::
-
     pewresearch: http://twitter.com/pewresearch: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pvankessel: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user pvankessel
-
-
-.. parsed-literal::
-
     Retrieving tweets for user pvankessel: 24it [00:02, 10.63it/s]
-
-
-.. parsed-literal::
-
     pvankessel: http://twitter.com/pvankessel: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     Retrieving tweets for user justinbieber: 0it [00:00, ?it/s]
-
-.. parsed-literal::
-
     Retrieving tweets for user justinbieber
-
-
-.. parsed-literal::
-
     Retrieving tweets for user justinbieber: 24it [00:02,  9.66it/s]
-
-
-.. parsed-literal::
-
     justinbieber: http://twitter.com/justinbieber: 25 tweets scanned, 25 updated
-
-
-.. parsed-literal::
-
     100%|██████████| 11/11 [00:27<00:00,  2.49s/it]
 
 
