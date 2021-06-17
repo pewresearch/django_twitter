@@ -1,0 +1,277 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>django_twitter.management.commands.django_twitter_get_profile_set &mdash; django_twitter 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> django_twitter
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../models.html">Abstract Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../commands.html">Management Commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples.html">Examples</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">django_twitter</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>django_twitter.management.commands.django_twitter_get_profile_set</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for django_twitter.management.commands.django_twitter_get_profile_set</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">multiprocessing</span>
+
+<span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="k">import</span> <span class="n">Pool</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm</span>
+
+<span class="kn">from</span> <span class="nn">django.core.management.base</span> <span class="k">import</span> <span class="n">BaseCommand</span>
+<span class="kn">from</span> <span class="nn">django.core.management</span> <span class="k">import</span> <span class="n">call_command</span>
+<span class="kn">from</span> <span class="nn">django</span> <span class="k">import</span> <span class="n">db</span>
+
+<span class="kn">from</span> <span class="nn">pewtils</span> <span class="k">import</span> <span class="n">is_null</span>
+<span class="kn">from</span> <span class="nn">django_pewtils</span> <span class="k">import</span> <span class="n">reset_django_connection</span>
+
+<span class="kn">from</span> <span class="nn">django_twitter.utils</span> <span class="k">import</span> <span class="n">safe_get_or_create</span>
+
+
+<div class="viewcode-block" id="Command"><a class="viewcode-back" href="../../../../commands.html#django_twitter.management.commands.django_twitter_get_profile_set.Command">[docs]</a><span class="k">class</span> <span class="nc">Command</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Loops over a set of profiles (as defined by an existing TwitterProfileSet&#39;s name) and \</span>
+<span class="sd">    downloads profile data for each profile in the set. Equivalent to looping over the sets \</span>
+<span class="sd">    in a profile account and running `django_twitter_get_profile`. Supports running these commands \</span>
+<span class="sd">    in parallel using multiprocessing and the `num_cores` parameter. Multiprocessing is enabled \</span>
+<span class="sd">    by default and is set to the number of cores.</span>
+
+<span class="sd">    :param profile_set: The `name` of the profile set in the database</span>
+<span class="sd">    :param add_to_profile_set: (Optional) The name of a profile set to add the profiles to. Can be \</span>
+<span class="sd">    any arbitrary string you want to use; if the profile set doesn&#39;t already exist, it will be created. \</span>
+<span class="sd">    After the command has completed, all of the profiles in the first set should also belong to the second.</span>
+
+<span class="sd">    :param api_key: (Optional) Twitter API key, if you don&#39;t have the TWITTER_API_KEY environment variable set</span>
+<span class="sd">    :param api_secret: (Optional) Twitter API secret, if you don&#39;t have the TWITTER_API_SECRET environment variable set</span>
+<span class="sd">    :param access_token: (Optional) Twitter access token, if you don&#39;t have the TWITTER_API_ACCESS_TOKEN environment \</span>
+<span class="sd">    variable set</span>
+<span class="sd">    :param api_secret: (Optional) Twitter API access secret, if you don&#39;t have the TWITTER_API_ACCESS_SECRET \</span>
+<span class="sd">    environment variable set</span>
+
+<span class="sd">    :param num_cores: Number of cores to use in multiprocessing. Defaults to `multiprocessing.cpu_count()`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">add_arguments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">):</span>
+
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;profile_set&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--add_to_profile_set&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--api_key&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--api_secret&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--access_token&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--access_secret&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--num_cores&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+
+        <span class="n">reset_django_connection</span><span class="p">()</span>
+
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;add_to_profile_set&quot;</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;add_to_profile_set&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;api_key&quot;</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;api_key&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;api_secret&quot;</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;api_secret&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;access_token&quot;</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;access_token&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;access_secret&quot;</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;access_secret&quot;</span><span class="p">],</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">is_null</span><span class="p">(</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;num_cores&quot;</span><span class="p">]):</span>
+            <span class="n">options</span><span class="p">[</span><span class="s2">&quot;num_cores&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span>
+
+        <span class="n">pool</span> <span class="o">=</span> <span class="n">Pool</span><span class="p">(</span><span class="n">processes</span><span class="o">=</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;num_cores&quot;</span><span class="p">])</span>
+        <span class="n">profile_set</span> <span class="o">=</span> <span class="n">safe_get_or_create</span><span class="p">(</span>
+            <span class="s2">&quot;AbstractTwitterProfileSet&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;profile_set&quot;</span><span class="p">],</span> <span class="n">create</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="n">twitter_ids</span> <span class="o">=</span> <span class="n">profile_set</span><span class="o">.</span><span class="n">profiles</span><span class="o">.</span><span class="n">values_list</span><span class="p">(</span><span class="s2">&quot;twitter_id&quot;</span><span class="p">,</span> <span class="n">flat</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">twitter_id</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">twitter_ids</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">twitter_ids</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;num_cores&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">pool</span><span class="o">.</span><span class="n">apply_async</span><span class="p">(</span>
+                    <span class="n">call_command</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;django_twitter_get_profile&quot;</span><span class="p">,</span> <span class="n">twitter_id</span><span class="p">),</span> <span class="n">kwargs</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pool</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+                    <span class="n">call_command</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;django_twitter_get_profile&quot;</span><span class="p">,</span> <span class="n">twitter_id</span><span class="p">),</span> <span class="n">kwargs</span>
+                <span class="p">)</span>
+
+        <span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">pool</span><span class="o">.</span><span class="n">join</span><span class="p">()</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Pew Research Center
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

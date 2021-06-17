@@ -205,14 +205,6 @@ immediately switching to the account's canonical `twitter_id` as soon as you've 
 first time. Better yet, you can use Django Twitter's `TwitterProfileSet` model to track a list of accounts once 
 you've loaded them in, and it will always use the `twitter_id` field to collect data.
 
-> **NOTE:** Django Twitter does not enforce a unique constraint on `twitter_id`. Django Twitter is designed to be 
-> as flexible as possible, hence why it provides abstract models that can be modified and extended to fit your 
-> needs. In some cases, it might make sense to create separate records for a single Twitter account - which 
-> would, for example, allow you to attribute an institutional profile to the different politicians that have 
-> managed it over a long timeframe. If there are multiple records with the same `twitter_id`, Django Twitter's 
-> data collection commands will automatically update the most recently updated record (based on the 
-> `last_update_time` field) and ignore the others.
-
 ### Checking accounts with Django Verifications
 
 If you're loading in a list of accounts from an external data source, you might not have any choice but to use 

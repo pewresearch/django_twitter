@@ -1,0 +1,451 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>django_twitter.management.commands &mdash; django_twitter 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Examples" href="examples.html" />
+    <link rel="prev" title="django_twitter.models" href="models.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> django_twitter
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Table of Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Abstract Models</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Management Commands</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#streaming-api">Streaming API</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#django-twitter-collect-tweet-stream">django_twitter_collect_tweet_stream</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#collecting-profile-data">Collecting profile data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#django-twitter-get-profile">django_twitter_get_profile</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#django-twitter-get-profile-set">django_twitter_get_profile_set</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#collecting-tweets">Collecting tweets</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#django-twitter-get-profile-tweets">django_twitter_get_profile_tweets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#django-twitter-get-profile-set-tweets">django_twitter_get_profile_set_tweets</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#collecting-followers-and-followings">Collecting followers and followings</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#django-twitter-get-profile-followers">django_twitter_get_profile_followers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#django-twitter-get-profile-followings">django_twitter_get_profile_followings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#django-twitter-get-profile-set-followers">django_twitter_get_profile_set_followers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#django-twitter-get-profile-set-followings">django_twitter_get_profile_set_followings</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">django_twitter</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>django_twitter.management.commands</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/commands.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="django-twitter-management-commands">
+<h1>django_twitter.management.commands<a class="headerlink" href="#django-twitter-management-commands" title="Permalink to this headline">¶</a></h1>
+<p>Django Twitter provides a series of management commands for collecting and storing data from the Twitter API,
+which you can run via the CLI or by using Django’s <cite>call_command</cite> function.</p>
+<div class="section" id="streaming-api">
+<h2>Streaming API<a class="headerlink" href="#streaming-api" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="django-twitter-collect-tweet-stream">
+<h3>django_twitter_collect_tweet_stream<a class="headerlink" href="#django-twitter-collect-tweet-stream" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="django_twitter.management.commands.django_twitter_collect_tweet_stream.Command">
+<em class="property">class </em><code class="sig-name descname">Command</code><span class="sig-paren">(</span><em class="sig-param">stdout=None</em>, <em class="sig-param">stderr=None</em>, <em class="sig-param">no_color=False</em>, <em class="sig-param">force_color=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/django_twitter/management/commands/django_twitter_collect_tweet_stream.html#Command"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#django_twitter.management.commands.django_twitter_collect_tweet_stream.Command" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+<div class="section" id="collecting-profile-data">
+<h2>Collecting profile data<a class="headerlink" href="#collecting-profile-data" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="django-twitter-get-profile">
+<h3>django_twitter_get_profile<a class="headerlink" href="#django-twitter-get-profile" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="django_twitter.management.commands.django_twitter_get_profile.Command">
+<em class="property">class </em><code class="sig-name descname">Command</code><span class="sig-paren">(</span><em class="sig-param">stdout=None</em>, <em class="sig-param">stderr=None</em>, <em class="sig-param">no_color=False</em>, <em class="sig-param">force_color=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/django_twitter/management/commands/django_twitter_get_profile.html#Command"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#django_twitter.management.commands.django_twitter_get_profile.Command" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download and save data for a Twitter profile.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>twitter_id</strong> – The profile’s unique Twitter ID (or, if it’s the first time you’re downloading data for this     profile and you don’t know the Twitter ID, you can pass a screen name)</p></li>
+<li><p><strong>add_to_profile_set</strong> – (Optional) The name of a profile set to add the profile to. Can be     any arbitrary string you want to use; if the profile set doesn’t already exist, it will be created</p></li>
+<li><p><strong>api_key</strong> – (Optional) Twitter API key, if you don’t have the TWITTER_API_KEY environment variable set</p></li>
+<li><p><strong>api_secret</strong> – (Optional) Twitter API secret, if you don’t have the TWITTER_API_SECRET environment variable set</p></li>
+<li><p><strong>access_token</strong> – (Optional) Twitter access token, if you don’t have the TWITTER_API_ACCESS_TOKEN environment     variable set</p></li>
+<li><p><strong>api_secret</strong> – (Optional) Twitter API access secret, if you don’t have the TWITTER_API_ACCESS_SECRET     environment variable set</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="django-twitter-get-profile-set">
+<h3>django_twitter_get_profile_set<a class="headerlink" href="#django-twitter-get-profile-set" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="django_twitter.management.commands.django_twitter_get_profile_set.Command">
+<em class="property">class </em><code class="sig-name descname">Command</code><span class="sig-paren">(</span><em class="sig-param">stdout=None</em>, <em class="sig-param">stderr=None</em>, <em class="sig-param">no_color=False</em>, <em class="sig-param">force_color=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/django_twitter/management/commands/django_twitter_get_profile_set.html#Command"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#django_twitter.management.commands.django_twitter_get_profile_set.Command" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loops over a set of profiles (as defined by an existing TwitterProfileSet’s name) and     downloads profile data for each profile in the set. Equivalent to looping over the sets     in a profile account and running <cite>django_twitter_get_profile</cite>. Supports running these commands     in parallel using multiprocessing and the <cite>num_cores</cite> parameter. Multiprocessing is enabled     by default and is set to the number of cores.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>profile_set</strong> – The <cite>name</cite> of the profile set in the database</p></li>
+<li><p><strong>add_to_profile_set</strong> – (Optional) The name of a profile set to add the profiles to. Can be     any arbitrary string you want to use; if the profile set doesn’t already exist, it will be created.     After the command has completed, all of the profiles in the first set should also belong to the second.</p></li>
+<li><p><strong>api_key</strong> – (Optional) Twitter API key, if you don’t have the TWITTER_API_KEY environment variable set</p></li>
+<li><p><strong>api_secret</strong> – (Optional) Twitter API secret, if you don’t have the TWITTER_API_SECRET environment variable set</p></li>
+<li><p><strong>access_token</strong> – (Optional) Twitter access token, if you don’t have the TWITTER_API_ACCESS_TOKEN environment     variable set</p></li>
+<li><p><strong>api_secret</strong> – (Optional) Twitter API access secret, if you don’t have the TWITTER_API_ACCESS_SECRET     environment variable set</p></li>
+<li><p><strong>num_cores</strong> – Number of cores to use in multiprocessing. Defaults to <cite>multiprocessing.cpu_count()</cite>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="collecting-tweets">
+<h2>Collecting tweets<a class="headerlink" href="#collecting-tweets" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="django-twitter-get-profile-tweets">
+<h3>django_twitter_get_profile_tweets<a class="headerlink" href="#django-twitter-get-profile-tweets" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="django_twitter.management.commands.django_twitter_get_profile_tweets.Command">
+<em class="property">class </em><code class="sig-name descname">Command</code><span class="sig-paren">(</span><em class="sig-param">stdout=None</em>, <em class="sig-param">stderr=None</em>, <em class="sig-param">no_color=False</em>, <em class="sig-param">force_color=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/django_twitter/management/commands/django_twitter_get_profile_tweets.html#Command"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#django_twitter.management.commands.django_twitter_get_profile_tweets.Command" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download and save the tweets for a specific profile. The first time this command is run, it will loop over     the profile’s tweets in reverse-chronological order as far back as it can go (~3200 tweets). In subsequent     calls to this command, it will break off when it encounters an existing tweet. Passing <cite>–ignore_backfill</cite>     will override this behavior. Additionally passing <cite>–max_backfill_date</cite> or <cite>–max_backfill_days</cite> will override     this behavior but only for recent tweets. By default, Django Twitter does not update data for existing tweets     by default; to override this behavior you can pass <cite>–overwrite</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>profile_set</strong> – The <cite>name</cite> of the profile set in the database</p></li>
+<li><p><strong>add_to_profile_set</strong> – (Optional) The name of a profile set to add the profile to. Can be     any arbitrary string you want to use; if the profile set doesn’t already exist, it will be created</p></li>
+<li><p><strong>add_to_tweet_set</strong> – (Optional) The name of a tweet set to add each tweet to. Can be     any arbitrary string you want to use; if the tweet set doesn’t already exist, it will be created.</p></li>
+<li><p><strong>ignore_backfill</strong> – (Optional) By default, Django Twitter will only iterate through a profile’s full tweet     timeline the first time it runs. Once it has successfully iterated through all of a profile’s tweets once before,     subsequent calls to this command will break off when they encounter an existing tweet. Passing     <cite>–ignore_backfill</cite> to this command will override this behavior and force it to iterate the whole timeline.</p></li>
+<li><p><strong>overwrite</strong> – (Optional) By default, Django Twitter will skip over any existing tweets and will not     overwrite any of their data. If you pass <cite>–overwrite</cite> this behavior will be overridden, and if the command     encounters existing tweets (e.g. if you have also passed <cite>–ignore_backfill</cite>) then it will update them with     the latest API data.</p></li>
+<li><p><strong>max_backfill_date</strong> – (Optional) A YYYY-MM-DD or MM-DD-YYYY string representing a date at which the     <cite>ignore_backfill</cite> behavior should stop. Useful if you want to iterate over and refresh previously-collected     tweets (i.e. by also passing <cite>–ignore_backfill</cite> and <cite>–overwrite</cite>) and refresh their stats, but only for     recent tweets that were created after a certain date.</p></li>
+<li><p><strong>max_backfill_days</strong> – (Optional) Alternative to <cite>max_backfill_date</cite>; overrides the <cite>–ignore_backfill</cite>     behavior but only for tweets that were created within the last N days.</p></li>
+<li><p><strong>no_progress_bar</strong> – (Optional) Disables the default <cite>tqdm</cite> progress bar.</p></li>
+<li><p><strong>limit</strong> – (Optional) Set a limit for the number of tweets to collect for each profile, for testing purposes.</p></li>
+<li><p><strong>api_key</strong> – (Optional) Twitter API key, if you don’t have the TWITTER_API_KEY environment variable set</p></li>
+<li><p><strong>api_secret</strong> – (Optional) Twitter API secret, if you don’t have the TWITTER_API_SECRET environment variable set</p></li>
+<li><p><strong>access_token</strong> – (Optional) Twitter access token, if you don’t have the TWITTER_API_ACCESS_TOKEN environment     variable set</p></li>
+<li><p><strong>api_secret</strong> – (Optional) Twitter API access secret, if you don’t have the TWITTER_API_ACCESS_SECRET     environment variable set</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="django-twitter-get-profile-set-tweets">
+<h3>django_twitter_get_profile_set_tweets<a class="headerlink" href="#django-twitter-get-profile-set-tweets" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="django_twitter.management.commands.django_twitter_get_profile_set_tweets.Command">
+<em class="property">class </em><code class="sig-name descname">Command</code><span class="sig-paren">(</span><em class="sig-param">stdout=None</em>, <em class="sig-param">stderr=None</em>, <em class="sig-param">no_color=False</em>, <em class="sig-param">force_color=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/django_twitter/management/commands/django_twitter_get_profile_set_tweets.html#Command"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#django_twitter.management.commands.django_twitter_get_profile_set_tweets.Command" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loops over a set of profiles (as defined by an existing TwitterProfileSet’s name) and     downloads tweets for each profile in the set. Equivalent to looping over the sets     in a profile account and running <cite>django_twitter_get_profile_tweets</cite>. Supports running these commands     in parallel using multiprocessing and the <cite>num_cores</cite> parameter. Multiprocessing is enabled     by default and is set to the number of cores.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>profile_set</strong> – The <cite>name</cite> of the profile set in the database</p></li>
+<li><p><strong>add_to_profile_set</strong> – (Optional) The name of a profile set to add the profiles to. Can be     any arbitrary string you want to use; if the profile set doesn’t already exist, it will be created.     After the command has completed, all of the profiles in the first set should also belong to the second.</p></li>
+<li><p><strong>add_to_tweet_set</strong> – (Optional) The name of a tweet set to add each tweet to. Can be     any arbitrary string you want to use; if the tweet set doesn’t already exist, it will be created.</p></li>
+<li><p><strong>ignore_backfill</strong> – (Optional) By default, Django Twitter will only iterate through a profile’s full tweet     timeline the first time it runs. Once it has successfully iterated through all of a profile’s tweets once before,     subsequent calls to this command will break off when they encounter an existing tweet. Passing     <cite>–ignore_backfill</cite> to this command will override this behavior and force it to iterate the whole timeline.</p></li>
+<li><p><strong>overwrite</strong> – (Optional) By default, Django Twitter will skip over any existing tweets and will not     overwrite any of their data. If you pass <cite>–overwrite</cite> this behavior will be overridden, and if the command     encounters existing tweets (e.g. if you have also passed <cite>–ignore_backfill</cite>) then it will update them with     the latest API data.</p></li>
+<li><p><strong>max_backfill_date</strong> – (Optional) A YYYY-MM-DD or MM-DD-YYYY string representing a date at which the     <cite>ignore_backfill</cite> behavior should stop. Useful if you want to iterate over and refresh previously-collected     tweets (i.e. by also passing <cite>–ignore_backfill</cite> and <cite>–overwrite</cite>) and refresh their stats, but only for     recent tweets that were created after a certain date.</p></li>
+<li><p><strong>max_backfill_days</strong> – (Optional) Alternative to <cite>max_backfill_date</cite>; overrides the <cite>–ignore_backfill</cite>     behavior but only for tweets that were created within the last N days.</p></li>
+<li><p><strong>no_progress_bar</strong> – (Optional) Disables the default <cite>tqdm</cite> progress bar.</p></li>
+<li><p><strong>limit</strong> – (Optional) Set a limit for the number of tweets to collect for each profile, for testing purposes.</p></li>
+<li><p><strong>api_key</strong> – (Optional) Twitter API key, if you don’t have the TWITTER_API_KEY environment variable set</p></li>
+<li><p><strong>api_secret</strong> – (Optional) Twitter API secret, if you don’t have the TWITTER_API_SECRET environment variable set</p></li>
+<li><p><strong>access_token</strong> – (Optional) Twitter access token, if you don’t have the TWITTER_API_ACCESS_TOKEN environment     variable set</p></li>
+<li><p><strong>api_secret</strong> – (Optional) Twitter API access secret, if you don’t have the TWITTER_API_ACCESS_SECRET     environment variable set</p></li>
+<li><p><strong>num_cores</strong> – Number of cores to use in multiprocessing. Defaults to <cite>multiprocessing.cpu_count()</cite>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="collecting-followers-and-followings">
+<h2>Collecting followers and followings<a class="headerlink" href="#collecting-followers-and-followings" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="django-twitter-get-profile-followers">
+<h3>django_twitter_get_profile_followers<a class="headerlink" href="#django-twitter-get-profile-followers" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="django_twitter.management.commands.django_twitter_get_profile_followers.Command">
+<em class="property">class </em><code class="sig-name descname">Command</code><span class="sig-paren">(</span><em class="sig-param">stdout=None</em>, <em class="sig-param">stderr=None</em>, <em class="sig-param">no_color=False</em>, <em class="sig-param">force_color=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/django_twitter/management/commands/django_twitter_get_profile_followers.html#Command"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#django_twitter.management.commands.django_twitter_get_profile_followers.Command" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download and save a Twitter account’s followers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>twitter_id</strong> – The unique Twitter ID for the account</p></li>
+<li><p><strong>add_to_profile_set</strong> – (Optional) The name of a profile set to add the followers to. Can be     any arbitrary string you want to use; if the profile set doesn’t already exist, it will be created</p></li>
+<li><p><strong>hydrate</strong> – (Optional) By default, this command will only download the Twitter IDs for the profile’s followers.     If you pass <cite>hydrate=True</cite>, the command will download the full profile data for each follower, but this requires     heavy API usage and can take a long time.</p></li>
+<li><p><strong>limit</strong> – (Optional) Set a limit for the number of followers to collect, for testing purposes. If a limit     is passed, <cite>finish_time</cite> will not be set, because the data collection was forcibly aborted.</p></li>
+<li><p><strong>no_progress_bar</strong> – (Optional) Disables the default <cite>tqdm</cite> progress bar.</p></li>
+<li><p><strong>api_key</strong> – (Optional) Twitter API key, if you don’t have the TWITTER_API_KEY environment variable set</p></li>
+<li><p><strong>api_secret</strong> – (Optional) Twitter API secret, if you don’t have the TWITTER_API_SECRET environment variable set</p></li>
+<li><p><strong>access_token</strong> – (Optional) Twitter access token, if you don’t have the TWITTER_API_ACCESS_TOKEN environment     variable set</p></li>
+<li><p><strong>api_secret</strong> – (Optional) Twitter API access secret, if you don’t have the TWITTER_API_ACCESS_SECRET     environment variable set</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="django-twitter-get-profile-followings">
+<h3>django_twitter_get_profile_followings<a class="headerlink" href="#django-twitter-get-profile-followings" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="django_twitter.management.commands.django_twitter_get_profile_followings.Command">
+<em class="property">class </em><code class="sig-name descname">Command</code><span class="sig-paren">(</span><em class="sig-param">stdout=None</em>, <em class="sig-param">stderr=None</em>, <em class="sig-param">no_color=False</em>, <em class="sig-param">force_color=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/django_twitter/management/commands/django_twitter_get_profile_followings.html#Command"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#django_twitter.management.commands.django_twitter_get_profile_followings.Command" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download and save a Twitter account’s followings (the accounts they follow, also known as “friends”).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>twitter_id</strong> – The unique Twitter ID for the account</p></li>
+<li><p><strong>add_to_profile_set</strong> – (Optional) The name of a profile set to add the followings to. Can be     any arbitrary string you want to use; if the profile set doesn’t already exist, it will be created</p></li>
+<li><p><strong>hydrate</strong> – (Optional) By default, this command will only download the Twitter IDs for the profile’s followings.     If you pass <cite>hydrate=True</cite>, the command will download the full profile data for each following, but this requires     heavy API usage and can take a long time.</p></li>
+<li><p><strong>limit</strong> – (Optional) Set a limit for the number of followings to collect, for testing purposes. If a limit     is passed, <cite>finish_time</cite> will not be set, because the data collection was forcibly aborted.</p></li>
+<li><p><strong>no_progress_bar</strong> – (Optional) Disables the default <cite>tqdm</cite> progress bar.</p></li>
+<li><p><strong>api_key</strong> – (Optional) Twitter API key, if you don’t have the TWITTER_API_KEY environment variable set</p></li>
+<li><p><strong>api_secret</strong> – (Optional) Twitter API secret, if you don’t have the TWITTER_API_SECRET environment variable set</p></li>
+<li><p><strong>access_token</strong> – (Optional) Twitter access token, if you don’t have the TWITTER_API_ACCESS_TOKEN environment     variable set</p></li>
+<li><p><strong>api_secret</strong> – (Optional) Twitter API access secret, if you don’t have the TWITTER_API_ACCESS_SECRET     environment variable set</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="django-twitter-get-profile-set-followers">
+<h3>django_twitter_get_profile_set_followers<a class="headerlink" href="#django-twitter-get-profile-set-followers" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="django_twitter.management.commands.django_twitter_get_profile_set_followers.Command">
+<em class="property">class </em><code class="sig-name descname">Command</code><span class="sig-paren">(</span><em class="sig-param">stdout=None</em>, <em class="sig-param">stderr=None</em>, <em class="sig-param">no_color=False</em>, <em class="sig-param">force_color=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/django_twitter/management/commands/django_twitter_get_profile_set_followers.html#Command"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#django_twitter.management.commands.django_twitter_get_profile_set_followers.Command" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loops over a set of profiles (as defined by an existing TwitterProfileSet’s name) and     downloads followers for each profile in the set. Equivalent to looping over the sets     in a profile account and running <cite>django_twitter_get_profile_followers</cite>. Supports running these commands     in parallel using multiprocessing and the <cite>num_cores</cite> parameter. Multiprocessing is enabled     by default and is set to the number of cores.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>profile_set</strong> – The <cite>name</cite> of the profile set in the database</p></li>
+<li><p><strong>add_to_profile_set</strong> – (Optional) The name of a profile set to add the profiles’ followers to. Can be     any arbitrary string you want to use; if the profile set doesn’t already exist, it will be created.</p></li>
+<li><p><strong>hydrate</strong> – (Optional) By default, this command will only download the Twitter IDs for the profiles’ followers.     If you pass <cite>hydrate=True</cite>, the command will download the full profile data for each follower, but this requires     heavy API usage and can take a long time.</p></li>
+<li><p><strong>limit</strong> – (Optional) Set a limit for the number of followers to collect, for testing purposes. If a limit     is passed, <cite>finish_time</cite> will not be set, because the data collection was forcibly aborted.</p></li>
+<li><p><strong>no_progress_bar</strong> – (Optional) Disables the default <cite>tqdm</cite> progress bar.</p></li>
+<li><p><strong>api_key</strong> – (Optional) Twitter API key, if you don’t have the TWITTER_API_KEY environment variable set</p></li>
+<li><p><strong>api_secret</strong> – (Optional) Twitter API secret, if you don’t have the TWITTER_API_SECRET environment variable set</p></li>
+<li><p><strong>access_token</strong> – (Optional) Twitter access token, if you don’t have the TWITTER_API_ACCESS_TOKEN environment     variable set</p></li>
+<li><p><strong>api_secret</strong> – (Optional) Twitter API access secret, if you don’t have the TWITTER_API_ACCESS_SECRET     environment variable set</p></li>
+<li><p><strong>num_cores</strong> – Number of cores to use in multiprocessing. Defaults to <cite>multiprocessing.cpu_count()</cite>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="django-twitter-get-profile-set-followings">
+<h3>django_twitter_get_profile_set_followings<a class="headerlink" href="#django-twitter-get-profile-set-followings" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="django_twitter.management.commands.django_twitter_get_profile_set_followings.Command">
+<em class="property">class </em><code class="sig-name descname">Command</code><span class="sig-paren">(</span><em class="sig-param">stdout=None</em>, <em class="sig-param">stderr=None</em>, <em class="sig-param">no_color=False</em>, <em class="sig-param">force_color=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/django_twitter/management/commands/django_twitter_get_profile_set_followings.html#Command"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#django_twitter.management.commands.django_twitter_get_profile_set_followings.Command" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loops over a set of profiles (as defined by an existing TwitterProfileSet’s name) and     downloads followings for each profile in the set. Equivalent to looping over the sets     in a profile account and running <cite>django_twitter_get_profile_followings</cite>. Supports running these commands     in parallel using multiprocessing and the <cite>num_cores</cite> parameter. Multiprocessing is enabled     by default and is set to the number of cores.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>profile_set</strong> – The <cite>name</cite> of the profile set in the database</p></li>
+<li><p><strong>add_to_profile_set</strong> – (Optional) The name of a profile set to add the profiles’ followings to. Can be     any arbitrary string you want to use; if the profile set doesn’t already exist, it will be created.</p></li>
+<li><p><strong>hydrate</strong> – (Optional) By default, this command will only download the Twitter IDs for the profiles’ followings.     If you pass <cite>hydrate=True</cite>, the command will download the full profile data for each following, but this requires     heavy API usage and can take a long time.</p></li>
+<li><p><strong>limit</strong> – (Optional) Set a limit for the number of followings to collect, for testing purposes. If a limit     is passed, <cite>finish_time</cite> will not be set, because the data collection was forcibly aborted.</p></li>
+<li><p><strong>no_progress_bar</strong> – (Optional) Disables the default <cite>tqdm</cite> progress bar.</p></li>
+<li><p><strong>api_key</strong> – (Optional) Twitter API key, if you don’t have the TWITTER_API_KEY environment variable set</p></li>
+<li><p><strong>api_secret</strong> – (Optional) Twitter API secret, if you don’t have the TWITTER_API_SECRET environment variable set</p></li>
+<li><p><strong>access_token</strong> – (Optional) Twitter access token, if you don’t have the TWITTER_API_ACCESS_TOKEN environment     variable set</p></li>
+<li><p><strong>api_secret</strong> – (Optional) Twitter API access secret, if you don’t have the TWITTER_API_ACCESS_SECRET     environment variable set</p></li>
+<li><p><strong>num_cores</strong> – Number of cores to use in multiprocessing. Defaults to <cite>multiprocessing.cpu_count()</cite>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="examples.html" class="btn btn-neutral float-right" title="Examples" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="models.html" class="btn btn-neutral float-left" title="django_twitter.models" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Pew Research Center
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
