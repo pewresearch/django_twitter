@@ -35,7 +35,7 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
         self.TwitterFollowingList = get_concrete_model("AbstractTwitterFollowingList")
         self.TwitterHashtag = get_concrete_model("AbstractTwitterHashtag")
 
-    def test_user_commands(self):
+    def test_profile_commands(self):
 
         call_command(
             "django_twitter_get_profile", "pvankessel", add_to_profile_set="get_profile"
@@ -63,7 +63,6 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
         call_command(
             "django_twitter_get_profile_set",
             "get_profile",
-            num_cores=1,
             add_to_profile_set="get_profile_set",
         )
         self.assertEqual(
@@ -81,7 +80,6 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
         call_command(
             "django_twitter_get_profile_set_followers",
             "get_profile",
-            num_cores=1,
             add_to_profile_set="get_profile_set_followers",
             limit=5,
         )
@@ -103,7 +101,6 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
         call_command(
             "django_twitter_get_profile_set_followings",
             "get_profile",
-            num_cores=1,
             add_to_profile_set="get_profile_set_followings",
             limit=5,
         )
@@ -195,7 +192,6 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
         call_command(
             "django_twitter_get_profile_set_tweets",
             "get_profile_tweets",
-            num_cores=1,
             ignore_backfill=True,
             limit=50,
             add_to_profile_set="get_profile_set_tweets",
@@ -214,6 +210,70 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
         self.assertGreater(self.TwitterFollowerList.objects.count(), 0)
         self.assertGreater(self.TwitterFollowingList.objects.count(), 0)
         self.assertGreater(self.TwitterHashtag.objects.count(), 0)
+
+    def test_profile_set_commands(self):
+
+        HANDLES = ["pewresearch", "pewglobal", "pewmethods"]
+        for handle in HANDLES:
+            call_command(
+                "django_twitter_get_profile", handle, add_to_profile_set="test"
+            )
+        call_command("django_twitter_get_profile_set", "test")
+        self.assertEqual(
+            self.TwitterProfileSet.objects.get(name="test").profiles.count(), 3
+        )
+        call_command(
+            "django_twitter_get_profile_set_tweets",
+            "test",
+            ignore_backfill=True,
+            limit=25,
+            overwrite=True,
+        )
+        for handle in HANDLES:
+            self.assertGreaterEqual(
+                self.TwitterProfile.objects.get(screen_name=handle).tweets.count(), 25
+            )
+        call_command("django_twitter_get_profile_set_followers", "test", limit=1)
+        for handle in HANDLES:
+            self.assertGreater(
+                self.TwitterProfile.objects.get(screen_name=handle)
+                .current_followers()
+                .count(),
+                0,
+            )
+
+        call_command("django_twitter_get_profile_set_followings", "test", limit=1)
+        for handle in HANDLES:
+            self.assertGreater(
+                self.TwitterProfile.objects.get(screen_name=handle)
+                .current_followings()
+                .count(),
+                0,
+            )
+
+        call_command(
+            "django_twitter_get_profile_set_followers", "test", limit=1, hydrate=True
+        )
+        for handle in HANDLES:
+            self.assertGreater(
+                self.TwitterProfile.objects.get(screen_name=handle)
+                .current_followers()
+                .filter(screen_name__isnull=False)
+                .count(),
+                0,
+            )
+
+        call_command(
+            "django_twitter_get_profile_set_followings", "test", limit=1, hydrate=True
+        )
+        for handle in HANDLES:
+            self.assertGreater(
+                self.TwitterProfile.objects.get(screen_name=handle)
+                .current_followings()
+                .filter(screen_name__isnull=False)
+                .count(),
+                0,
+            )
 
     def test_utility_functions(self):
 
@@ -247,7 +307,6 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
         call_command(
             "django_twitter_get_profile_set_tweets",
             "test",
-            num_cores=1,
             ignore_backfill=True,
             limit=25,
             overwrite=True,
@@ -320,7 +379,6 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
 
         call_command(
             "django_twitter_collect_tweet_stream",
-            num_cores=1,
             limit="1 minute",
             queue_size=5,
             test=True,
@@ -330,7 +388,6 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
 
         call_command(
             "django_twitter_collect_tweet_stream",
-            num_cores=1,
             limit="10 tweets",
             queue_size=5,
             add_to_profile_set="test",
@@ -345,7 +402,6 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
 
         call_command(
             "django_twitter_collect_tweet_stream",
-            num_cores=1,
             limit="1 minute",
             queue_size=5,
             test=True,
