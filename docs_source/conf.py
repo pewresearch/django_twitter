@@ -44,6 +44,7 @@ release = "1.0.0"
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinxcontrib_django",
     "sphinx.ext.intersphinx",
     "sphinx.ext.coverage",
     "sphinx.ext.mathjax",
