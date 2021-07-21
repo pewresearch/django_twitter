@@ -23,6 +23,31 @@ allowable_limit_types = {
 
 
 class Command(BaseCommand):
+    """
+    Download a stream of tweets using the Twitter streaming API, either randomly sampling or pulling a \
+    sample of tweets that match to a specific `keyword_query`. Django Twitter will use multiprocessing to \
+    make sure it keeps up with the incoming volume of tweets. The data collection processes uses a queue \
+    to fill up batches of `queue_size` tweets, and once full it then sends each batch to a dedicated process \
+    that saves the tweets to the database.
+
+    :param num_cores: (Optional) Number of cores to use for processes that save the tweets to the database (default 2)
+    :param queue_size: (Optional) Size of the batches of tweets that will be sent to each data-saving proceess (default 500)
+    :param keyword_query: (Optional) Query to use to filter tweets in the stream
+    :param test: Use when testing to avoid resetting DB connections
+
+    :param add_to_profile_set: (Optional) The name of a profile set to add all encountered profiles to. Can be \
+    any arbitrary string you want to use; if the profile set doesn't already exist, it will be created
+    :param add_to_tweet_set: (Optional) The name of a tweet set to add each tweet to. Can be \
+    any arbitrary string you want to use; if the tweet set doesn't already exist, it will be created.
+
+    :param api_key: (Optional) Twitter API key, if you don't have the TWITTER_API_KEY environment variable set
+    :param api_secret: (Optional) Twitter API secret, if you don't have the TWITTER_API_SECRET environment variable set
+    :param access_token: (Optional) Twitter access token, if you don't have the TWITTER_API_ACCESS_TOKEN environment \
+    variable set
+    :param api_secret: (Optional) Twitter API access secret, if you don't have the TWITTER_API_ACCESS_SECRET \
+    environment variable set
+    """
+
     def add_arguments(self, parser):
 
         parser.add_argument("--num_cores", type=int, default=2)

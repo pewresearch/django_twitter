@@ -400,11 +400,39 @@ results = find_missing_date_ranges(
 
 ### Streaming API
 
-TODO
+As an alternative to collecting tweets for specific accounts, you can also sample tweets from Twitter's streaming 
+API, either randomly or using a specific keyword query. Django Twitter will use multiprocessing to make sure it keeps 
+up with the incoming volume of tweets. The data collection processes uses a queue to fill up batches of N 
+tweets, and once full it then sends each batch to a dedicated process that saves the tweets to the database. 
+You can invoke the command like so:
+
+```python
+# Collect a random sample
+call_command("django_twitter_collect_tweet_stream")
+
+# Collect a sample of tweets containing a keyword
+call_command("django_twitter_collect_tweet_stream", keyword_query="keyword")
+
+# Adjust the queue size and number of cores to use in multiprocessing
+call_command("django_twitter_collect_tweet_stream", num_cores=4, queue_size=100)
+
+# Set a limit for how long the stream should run
+call_command("django_twitter_collect_tweet_stream", limit="10 tweets")
+call_command("django_twitter_collect_tweet_stream", limit="10 minutes")
+call_command("django_twitter_collect_tweet_stream", limit="24 hours")
+call_command("django_twitter_collect_tweet_stream", limit="7 days")
+
+# Add all of the collected tweets to a particular tweet set
+call_command("django_twitter_collect_tweet_stream", add_to_tweet_set="my_tweet_set")
+
+# Add all of the profiles encountered by the stream to a profile set
+call_command("django_twitter_collect_tweet_stream", add_to_profile_set="my_profile_set")
+```
+
+Like the other functions, this command accepts API credential keyword arguments, but it's 
+preferable to configure this using your environment variables.
 
 ### Exporting data
-
-TODO: get_tweet_dataframe
 
 Since we often conduct research on tweets as well as profile attributes, and want to capture a representation 
 of each tweet's authoring profile _as it existed at the time of the tweet_, Django Twitter also provides a 
@@ -431,5 +459,19 @@ df = get_twitter_profile_dataframe(
     START_DATE,
     END_DATE, 
     skip_interpolation=False
+)
+```
+
+A similar utility function exists for exporting a DataFrame of tweets for a specific 
+set of profiles. This DataFrame is easy to merge together with a profile snapshot table 
+from the `get_twitter_profile_dataframe` - the column `profile` in the tweets table 
+corresponds to the `twitter_id` in the profile table.
+
+```python
+from django_twitter.utils import get_twitter_profile_dataframe
+df = get_tweet_dataframe(
+    profiles, # a QuerySet of Twitter profiles
+    START_DATE,
+    END_DATE
 )
 ```
