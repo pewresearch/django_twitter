@@ -299,160 +299,160 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
                 0,
             )
 
-    # def test_utility_functions(self):
-    #
-    #     from django_twitter.utils import (
-    #         identify_unusual_profiles_by_descriptions,
-    #         identify_unusual_profiles_by_tweet_text,
-    #         get_monthly_twitter_activity,
-    #         find_missing_date_ranges,
-    #         get_twitter_profile_dataframe,
-    #         get_tweet_dataframe,
-    #     )
-    #
-    #     # We're going to assume that Justin Bieber will always be quite distinctive from the Pew accounts
-    #     # And that none of these accounts will disappear anytime soon
-    #     for handle in [
-    #         "pewresearch",
-    #         "pewglobal",
-    #         "pewmethods",
-    #         "pewjournalism",
-    #         "facttank",
-    #         "pewscience",
-    #         "pewreligion",
-    #         "pewhispanic",
-    #         "pewinternet",
-    #         "pvankessel",
-    #         "justinbieber",
-    #     ]:
-    #         call_command(
-    #             "django_twitter_get_profile", handle, add_to_profile_set="test"
-    #         )
-    #     call_command(
-    #         "django_twitter_get_profile_set_tweets",
-    #         "test",
-    #         ignore_backfill=True,
-    #         limit=25,
-    #         overwrite=True,
-    #     )
-    #     profiles = self.TwitterProfileSet.objects.get(name="test").profiles.all()
-    #
-    #     most_similar, most_unique = identify_unusual_profiles_by_tweet_text(profiles)
-    #     self.assertEqual(len(most_unique), 1)
-    #     self.assertEqual(
-    #         self.TwitterProfile.objects.get(
-    #             twitter_id=most_unique["twitter_id"].values[0]
-    #         ).screen_name,
-    #         "justinbieber",
-    #     )
-    #
-    #     most_similar, most_unique = identify_unusual_profiles_by_descriptions(profiles)
-    #     self.assertEqual(len(most_unique), 1)
-    #     self.assertEqual(
-    #         self.TwitterProfile.objects.get(
-    #             twitter_id=most_unique["twitter_id"].values[0]
-    #         ).screen_name,
-    #         "justinbieber",
-    #     )
-    #
-    #     results = get_monthly_twitter_activity(
-    #         profiles,
-    #         datetime.date(2018, 1, 1),
-    #         max_date=datetime.datetime.now().date() + datetime.timedelta(days=1),
-    #     )
-    #     self.assertEqual(len(results), profiles.count())
-    #     current_month = "{}_{}".format(
-    #         datetime.datetime.now().year, datetime.datetime.now().month
-    #     )
-    #     self.assertIn(current_month, results.columns)
-    #     self.assertGreater(results[current_month].sum(), 0)
-    #
-    #     results = find_missing_date_ranges(
-    #         profiles,
-    #         datetime.date(2018, 1, 1),
-    #         max_date=datetime.datetime.now().date() + datetime.timedelta(days=1),
-    #         min_consecutive_missing_dates=1,
-    #     )
-    #     earliest_tweet = (
-    #         self.Tweet.objects.filter(profile__in=profiles)
-    #         .order_by("created_at")[0]
-    #         .created_at
-    #     )
-    #     min_missing = (earliest_tweet - datetime.datetime(2018, 1, 1)).days
-    #     for profile in profiles:
-    #         self.assertGreaterEqual(
-    #             results[results["twitter_id"] == profile.twitter_id]["range"].max(),
-    #             min_missing,
-    #         )
-    #
-    #     df = get_twitter_profile_dataframe(
-    #         profiles, datetime.datetime(2018, 1, 1), datetime.datetime.now()
-    #     )
-    #     self.assertEqual(df["date"].min(), datetime.date(2018, 1, 1))
-    #     self.assertEqual(df["date"].max(), datetime.datetime.now().date())
-    #     df = df.dropna(subset=["followers_count"])
-    #     self.assertEqual(profiles.count(), len(df))
-    #
-    #     df = get_tweet_dataframe(
-    #         profiles, datetime.datetime(2018, 1, 1), datetime.datetime.now()
-    #     )
-    #     counts = df.groupby("profile")["pk"].count()
-    #     self.assertEqual(profiles.count(), len(counts))
-    #
-    # def test_stream_command(self):
-    #
-    #     call_command(
-    #         "django_twitter_collect_tweet_stream",
-    #         limit="1 minute",
-    #         queue_size=5,
-    #         test=True,
-    #     )
-    #     self.assertGreater(self.Tweet.objects.count(), 0)
-    #     self.Tweet.objects.all().delete()
-    #
-    #     call_command(
-    #         "django_twitter_collect_tweet_stream",
-    #         limit="10 tweets",
-    #         queue_size=5,
-    #         add_to_profile_set="test",
-    #         add_to_tweet_set="test",
-    #         test=True,
-    #     )
-    #     self.assertGreater(self.Tweet.objects.count(), 0)
-    #     self.assertGreater(self.TweetSet.objects.get(name="test").tweets.count(), 0)
-    #     self.assertGreater(
-    #         self.TwitterProfileSet.objects.get(name="test").profiles.count(), 0
-    #     )
-    #
-    #     call_command(
-    #         "django_twitter_collect_tweet_stream",
-    #         limit="1 minute",
-    #         queue_size=5,
-    #         test=True,
-    #         keyword_query="pew",
-    #         add_to_tweet_set="pew_tweets",
-    #     )
-    #     self.assertGreater(
-    #         self.TweetSet.objects.get(name="pew_tweets").tweets.count(), 0
-    #     )
-    #
-    # def test_multiprocessing_race_condition(self):
-    #
-    #     from django_pewtils import reset_django_connection
-    #
-    #     call_command("django_twitter_get_profile", "pewresearch")
-    #     pool = Pool(processes=2)
-    #     twitter_ids = ["pewresearch"] * 10
-    #     for twitter_id in twitter_ids:
-    #         pool.apply_async(
-    #             call_command, ("django_twitter_get_profile", twitter_id), {}
-    #         )
-    #     pool.close()
-    #     pool.join()
-    #     reset_django_connection()
-    #     self.assertEqual(
-    #         self.TwitterProfile.objects.filter(screen_name="pewresearch").count(), 1
-    #     )
+    def test_utility_functions(self):
+
+        from django_twitter.utils import (
+            identify_unusual_profiles_by_descriptions,
+            identify_unusual_profiles_by_tweet_text,
+            get_monthly_twitter_activity,
+            find_missing_date_ranges,
+            get_twitter_profile_dataframe,
+            get_tweet_dataframe,
+        )
+
+        # We're going to assume that Justin Bieber will always be quite distinctive from the Pew accounts
+        # And that none of these accounts will disappear anytime soon
+        for handle in [
+            "pewresearch",
+            "pewglobal",
+            "pewmethods",
+            "pewjournalism",
+            "facttank",
+            "pewscience",
+            "pewreligion",
+            "pewhispanic",
+            "pewinternet",
+            "pvankessel",
+            "justinbieber",
+        ]:
+            call_command(
+                "django_twitter_get_profile", handle, add_to_profile_set="test"
+            )
+        call_command(
+            "django_twitter_get_profile_set_tweets",
+            "test",
+            ignore_backfill=True,
+            limit=25,
+            overwrite=True,
+        )
+        profiles = self.TwitterProfileSet.objects.get(name="test").profiles.all()
+
+        most_similar, most_unique = identify_unusual_profiles_by_tweet_text(profiles)
+        self.assertEqual(len(most_unique), 1)
+        self.assertEqual(
+            self.TwitterProfile.objects.get(
+                twitter_id=most_unique["twitter_id"].values[0]
+            ).screen_name,
+            "justinbieber",
+        )
+
+        most_similar, most_unique = identify_unusual_profiles_by_descriptions(profiles)
+        self.assertEqual(len(most_unique), 1)
+        self.assertEqual(
+            self.TwitterProfile.objects.get(
+                twitter_id=most_unique["twitter_id"].values[0]
+            ).screen_name,
+            "justinbieber",
+        )
+
+        results = get_monthly_twitter_activity(
+            profiles,
+            datetime.date(2018, 1, 1),
+            max_date=datetime.datetime.now().date() + datetime.timedelta(days=1),
+        )
+        self.assertEqual(len(results), profiles.count())
+        current_month = "{}_{}".format(
+            datetime.datetime.now().year, datetime.datetime.now().month
+        )
+        self.assertIn(current_month, results.columns)
+        self.assertGreater(results[current_month].sum(), 0)
+
+        results = find_missing_date_ranges(
+            profiles,
+            datetime.date(2018, 1, 1),
+            max_date=datetime.datetime.now().date() + datetime.timedelta(days=1),
+            min_consecutive_missing_dates=1,
+        )
+        earliest_tweet = (
+            self.Tweet.objects.filter(profile__in=profiles)
+            .order_by("created_at")[0]
+            .created_at
+        )
+        min_missing = (earliest_tweet - datetime.datetime(2018, 1, 1)).days
+        for profile in profiles:
+            self.assertGreaterEqual(
+                results[results["twitter_id"] == profile.twitter_id]["range"].max(),
+                min_missing,
+            )
+
+        df = get_twitter_profile_dataframe(
+            profiles, datetime.datetime(2018, 1, 1), datetime.datetime.now()
+        )
+        self.assertEqual(df["date"].min(), datetime.date(2018, 1, 1))
+        self.assertEqual(df["date"].max(), datetime.datetime.now().date())
+        df = df.dropna(subset=["followers_count"])
+        self.assertEqual(profiles.count(), len(df))
+
+        df = get_tweet_dataframe(
+            profiles, datetime.datetime(2018, 1, 1), datetime.datetime.now()
+        )
+        counts = df.groupby("profile")["pk"].count()
+        self.assertEqual(profiles.count(), len(counts))
+
+    def test_stream_command(self):
+
+        call_command(
+            "django_twitter_collect_tweet_stream",
+            limit="1 minute",
+            queue_size=5,
+            test=True,
+        )
+        self.assertGreater(self.Tweet.objects.count(), 0)
+        self.Tweet.objects.all().delete()
+
+        call_command(
+            "django_twitter_collect_tweet_stream",
+            limit="10 tweets",
+            queue_size=5,
+            add_to_profile_set="test",
+            add_to_tweet_set="test",
+            test=True,
+        )
+        self.assertGreater(self.Tweet.objects.count(), 0)
+        self.assertGreater(self.TweetSet.objects.get(name="test").tweets.count(), 0)
+        self.assertGreater(
+            self.TwitterProfileSet.objects.get(name="test").profiles.count(), 0
+        )
+
+        call_command(
+            "django_twitter_collect_tweet_stream",
+            limit="1 minute",
+            queue_size=5,
+            test=True,
+            keyword_query="pew",
+            add_to_tweet_set="pew_tweets",
+        )
+        self.assertGreater(
+            self.TweetSet.objects.get(name="pew_tweets").tweets.count(), 0
+        )
+
+    def test_multiprocessing_race_condition(self):
+
+        from django_pewtils import reset_django_connection
+
+        call_command("django_twitter_get_profile", "pewresearch")
+        pool = Pool(processes=2)
+        twitter_ids = ["pewresearch"] * 10
+        for twitter_id in twitter_ids:
+            pool.apply_async(
+                call_command, ("django_twitter_get_profile", twitter_id), {}
+            )
+        pool.close()
+        pool.join()
+        reset_django_connection()
+        self.assertEqual(
+            self.TwitterProfile.objects.filter(screen_name="pewresearch").count(), 1
+        )
 
     def tearDown(self):
         from django.conf import settings
