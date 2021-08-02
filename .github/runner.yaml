@@ -1,0 +1,42 @@
+apiVersion: actions.summerwind.dev/v1alpha1
+kind: RunnerDeployment
+metadata:
+  name: django-twitter-runner
+  namespace: github-runners
+
+spec:
+  replicas: 1
+  template:
+    spec:
+      repository: pewresearch/django_twitter
+      image: 458280294434.dkr.ecr.us-east-1.amazonaws.com/labs-actions-runner@sha256:f66332fda3c241985542e53a867cb888f21de04d71a8fab16b7784776666c594
+      imagePullPolicy: Always
+      serviceAccountName: labs-runner
+      labels:
+        - django-twitter-runner
+      dockerEnabled: false
+      dockerdContainerResources:
+        limits:
+          cpu: "4.0"
+          memory: "8Gi"
+
+        requests:
+          cpu: "1.0"
+          memory: "2Gi"
+
+      env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: labs-runner
+              key: AWS_ACCESS_KEY_ID
+
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: labs-runner
+              key: AWS_SECRET_ACCESS_KEY
+
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
