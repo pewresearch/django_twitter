@@ -6,6 +6,7 @@ from tqdm import tqdm
 from django.core.management.base import BaseCommand
 from django.core.management import call_command
 from django import db
+from django.db.models import Count
 
 from pewtils import is_null
 from django_pewtils import reset_django_connection
@@ -53,6 +54,9 @@ class Command(BaseCommand):
     environment variable set
 
     :param num_cores: Number of cores to use in multiprocessing. Defaults to `multiprocessing.cpu_count()`.
+    :param collect_all_once: (Optional) If True, this command will attempt to ensure tweets \
+    have been collected for each profile in the set. On subsequent runs, it will pick up where it left off and will \
+    only fetch tweets for profiles that do not have any already.
     """
 
     def add_arguments(self, parser):
@@ -74,6 +78,7 @@ class Command(BaseCommand):
         parser.add_argument("--access_secret", type=str)
 
         parser.add_argument("--num_cores", type=int, default=2)
+        parser.add_argument("--collect_all_once", action="store_true", default=False)
 
     def handle(self, *args, **options):
 
@@ -100,7 +105,14 @@ class Command(BaseCommand):
         profile_set = safe_get_or_create(
             "AbstractTwitterProfileSet", "name", options["profile_set"], create=True
         )
-        twitter_ids = profile_set.profiles.values_list("twitter_id", flat=True)
+        if options["collect_all_once"]:
+            twitter_ids = (
+                profile_set.profiles.annotate(c=Count("tweets"))
+                .filter(c=0)
+                .values_list("twitter_id", flat=True)
+            )
+        else:
+            twitter_ids = profile_set.profiles.values_list("twitter_id", flat=True)
         for twitter_id in tqdm(twitter_ids, total=len(twitter_ids)):
             if options["num_cores"] > 1:
                 pool.apply_async(
