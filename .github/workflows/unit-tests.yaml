@@ -11,6 +11,8 @@ on:
       - requirements.txt
       - setup.py
       - tests/**
+      - testapp/**
+      - tests.py
 
 jobs:
   unit-tests:
@@ -24,8 +26,9 @@ jobs:
 
       - name: Install python dependencies
         run: |
-          while read requirement; do mamba install "conda-forge::$requirement" || true; done < requirements.txt
-          pip install -r requirements.txt
+          set -x
+          while read requirement; do python3 -m pip install $requirement || mamba install "conda-forge::$requirement" || true; done < requirements.txt
+          python3 -m pip install -r requirements.txt || true
 
       - name: Lint with flake8
         env:

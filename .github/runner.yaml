@@ -9,7 +9,7 @@ spec:
   template:
     spec:
       repository: pewresearch/django_twitter
-      image: 458280294434.dkr.ecr.us-east-1.amazonaws.com/labs-actions-runner@sha256:f66332fda3c241985542e53a867cb888f21de04d71a8fab16b7784776666c594
+      image: 458280294434.dkr.ecr.us-east-1.amazonaws.com/labs-actions-runner@sha256:8d51030dc3c5f6c99164f0577c4f46ce041ba479400dadef3509b5c08e188701
       imagePullPolicy: Always
       serviceAccountName: labs-runner
       labels:
