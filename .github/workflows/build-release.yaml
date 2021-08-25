@@ -27,9 +27,9 @@ jobs:
           make python_lint_errors
           make python_lint_quality
 
-#      - name: Run unit tests
-#        run: |
-#          make python_test
+      - name: Run unit tests
+        run: |
+          make python_test
 
       - name: Build Python package
         run: |
