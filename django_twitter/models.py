@@ -7,6 +7,8 @@ import re
 import json
 import simple_history
 import django
+import itertools
+import copy
 import pytz
 import datetime
 import pandas as pd
@@ -431,9 +433,14 @@ class AbstractTwitterProfile(
                 tz="US/Eastern"
             )
         except TypeError:
-            stats["timestamp"] = pd.to_datetime(stats["timestamp"]).dt.tz_localize(
-                tz="US/Eastern"
-            )
+            try:
+                stats["timestamp"] = pd.to_datetime(stats["timestamp"]).dt.tz_localize(
+                    tz="US/Eastern"
+                )
+            except:
+                stats["timestamp"] = pd.to_datetime(stats["timestamp"]).dt.tz_localize(
+                    tz="US/Eastern", ambiguous=True
+                )
 
         if stats["timestamp"].min() > start_date:
             stats = pd.concat([stats, pd.DataFrame([{"timestamp": start_date}])])
@@ -931,6 +938,7 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
             additional_text_patterns = [
                 ["retweeted_status", "extended_tweet"],
                 ["quoted_status", "extended_tweet"],
+                ["retweeted_status", "quoted_status"],
                 ["retweeted_status", "quoted_status", "extended_tweet"],
                 ["retweeted_status"],
                 ["quoted_status"],
@@ -939,45 +947,67 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
 
             def get_text(tweet_data):
 
-                text = None
+                all_text = []
+
                 for keys in text_patterns:
                     subset = tweet_data
                     for key in keys:
-                        subset = tweet_data.get(key, {})
+                        subset = subset.get(key, {})
                     for text_key in text_keys:
                         if text_key in subset.keys():
                             text = subset[text_key]
-                            break
-                    if text:
-                        break
+                            if text not in all_text:
+                                all_text.append(text)
 
-                additional_text = None
                 for keys in additional_text_patterns:
                     subset = tweet_data
                     for key in keys:
-                        subset = tweet_data.get(key, {})
+                        subset = subset.get(key, {})
                     for text_key in text_keys:
                         if text_key in subset.keys():
                             additional_text = subset[text_key]
-                            break
-                    if additional_text:
-                        break
+                            if additional_text not in all_text:
+                                all_text.append(additional_text)
 
-                if text and additional_text:
-                    # Examples of RTs: 1116460554237902849, 1116460554237902849, 1084731566423715841
-                    if text.endswith("\u2026") or text.endswith("\u2026"):
-                        text = re.sub(text[-1], "", text)
+                all_text = [
+                    re.sub(text[-1], "", text)
+                    if text.endswith("\u2026") or text.endswith("\u2026")
+                    else text
+                    for text in all_text
+                ]
+                if len(all_text) > 1:
+                    new_all_text = copy.deepcopy(all_text)
+                    for text, additional_text in itertools.permutations(all_text, 2):
                         s = SequenceMatcher(None, additional_text, text, autojunk=True)
-                        for block in s.get_matching_blocks():
-                            if block.size > 1:
-                                overlap = additional_text[
-                                    block.a : (block.a + block.size)
+                        blocks = s.get_matching_blocks()
+                        if len(blocks) > 0:
+                            new_additional_text = None
+                            for block in blocks:
+                                if block.size > 1:
+                                    overlap = additional_text[
+                                        block.a : (block.a + block.size)
+                                    ]
+                                    if text.endswith(
+                                        overlap
+                                    ) and additional_text.startswith(overlap):
+                                        new_additional_text = additional_text.replace(
+                                            overlap, ""
+                                        )
+                            if new_additional_text is not None:
+                                new_all_text = [
+                                    t
+                                    for t in new_all_text
+                                    if t not in [text, additional_text]
                                 ]
-                                additional_text = additional_text.replace(overlap, "")
-                        text = "".join([text, additional_text])
+                                new_all_text.append(
+                                    "".join([text, new_additional_text])
+                                )
+                    all_text = new_all_text
 
-                elif not text and additional_text:
-                    text = additional_text
+                if len(all_text) > 0:
+                    text = " ".join(all_text)
+                else:
+                    text = None
 
                 return text
 

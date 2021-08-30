@@ -23,7 +23,7 @@ class Command(BaseCommand):
 
     :param profile_set: The `name` of the profile set in the database
     :param add_to_profile_set: (Optional) The name of a profile set to add the profiles' followings to. Can be \
-    any arbitrary string you want to use; if the profile set doesn't already exist, it will be created. 
+    any arbitrary string you want to use; if the profile set doesn't already exist, it will be created.
     :param hydrate: (Optional) By default, this command will only download the Twitter IDs for the profiles' followings. \
     If you pass `hydrate=True`, the command will download the full profile data for each following, but this requires \
     heavy API usage and can take a long time.
@@ -39,6 +39,9 @@ class Command(BaseCommand):
     environment variable set
 
     :param num_cores: Number of cores to use in multiprocessing. Defaults to `multiprocessing.cpu_count()`.
+    :param collect_all_once: (Optional) If True, this command will attempt to ensure that at least one following list \
+    has been collected for each profile in the set. On subsequent runs, it will pick up where it left off and will \
+    only fetch new following lists for profiles that do not already have one.
 
     """
 
@@ -56,6 +59,7 @@ class Command(BaseCommand):
         parser.add_argument("--access_secret", type=str)
 
         parser.add_argument("--num_cores", type=int, default=2)
+        parser.add_argument("--collect_all_once", action="store_true", default=False)
 
     def handle(self, *args, **options):
 
@@ -78,7 +82,18 @@ class Command(BaseCommand):
         profile_set = safe_get_or_create(
             "AbstractTwitterProfileSet", "name", options["profile_set"], create=True
         )
-        twitter_ids = profile_set.profiles.values_list("twitter_id", flat=True)
+        if options["collect_all_once"]:
+            exclude_profile_ids = (
+                get_concrete_model("AbstractTwitterFollowingList")
+                    .objects.filter(finish_time__isnull=False)
+                    .filter(profile__in=profile_set.profiles.all())
+                    .values_list("profile_id", flat=True)
+            )
+            twitter_ids = profile_set.profiles.exclude(
+                pk__in=exclude_profile_ids
+            ).values_list("twitter_id", flat=True)
+        else:
+            twitter_ids = profile_set.profiles.values_list("twitter_id", flat=True)
         for twitter_id in tqdm(twitter_ids, total=len(twitter_ids)):
             if options["num_cores"] > 1:
                 pool.apply_async(
