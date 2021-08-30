@@ -481,7 +481,7 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
             limit=5,
         )
         for profile in self.TwitterProfileSet.objects.get(
-                name="collect_all_once"
+            name="collect_all_once"
         ).profiles.all():
             if not profile.twitter_error_code:
                 self.assertIsNotNone(profile.most_recent_snapshot)

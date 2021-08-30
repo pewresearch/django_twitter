@@ -10,7 +10,7 @@ from django import db
 from pewtils import is_null
 from django_pewtils import reset_django_connection
 
-from django_twitter.utils import safe_get_or_create
+from django_twitter.utils import safe_get_or_create, get_concrete_model
 
 
 class Command(BaseCommand):
@@ -85,9 +85,9 @@ class Command(BaseCommand):
         if options["collect_all_once"]:
             exclude_profile_ids = (
                 get_concrete_model("AbstractTwitterFollowingList")
-                    .objects.filter(finish_time__isnull=False)
-                    .filter(profile__in=profile_set.profiles.all())
-                    .values_list("profile_id", flat=True)
+                .objects.filter(finish_time__isnull=False)
+                .filter(profile__in=profile_set.profiles.all())
+                .values_list("profile_id", flat=True)
             )
             twitter_ids = profile_set.profiles.exclude(
                 pk__in=exclude_profile_ids
