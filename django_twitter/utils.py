@@ -114,7 +114,6 @@ def get_twitter_profile_json(twitter_id, twitter_handler):
 
 def _identify_unusual_text(profiles, text_col):
 
-    empty = profiles[(profiles[text_col].isnull()) | (profiles[text_col] == "")]
     not_empty = profiles[~(profiles[text_col].isnull()) & ~(profiles[text_col] == "")]
     tdf = TextDataFrame(
         not_empty, text_col, min_df=1, analyzer="char", ngram_range=(1, 10)
