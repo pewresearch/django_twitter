@@ -125,7 +125,7 @@ class Command(BaseCommand):
             snapshot.update_from_json(twitter_json._json)
             twitter_profile.twitter_error_code = None
             twitter_profile.save()
-            Tweet = get_concrete_model("AbstractTweet")
+
             # Get list of current tweets
             existing_tweets = list(
                 twitter_profile.tweets.values_list("twitter_id", flat=True)

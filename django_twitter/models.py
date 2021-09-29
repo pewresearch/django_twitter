@@ -812,18 +812,8 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
 
         :param tweet_data: JSON from the API
         """
-        Tweet = get_concrete_model("AbstractTweet")
-        TwitterProfile = get_concrete_model("AbstractTwitterProfile")
-        TwitterProfileSnapshot = get_concrete_model("AbstractTwitterProfileSnapshot")
-        TwitterHashtag = get_concrete_model("AbstractTwitterHashtag")
 
-        def _consolidate_duplicate_tweets(twitter_id):
-            tweets = Tweet.objects.filter(twitter_id=twitter_id)
-            target = tweets[0]
-            for tweet in tweets.exclude(pk=target.pk):
-                consolidate_objects(source=tweet, target=target)
-            target.refresh_from_db()
-            return target
+        TwitterProfileSnapshot = get_concrete_model("AbstractTwitterProfileSnapshot")
 
         if not tweet_data:
             tweet_data = self.json
@@ -1157,17 +1147,6 @@ class AbstractTwitterHashtag(with_metaclass(AbstractTwitterBase, models.Model)):
         """
         self.name = self.name.lower()
         super(AbstractTwitterHashtag, self).save(*args, **kwargs)
-
-
-# def add_historical_records(sender, **kwargs):
-#     try: base = sender.__base__.__base__
-#     except: base = None
-#     if base and base.__module__.startswith("django_twitter") and base.__name__ == "AbstractTwitterObject":
-#         history = HistoricalRecords()
-#         history.contribute_to_class(sender, "history")
-#         register(sender)
-#
-# class_prepared.connect(add_historical_records)
 
 
 class AbstractTweetSet(with_metaclass(AbstractTwitterBase, models.Model)):

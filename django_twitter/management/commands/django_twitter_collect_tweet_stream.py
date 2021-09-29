@@ -94,8 +94,8 @@ class Command(BaseCommand):
                     "Please specify limit in format: <number> <duration/tweets>."
                 )
             try:
-                temp = int(limit_values[0])
-            except:
+                int(limit_values[0])
+            except ValueError:
                 raise ValueError("Please specify a number of minutes/days/hours/tweets")
 
             passed_allowed_limit_type = False
@@ -241,16 +241,13 @@ class StreamListener(tweepy.StreamListener):
 
     def on_timeout(self):
         print("Snoozing Zzzzzz")
-        return
 
     def on_limit(self, limit_data):
         # print("Twitter rate-limited this query.  Since query start, Twitter dropped %d messages." % (limit_data))
         self.omitted_counter = limit_data
-        return
 
     def on_warning(self, warning):
         print("WARNING: {}".format(warning))
-        return
 
     def on_disconnect(self, disconnect):
         print("DISCONNECT: {}".format(disconnect))
@@ -262,10 +259,6 @@ class StreamListener(tweepy.StreamListener):
 
         if status == 420:
             return False
-        return
-
-        # print("ERROR: {}".format(status))
-        # return False
 
     def limit_exceeded(self):
         if self.limit["limit_type"] is None:
@@ -281,7 +274,6 @@ def save_tweets(tweets, tweet_set, profile_set, test):
     if not test:
         reset_django_connection(settings.TWITTER_APP)
 
-    Tweet = get_concrete_model("AbstractTweet")
     if tweet_set:
         tweet_set = safe_get_or_create(
             "AbstractTweetSet", "name", tweet_set, create=True
