@@ -17,7 +17,7 @@ on:
 jobs:
   unit-tests:
     name: unit-tests
-    runs-on: django_twitter-runner
+    runs-on: django-twitter-runner
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
 
