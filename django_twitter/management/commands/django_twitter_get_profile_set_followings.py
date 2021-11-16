@@ -51,6 +51,7 @@ class Command(BaseCommand):
         parser.add_argument("--add_to_profile_set", type=str)
         parser.add_argument("--hydrate", action="store_true", default=False)
         parser.add_argument("--limit", type=int)
+        parser.add_argument("--no_progress_bar", action="store_true", default=False)
 
         parser.add_argument("--api_key", type=str)
         parser.add_argument("--api_secret", type=str)
@@ -68,6 +69,7 @@ class Command(BaseCommand):
             "add_to_profile_set": options["add_to_profile_set"],
             "hydrate": options["hydrate"],
             "limit": options["limit"],
+            "no_progress_bar": options["no_progress_bar"],
             "api_key": options["api_key"],
             "api_secret": options["api_secret"],
             "access_token": options["access_token"],
