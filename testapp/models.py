@@ -1,7 +1,16 @@
 from django.db import models
 from django.conf import settings
 
-from django_twitter.models import *
+from django_twitter.models import (
+    AbstractTwitterProfile,
+    AbstractTwitterProfileSnapshot,
+    AbstractTweet,
+    AbstractTwitterFollowerList,
+    AbstractTwitterFollowingList,
+    AbstractTwitterHashtag,
+    AbstractTweetSet,
+    AbstractTwitterProfileSet,
+)
 
 
 class Politician(models.Model):
