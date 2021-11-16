@@ -1,4 +1,5 @@
 import datetime
+import multiprocessing
 
 from multiprocessing import Pool
 from tqdm import tqdm
@@ -8,7 +9,9 @@ from django.core.management import call_command
 from django import db
 
 from pewtils import is_null
-from django_twitter.utils import get_twitter_profile, get_twitter_profile_set
+from django_pewtils import reset_django_connection
+
+from django_twitter.utils import safe_get_or_create
 
 
 class Command(BaseCommand):
@@ -53,6 +56,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
+        reset_django_connection()
+
         kwargs = {
             "add_to_profile_set": options["add_to_profile_set"],
             "api_key": options["api_key"],
@@ -62,7 +67,9 @@ class Command(BaseCommand):
         }
 
         pool = Pool(processes=options["num_cores"])
-        profile_set = get_twitter_profile_set(options["profile_set"])
+        profile_set = safe_get_or_create(
+            "AbstractTwitterProfileSet", "name", options["profile_set"], create=True
+        )
         if options["collect_all_once"]:
             profiles = profile_set.profiles.filter(most_recent_snapshot__isnull=True)
         else:
