@@ -114,7 +114,6 @@ def get_twitter_profile_json(twitter_id, twitter_handler):
 
 def _identify_unusual_text(profiles, text_col):
 
-    empty = profiles[(profiles[text_col].isnull()) | (profiles[text_col] == "")]
     not_empty = profiles[~(profiles[text_col].isnull()) & ~(profiles[text_col] == "")]
     tdf = TextDataFrame(
         not_empty, text_col, min_df=1, analyzer="char", ngram_range=(1, 10)
@@ -241,9 +240,26 @@ def get_monthly_twitter_activity(profiles, min_date, max_date=None):
             "c",
         ] = 0
 
-    tweets = tweets.pivot(index="profile_id", columns="month", values="c")
+    idx = pd.date_range(tweets["month"].min(), tweets["month"].max())
+    months = tweets[["month"]].drop_duplicates()
+    months.index = pd.DatetimeIndex(months["month"])
+    months = months.reindex(idx, fill_value="NaN")
+    tweets = pd.concat(
+        [
+            tweets,
+            pd.DataFrame(
+                [
+                    {"month": m}
+                    for m in months.index
+                    if m.day == 1 and m not in tweets["month"].values
+                ]
+            ),
+        ]
+    )
+    tweets = tweets.pivot(index="profile_id", columns="month", values="c").fillna(0)
     tweets.columns = tweets.columns.map(lambda x: "{}_{}".format(x.year, x.month))
     tweets = tweets.merge(profiles, how="left", left_index=True, right_on="pk")
+    tweets = tweets.dropna(subset=["pk"])
 
     return tweets
 
