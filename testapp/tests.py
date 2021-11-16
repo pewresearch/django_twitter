@@ -436,6 +436,24 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
             self.TweetSet.objects.get(name="pew_tweets").tweets.count(), 0
         )
 
+    def test_multiprocessing_race_condition(self):
+
+        from django_pewtils import reset_django_connection
+
+        call_command("django_twitter_get_profile", "pewresearch")
+        pool = Pool(processes=2)
+        twitter_ids = ["pewresearch"] * 10
+        for twitter_id in twitter_ids:
+            pool.apply_async(
+                call_command, ("django_twitter_get_profile", twitter_id), {}
+            )
+        pool.close()
+        pool.join()
+        reset_django_connection()
+        self.assertEqual(
+            self.TwitterProfile.objects.filter(screen_name="pewresearch").count(), 1
+        )
+
     def test_collect_all_once_option(self):
 
         call_command(
