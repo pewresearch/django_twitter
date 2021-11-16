@@ -1,4 +1,6 @@
 import datetime
+
+import django.db
 import pytz
 import itertools
 import pandas as pd
@@ -25,11 +27,32 @@ def get_concrete_model(abstract_model_name):
     return None
 
 
+def safe_get_or_create(model_name, field, value, create=False):
+    """
+    Helper function to get or create an existing object from an identifier, with error handling for
+    mutiprocessing race conditions/collisions.
+    """
+
+    kwargs = {field: value}
+    Model = get_concrete_model(model_name)  # AbstractTwitterProfile
+    try:
+        if create:
+            try:
+                existing, created = Model.objects.get_or_create(**kwargs)
+            except django.db.IntegrityError:
+                existing = TwitterProfile.objects.get(**kwargs)
+        else:
+            existing = Model.objects.get(**kwargs)
+    except Model.DoesNotExist:
+        existing = None
+
+    return existing
+
+
 def get_tweet_set(tweet_set_name):
 
-    TweetSet = get_concrete_model("AbstractTweetSet")
-    tweet_set, created = TweetSet.objects.get_or_create(name=tweet_set_name)
-    return tweet_set
+    print("get_tweet_set is deprecated, please use safe_get_or_create")
+    return safe_get_or_create("AbstractTweetSet", "name", tweet_set_name, create=True)
 
 
 def get_twitter_profile_set(twitter_profile_set_name):
@@ -41,11 +64,10 @@ def get_twitter_profile_set(twitter_profile_set_name):
     :return: A TwitterProfileSet object
     """
 
-    TwitterProfileSet = get_concrete_model("AbstractTwitterProfileSet")
-    twitter_profile_set, created = TwitterProfileSet.objects.get_or_create(
-        name=twitter_profile_set_name
+    print("get_twitter_profile_set is deprecated, please use safe_get_or_create")
+    return safe_get_or_create(
+        "AbstractTwitterProfileSet", "name", twitter_profile_set_name, create=True
     )
-    return twitter_profile_set
 
 
 def get_twitter_profile(twitter_id, create=False):
@@ -59,28 +81,10 @@ def get_twitter_profile(twitter_id, create=False):
     :return: An existing TwitterProfile record, if one exists
     """
 
-    TwitterProfile = get_concrete_model("AbstractTwitterProfile")
-    try:
-        if create:
-            existing_profile, created = TwitterProfile.objects.get_or_create(
-                twitter_id=twitter_id
-            )
-        else:
-            existing_profile = TwitterProfile.objects.get(twitter_id=twitter_id)
-    except TwitterProfile.DoesNotExist:
-        existing_profile = None
-    except TwitterProfile.MultipleObjectsReturned:
-        print("Warning: multiple profiles found for {}".format(twitter_id))
-        print(
-            "For flexibility, Django Twitter does not enforce a unique constraint on twitter_id"
-        )
-        print(
-            "But in this case it can't tell which profile to use, so it's picking the most recently updated one"
-        )
-        existing_profile = TwitterProfile.objects.filter(
-            twitter_id=twitter_id
-        ).order_by("-last_update_time")[0]
-    return existing_profile
+    print("get_twitter_profile is deprecated, please use safe_get_or_create")
+    return safe_get_or_create(
+        "AbstractTwitterProfile", "twitter_id", twitter_id, create=create
+    )
 
 
 def get_twitter_profile_json(twitter_id, twitter_handler):
@@ -97,7 +101,9 @@ def get_twitter_profile_json(twitter_id, twitter_handler):
     twitter_json = twitter_handler.get_profile(twitter_id, return_errors=True)
     if isinstance(twitter_json, int):
         error_code = twitter_json
-        existing_profile = get_twitter_profile(twitter_id)
+        existing_profile = safe_get_or_create(
+            "AbstractTwitterProfile", "twitter_id", twitter_id
+        )
         if existing_profile:
             existing_profile.twitter_error_code = error_code
             existing_profile.save()

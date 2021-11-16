@@ -9,11 +9,11 @@ from django.apps import apps
 from tqdm import tqdm
 
 from pewhooks.twitter import TwitterAPIHandler
+from django_pewtils import reset_django_connection
 
 from django_twitter.utils import (
     get_twitter_profile_json,
-    get_twitter_profile,
-    get_twitter_profile_set,
+    safe_get_or_create,
     get_concrete_model,
 )
 
@@ -44,14 +44,21 @@ class Command(BaseCommand):
         TwitterFollowerList = get_concrete_model("AbstractTwitterFollowerList")
 
         if options["add_to_profile_set"]:
-            profile_set = get_twitter_profile_set(options["add_to_profile_set"])
+            profile_set = safe_get_or_create(
+                "AbstractTwitterProfileSet",
+                "name",
+                options["add_to_profile_set"],
+                create=True,
+            )
         else:
             profile_set = None
 
         twitter_json = get_twitter_profile_json(options["twitter_id"], self.twitter)
         if twitter_json:
 
-            profile = get_twitter_profile(twitter_json.id_str, create=True)
+            profile = safe_get_or_create(
+                "AbstractTwitterProfile", "twitter_id", twitter_json.id_str, create=True
+            )
             profile.twitter_error_code = None
             profile.save()
             follower_list = TwitterFollowerList.objects.create(profile=profile)
@@ -75,10 +82,18 @@ class Command(BaseCommand):
 
                 for follower_data in iterator:
                     if not options["hydrate"]:
-                        follower = get_twitter_profile(follower_data, create=True)
+                        follower = safe_get_or_create(
+                            "AbstractTwitterProfile",
+                            "twitter_id",
+                            follower_data,
+                            create=True,
+                        )
                     else:
-                        follower = get_twitter_profile(
-                            follower_data._json["id_str"], create=True
+                        follower = safe_get_or_create(
+                            "AbstractTwitterProfile",
+                            "twitter_id",
+                            follower_data._json["id_str"],
+                            create=True,
                         )
                         follower.update_from_json(follower_data._json)
                     follower_list.followers.add(follower)
