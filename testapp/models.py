@@ -13,48 +13,60 @@ from django_twitter.models import (
 )
 
 
-class Politician(models.Model):
+class Person(models.Model):
+    name = models.CharField(max_length=250)
+
+
+class Organization(models.Model):
+    name = models.CharField(max_length=250)
+
+
+class TwitterProfile(AbstractTwitterProfile):
+
+    person = models.ForeignKey(
+        "testapp.Person",
+        related_name="twitter_profiles",
+        null=True,
+        on_delete=models.SET_NULL,
+    )
+    organization = models.ForeignKey(
+        "testapp.Organization",
+        related_name="twitter_profiles",
+        null=True,
+        on_delete=models.SET_NULL,
+    )
+
+
+class TwitterProfileSnapshot(AbstractTwitterProfileSnapshot):
 
     pass
 
 
-if settings.TWITTER_APP == "testapp":
+class Tweet(AbstractTweet):
 
-    class TwitterProfile(AbstractTwitterProfile):
-
-        politician = models.ForeignKey(
-            "testapp.Politician",
-            related_name="twitter_profiles",
-            null=True,
-            on_delete=models.SET_NULL,
-        )
-
-    class TwitterProfileSnapshot(AbstractTwitterProfileSnapshot):
-
-        pass
-
-    class Tweet(AbstractTweet):
-
-        pass
+    pass
 
 
-    class TwitterFollowerList(AbstractTwitterFollowerList):
+class TwitterFollowerList(AbstractTwitterFollowerList):
 
-        pass
-
-    class TwitterFollowingList(AbstractTwitterFollowingList):
-
-        pass
-
-    class TwitterHashtag(AbstractTwitterHashtag):
-
-        pass
+    pass
 
 
-    class TweetSet(AbstractTweetSet):
+class TwitterFollowingList(AbstractTwitterFollowingList):
 
-        pass
+    pass
 
-    class TwitterProfileSet(AbstractTwitterProfileSet):
 
-        pass
+class TwitterHashtag(AbstractTwitterHashtag):
+
+    pass
+
+
+class TweetSet(AbstractTweetSet):
+
+    pass
+
+
+class TwitterProfileSet(AbstractTwitterProfileSet):
+
+    pass
