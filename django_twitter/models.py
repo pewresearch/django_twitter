@@ -279,7 +279,7 @@ class AbstractTwitterObject(models.Model):
     class Meta(object):
         abstract = True
 
-    twitter_id = models.CharField(max_length=150, db_index=True)
+    twitter_id = models.CharField(max_length=150, db_index=True, unique=True)
     last_update_time = models.DateTimeField(auto_now=True)
     historical = models.BooleanField(default=False)
     # TODO: add historical_twitter_ids
@@ -516,7 +516,6 @@ class AbstractTwitterProfile(
         except IndexError:
             followings = None
         return followings
-
 
 
 class AbstractTwitterProfileSnapshot(
