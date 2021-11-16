@@ -1202,30 +1202,3 @@ class AbstractTwitterProfileSet(with_metaclass(AbstractTwitterBase, models.Model
     def __str__(self):
 
         return self.name
-
-
-if settings.TWITTER_APP == "django_twitter":
-
-    class TwitterProfile(AbstractTwitterProfile):
-        pass
-
-    class TwitterProfileSnapshot(AbstractTwitterProfileSnapshot):
-        pass
-
-    class Tweet(AbstractTweet):
-        pass
-
-    class BotometerScore(AbstractBotometerScore):
-        pass
-
-    class TwitterHashtag(AbstractTwitterHashtag):
-        pass
-
-    class TwitterPlace(AbstractTwitterPlace):
-        pass
-
-    class TweetSet(AbstractTweetSet):
-        pass
-
-    class TwitterProfileSet(AbstractTwitterProfileSet):
-        pass
