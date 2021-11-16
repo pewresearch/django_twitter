@@ -21,7 +21,7 @@ with open("requirements.txt") as reqs:
 
 setup(
     name="django_twitter",
-    version= "0.1.3.dev0",
+    version= '0.1.3.dev1',
     description="twitter models for django projects",
     long_description=README,  # 'http://labs.pewresearch.tech/docs/libs/django_twitter',
     url="https://github.com/pewresearch/django_twitter",
