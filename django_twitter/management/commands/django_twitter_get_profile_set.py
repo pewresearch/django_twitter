@@ -51,7 +51,7 @@ class Command(BaseCommand):
         parser.add_argument("--access_token", type=str)
         parser.add_argument("--access_secret", type=str)
 
-        parser.add_argument("--num_cores", type=int, default=2)
+        parser.add_argument("--num_cores", type=int, default=None)
         parser.add_argument("--collect_all_once", action="store_true", default=False)
 
     def handle(self, *args, **options):
@@ -65,6 +65,9 @@ class Command(BaseCommand):
             "access_token": options["access_token"],
             "access_secret": options["access_secret"],
         }
+
+        if is_null(options["num_cores"]):
+            options["num_cores"] = multiprocessing.cpu_count()
 
         pool = Pool(processes=options["num_cores"])
         profile_set = safe_get_or_create(
