@@ -466,27 +466,37 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
             limit=5,
         )
         call_command(
-            "django_twitter_get_profile_set", "collect_all_once", collect_all_once=True
+            "django_twitter_get_profile_set",
+            "collect_all_once",
+            collect_all_once=True,
+            num_cores=1,
         )
         call_command(
             "django_twitter_get_profile_set_followers",
             "collect_all_once",
             collect_all_once=True,
             limit=5,
+            num_cores=1,
         )
         call_command(
             "django_twitter_get_profile_set_followings",
             "collect_all_once",
             collect_all_once=True,
             limit=5,
+            num_cores=1,
         )
-        for profile in self.TwitterProfileSet.objects.get(
-            name="collect_all_once"
-        ).profiles.all():
-            if not profile.twitter_error_code:
-                self.assertIsNotNone(profile.most_recent_snapshot)
-                self.assertEqual(profile.follower_lists.count(), 1)
-                self.assertEqual(profile.following_lists.count(), 1)
+        self.assertGreater(
+            self.TwitterFollowingList.objects.filter(
+                profile__twitter_profile_sets__name="collect_all_once"
+            ).count(),
+            0,
+        )
+        self.assertGreater(
+            self.TwitterFollowerList.objects.filter(
+                profile__twitter_profile_sets__name="collect_all_once"
+            ).count(),
+            0,
+        )
 
     def tearDown(self):
         from django.conf import settings
