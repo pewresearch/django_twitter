@@ -103,7 +103,8 @@ class Command(BaseCommand):
                     if profile_set:
                         profile_set.profiles.add(follower)
 
-                follower_list.finish_time = datetime.datetime.now()
+                if not options["limit"]:
+                    follower_list.finish_time = datetime.datetime.now()
                 follower_list.save()
 
             except Exception as e:

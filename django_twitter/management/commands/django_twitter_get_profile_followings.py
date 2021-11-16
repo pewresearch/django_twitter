@@ -77,7 +77,7 @@ class Command(BaseCommand):
                 if not options["no_progress_bar"]:
                     iterator = tqdm(
                         iterator,
-                        desc="Retrieving friends for user {}".format(
+                        desc="Retrieving followings for user {}".format(
                             profile.screen_name
                         ),
                     )
@@ -105,7 +105,8 @@ class Command(BaseCommand):
                     if profile_set:
                         profile_set.profiles.add(following)
 
-                following_list.finish_time = datetime.datetime.now()
+                if not options["limit"]:
+                    following_list.finish_time = datetime.datetime.now()
                 following_list.save()
 
             except Exception as e:
