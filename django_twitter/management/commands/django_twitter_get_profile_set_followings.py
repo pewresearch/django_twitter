@@ -1,3 +1,5 @@
+import multiprocessing
+
 from multiprocessing import Pool
 from tqdm import tqdm
 
@@ -72,6 +74,8 @@ class Command(BaseCommand):
             "access_secret": options["access_secret"],
         }
 
+        if is_null(options["num_cores"]):
+            options["num_cores"] = multiprocessing.cpu_count()
         pool = Pool(processes=options["num_cores"])
         profile_set = safe_get_or_create(
             "AbstractTwitterProfileSet", "name", options["profile_set"], create=True
