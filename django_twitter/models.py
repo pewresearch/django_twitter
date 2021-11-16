@@ -78,15 +78,6 @@ class AbstractTwitterBase(models.base.ModelBase):
                     None,
                 ),
                 (
-                    models.ForeignKey,
-                    "TwitterPlaceModel",
-                    "place",
-                    "tweets",
-                    None,
-                    True,
-                    models.SET_NULL,
-                ),
-                (
                     models.ManyToManyField,
                     "TwitterProfileModel",
                     "profile_mentions",
@@ -123,37 +114,6 @@ class AbstractTwitterBase(models.base.ModelBase):
                     models.SET_NULL,
                 ),
             ],
-            "BotometerScoreModel": [
-                (
-                    models.ForeignKey,
-                    "TwitterProfileModel",
-                    "profile",
-                    "botometer_scores",
-                    None,
-                    True,
-                    models.CASCADE,
-                )
-            ],
-            # "TwitterRelationshipModel": [
-            #     (
-            #         models.ForeignKey,
-            #         "TwitterProfileModel",
-            #         "following",
-            #         "follower_details",
-            #         None,
-            #         True,
-            #         models.CASCADE,
-            #     ),
-            #     (
-            #         models.ForeignKey,
-            #         "TwitterProfileModel",
-            #         "follower",
-            #         "following_details",
-            #         None,
-            #         True,
-            #         models.CASCADE,
-            #     ),
-            # ],
             "TwitterFollowerListModel": [
                 (
                     models.ForeignKey,
@@ -557,13 +517,6 @@ class AbstractTwitterProfile(
             followings = None
         return followings
 
-    def most_recent_botometer_score(self):
-
-        scores = self.botometer_scores.order_by("-timestamp")
-        if scores.count() > 0:
-            return scores[0]
-        else:
-            return None
 
 
 class AbstractTwitterProfileSnapshot(
@@ -686,14 +639,6 @@ class AbstractTwitterProfileSnapshot(
         return "http://www.twitter.com/intent/user?user_id={0}".format(
             self.twitter_id
         )  # Can we verify this? Never seen it
-
-    def most_recent_botometer_score(self):
-
-        scores = self.botometer_scores.order_by("-timestamp")
-        if scores.count() > 0:
-            return scores[0]
-        else:
-            return None
 
 
 class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
@@ -1046,65 +991,6 @@ class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
         return "http://www.twitter.com/statuses/{0}".format(self.twitter_id)
 
 
-class AbstractBotometerScore(with_metaclass(AbstractTwitterBase, models.Model)):
-    class Meta(object):
-        abstract = True
-
-    timestamp = models.DateTimeField(auto_now_add=True)
-
-    api_version = models.FloatField(null=True)
-    error = models.CharField(max_length=100, null=True)
-    automation_probability_english = models.FloatField(null=True)
-    automation_probability_universal = models.FloatField(null=True)
-    content_score = models.FloatField(null=True)
-    friend_score = models.FloatField(null=True)
-    network_score = models.FloatField(null=True)
-    sentiment_score = models.FloatField(null=True)
-    temporal_score = models.FloatField(null=True)
-    user_score = models.FloatField(null=True)
-    overall_score_english = models.FloatField(null=True)
-    overall_score_universal = models.FloatField(null=True)
-
-    json = models.JSONField(null=True, default=dict)
-
-    """
-    AUTO-CREATED RELATIONSHIPS:
-    profile = models.ForeignKey(your_app.TwitterProfileModel, related_name="botometer_scores")
-    """
-
-    def update_from_json(self, score_data=None, api_version=None):
-
-        if not score_data:
-            self.error = "No data"
-        if score_data:
-            self.automation_probability_english = score_data.get("cap", {}).get(
-                "english", 0
-            )
-            self.automation_probability_universal = score_data.get("cap", {}).get(
-                "universal", 0
-            )
-            self.content_score = score_data.get("display_scores", {}).get("content", 0)
-            self.friend_score = score_data.get("display_scores", {}).get("friend", 0)
-            self.network_score = score_data.get("display_scores", {}).get("network", 0)
-            self.sentiment_score = score_data.get("display_scores", {}).get(
-                "sentiment", 0
-            )
-            self.temporal_score = score_data.get("display_scores", {}).get(
-                "temporal", 0
-            )
-            self.user_score = score_data.get("display_scores", {}).get("user", 0)
-            self.overall_score_english = score_data.get("display_scores", {}).get(
-                "english", 0
-            )
-            self.overall_score_universal = score_data.get("display_scores", {}).get(
-                "universal", 0
-            )
-            self.json = score_data
-            if api_version:
-                self.api_version = api_version
-            self.save()
-
-
 class AbstractTwitterFollowerList(with_metaclass(AbstractTwitterBase, models.Model)):
     class Meta(object):
         abstract = True
@@ -1137,39 +1023,6 @@ class AbstractTwitterHashtag(with_metaclass(AbstractTwitterBase, models.Model)):
     def save(self, *args, **kwargs):
         self.name = self.name.lower()
         super(AbstractTwitterHashtag, self).save(*args, **kwargs)
-
-
-####
-# Additional classes that are in Rookery that I don't think we need
-class AbstractTwitterPlace(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
-    class Meta(object):
-        abstract = True
-
-    full_name = models.CharField(max_length=255)
-    name = models.CharField(max_length=255)
-    place_type = models.CharField(max_length=255)
-    country_code = models.CharField(max_length=10)
-    country = models.CharField(max_length=255)
-
-    def save(self, *args, **kwargs):
-
-        if not all([self.name, self.place_type] or kwargs.get("reparse", False)):
-            self.place_type = self.json["place_type"]
-            self.country = self.json["country"]
-            self.name = self.json["name"]
-            self.full_name = self.json["full_name"]
-        super(AbstractTwitterPlace, self).save(*args, **kwargs)
-
-
-# def add_historical_records(sender, **kwargs):
-#     try: base = sender.__base__.__base__
-#     except: base = None
-#     if base and base.__module__.startswith("django_twitter") and base.__name__ == "AbstractTwitterObject":
-#         history = HistoricalRecords()
-#         history.contribute_to_class(sender, "history")
-#         register(sender)
-#
-# class_prepared.connect(add_historical_records)
 
 
 class AbstractTweetSet(with_metaclass(AbstractTwitterBase, models.Model)):
