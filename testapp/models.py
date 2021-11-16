@@ -28,9 +28,6 @@ if settings.TWITTER_APP == "testapp":
 
         pass
 
-    class BotometerScore(AbstractBotometerScore):
-
-        pass
 
     class TwitterFollowerList(AbstractTwitterFollowerList):
 
@@ -44,9 +41,6 @@ if settings.TWITTER_APP == "testapp":
 
         pass
 
-    class TwitterPlace(AbstractTwitterPlace):
-
-        pass
 
     class TweetSet(AbstractTweetSet):
 
