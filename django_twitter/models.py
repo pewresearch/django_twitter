@@ -518,9 +518,7 @@ class AbstractTwitterProfile(
         return followings
 
 
-class AbstractTwitterProfileSnapshot(
-    with_metaclass(AbstractTwitterBase, AbstractTwitterObject)
-):
+class AbstractTwitterProfileSnapshot(with_metaclass(AbstractTwitterBase, models.Model)):
     class Meta(object):
         abstract = True
 
