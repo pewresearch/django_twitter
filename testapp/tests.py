@@ -232,7 +232,7 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
             )
         call_command("django_twitter_get_profile_set", "test")
         self.assertEqual(
-            self.TwitterProfileSet.objects.get(name="test").profiles.count(), 3
+            self.TwitterProfileSet.objects.get(name="test").profiles.count(), 2
         )
         call_command(
             "django_twitter_get_profile_set_tweets",
