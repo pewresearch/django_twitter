@@ -64,6 +64,7 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
             "django_twitter_get_profile_set",
             "get_profile",
             add_to_profile_set="get_profile_set",
+            num_cores=1,
         )
         self.assertEqual(
             profile.twitter_profile_sets.filter(name="get_profile_set").count(), 1
@@ -84,6 +85,7 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
             "get_profile",
             add_to_profile_set="get_profile_set_followers",
             limit=5,
+            num_cores=1,
         )
         # Hard-update finish time since we passed a limit for unit testing
         profile.follower_lists.update(finish_time=datetime.datetime.now())
@@ -109,6 +111,7 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
             "get_profile",
             add_to_profile_set="get_profile_set_followings",
             limit=5,
+            num_cores=1,
         )
         # Hard-update finish time since we passed a limit for unit testing
         profile.following_lists.update(finish_time=datetime.datetime.now())
@@ -204,6 +207,7 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
             limit=50,
             add_to_profile_set="get_profile_set_tweets",
             add_to_tweet_set="get_profile_set_tweets",
+            num_cores=1,
             overwrite=True,  # this is so we don't skip over adding tweets to the tweet set
         )
         self.assertEqual(
@@ -221,14 +225,14 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
 
     def test_profile_set_commands(self):
 
-        HANDLES = ["pewresearch", "pewglobal", "pewmethods"]
+        HANDLES = ["pewresearch", "pewglobal"]
         for handle in HANDLES:
             call_command(
                 "django_twitter_get_profile", handle, add_to_profile_set="test"
             )
         call_command("django_twitter_get_profile_set", "test")
         self.assertEqual(
-            self.TwitterProfileSet.objects.get(name="test").profiles.count(), 3
+            self.TwitterProfileSet.objects.get(name="test").profiles.count(), 2
         )
         call_command(
             "django_twitter_get_profile_set_tweets",
@@ -236,12 +240,15 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
             ignore_backfill=True,
             limit=25,
             overwrite=True,
+            num_cores=1,
         )
         for handle in HANDLES:
             self.assertGreaterEqual(
                 self.TwitterProfile.objects.get(screen_name=handle).tweets.count(), 25
             )
-        call_command("django_twitter_get_profile_set_followers", "test", limit=1)
+        call_command(
+            "django_twitter_get_profile_set_followers", "test", limit=1, num_cores=1
+        )
         # Hard-update finish time since we passed a limit for unit testing
         self.TwitterFollowerList.objects.filter(
             profile__screen_name__in=HANDLES
@@ -254,7 +261,9 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
                 0,
             )
 
-        call_command("django_twitter_get_profile_set_followings", "test", limit=1)
+        call_command(
+            "django_twitter_get_profile_set_followings", "test", limit=1, num_cores=1
+        )
         # Hard-update finish time since we passed a limit for unit testing
         self.TwitterFollowingList.objects.filter(
             profile__screen_name__in=HANDLES
@@ -268,7 +277,11 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
             )
 
         call_command(
-            "django_twitter_get_profile_set_followers", "test", limit=1, hydrate=True
+            "django_twitter_get_profile_set_followers",
+            "test",
+            limit=1,
+            hydrate=True,
+            num_cores=1,
         )
         # Hard-update finish time since we passed a limit for unit testing
         self.TwitterFollowerList.objects.filter(
@@ -284,7 +297,11 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
             )
 
         call_command(
-            "django_twitter_get_profile_set_followings", "test", limit=1, hydrate=True
+            "django_twitter_get_profile_set_followings",
+            "test",
+            limit=1,
+            hydrate=True,
+            num_cores=1,
         )
         # Hard-update finish time since we passed a limit for unit testing
         self.TwitterFollowingList.objects.filter(
@@ -320,7 +337,6 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
             "facttank",
             "pewscience",
             "pewreligion",
-            "pewhispanic",
             "pewinternet",
             "pvankessel",
             "justinbieber",
@@ -334,6 +350,7 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
             ignore_backfill=True,
             limit=25,
             overwrite=True,
+            num_cores=1,
         )
         profiles = self.TwitterProfileSet.objects.get(name="test").profiles.all()
 
@@ -401,12 +418,16 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
 
     def test_stream_command(self):
 
+        from django_pewtils import reset_django_connection
+
         call_command(
             "django_twitter_collect_tweet_stream",
             limit="1 minute",
             queue_size=5,
             test=True,
+            num_cores=1,
         )
+        reset_django_connection()
         self.assertGreater(self.Tweet.objects.count(), 0)
         self.Tweet.objects.all().delete()
 
@@ -417,7 +438,9 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
             add_to_profile_set="test",
             add_to_tweet_set="test",
             test=True,
+            num_cores=1,
         )
+        reset_django_connection()
         self.assertGreater(self.Tweet.objects.count(), 0)
         self.assertGreater(self.TweetSet.objects.get(name="test").tweets.count(), 0)
         self.assertGreater(
@@ -431,7 +454,9 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
             test=True,
             keyword_query="pew",
             add_to_tweet_set="pew_tweets",
+            num_cores=1,
         )
+        reset_django_connection()
         self.assertGreater(
             self.TweetSet.objects.get(name="pew_tweets").tweets.count(), 0
         )
@@ -464,29 +489,40 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
             "profile_set",
             add_to_profile_set="collect_all_once",
             limit=5,
+            num_cores=1,
         )
         call_command(
-            "django_twitter_get_profile_set", "collect_all_once", collect_all_once=True
+            "django_twitter_get_profile_set",
+            "collect_all_once",
+            collect_all_once=True,
+            num_cores=1,
         )
         call_command(
             "django_twitter_get_profile_set_followers",
             "collect_all_once",
             collect_all_once=True,
             limit=5,
+            num_cores=1,
         )
         call_command(
             "django_twitter_get_profile_set_followings",
             "collect_all_once",
             collect_all_once=True,
             limit=5,
+            num_cores=1,
         )
-        for profile in self.TwitterProfileSet.objects.get(
-            name="collect_all_once"
-        ).profiles.all():
-            if not profile.twitter_error_code:
-                self.assertIsNotNone(profile.most_recent_snapshot)
-                self.assertEqual(profile.follower_lists.count(), 1)
-                self.assertEqual(profile.following_lists.count(), 1)
+        self.assertGreater(
+            self.TwitterFollowingList.objects.filter(
+                profile__twitter_profile_sets__name="collect_all_once"
+            ).count(),
+            0,
+        )
+        self.assertGreater(
+            self.TwitterFollowerList.objects.filter(
+                profile__twitter_profile_sets__name="collect_all_once"
+            ).count(),
+            0,
+        )
 
     def tearDown(self):
         from django.conf import settings
