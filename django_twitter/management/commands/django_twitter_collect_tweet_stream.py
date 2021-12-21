@@ -191,6 +191,16 @@ class Stream(tweepy.Stream):
                             self.profile_set,
                             self.test,
                         )
+                        # TODO: Latest version of Django is causing errors with multiprocessing; need to fix
+                        # self.pool.apply(
+                        #     save_tweets,
+                        #     args=[
+                        #         list(self.tweet_queue),
+                        #         self.tweet_set,
+                        #         self.profile_set,
+                        #         self.test,
+                        #     ],
+                        # )
 
                     self.tweet_queue = []
                     self.processed_counter += self.queue_size
