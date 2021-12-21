@@ -256,7 +256,6 @@ def get_monthly_twitter_activity(profiles, min_date, max_date=None):
             ),
         ]
     )
-
     tweets = tweets.pivot(index="profile_id", columns="month", values="c").fillna(0)
     tweets.columns = tweets.columns.map(lambda x: "{}_{}".format(x.year, x.month))
     tweets = tweets.merge(profiles, how="left", left_index=True, right_on="pk")

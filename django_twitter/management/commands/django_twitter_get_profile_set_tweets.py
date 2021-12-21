@@ -109,11 +109,13 @@ class Command(BaseCommand):
                     kwargs,
                 )
             else:
-                pool.apply(
-                    call_command,
-                    ("django_twitter_get_profile_tweets", twitter_id),
-                    kwargs,
-                )
+                call_command("django_twitter_get_profile_tweets", twitter_id, **kwargs)
+                # TODO: Latest version of Django is causing errors with multiprocessing; need to fix
+                # pool.apply(
+                #     call_command,
+                #     ("django_twitter_get_profile_tweets", twitter_id),
+                #     kwargs,
+                # )
 
         pool.close()
         pool.join()
