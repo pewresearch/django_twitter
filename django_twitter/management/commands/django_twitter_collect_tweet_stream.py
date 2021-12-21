@@ -185,14 +185,11 @@ class Stream(tweepy.Stream):
                             ],
                         )
                     else:
-                        self.pool.apply(
-                            save_tweets,
-                            args=[
-                                list(self.tweet_queue),
-                                self.tweet_set,
-                                self.profile_set,
-                                self.test,
-                            ],
+                        save_tweets(
+                            list(self.tweet_queue),
+                            self.tweet_set,
+                            self.profile_set,
+                            self.test,
                         )
 
                     self.tweet_queue = []
