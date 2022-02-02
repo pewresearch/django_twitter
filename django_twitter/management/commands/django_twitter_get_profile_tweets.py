@@ -1,17 +1,12 @@
-from __future__ import print_function
-
-import datetime
-
 from builtins import str
+from dateutil.parser import parse as date_parse
+from django.apps import apps
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.apps import apps
-
-from tqdm import tqdm
-from dateutil.parser import parse as date_parse
-
 from pewhooks.twitter import TwitterAPIHandler
-
+from tqdm import tqdm
+import datetime
+import os
 from django_twitter.utils import (
     get_twitter_profile_json,
     get_twitter_profile,
@@ -93,7 +88,7 @@ class Command(BaseCommand):
                 iterator = tqdm(
                     self.twitter.iterate_profile_timeline(
                         options["twitter_id"], return_errors=True
-                    ),
+                    ), disable=os.environ.get("DISABLE_TQDM", False),
                     desc="Retrieving tweets for user {}".format(
                         twitter_profile.screen_name
                     ),

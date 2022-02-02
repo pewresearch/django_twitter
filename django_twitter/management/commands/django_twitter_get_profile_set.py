@@ -1,14 +1,12 @@
-import datetime
-
-from multiprocessing import Pool
-from tqdm import tqdm
-
-from django.core.management.base import BaseCommand
-from django.core.management import call_command
 from django import db
-
-from pewtils import is_null
+from django.core.management import call_command
+from django.core.management.base import BaseCommand
 from django_twitter.utils import get_twitter_profile, get_twitter_profile_set
+from multiprocessing import Pool
+from pewtils import is_null
+from tqdm import tqdm
+import datetime
+import os
 
 
 class Command(BaseCommand):
@@ -68,7 +66,7 @@ class Command(BaseCommand):
         else:
             profiles = profile_set.profiles.all()
         twitter_ids = profiles.values_list("twitter_id", flat=True)
-        for twitter_id in tqdm(twitter_ids, total=len(twitter_ids)):
+        for twitter_id in tqdm(twitter_ids, total=len(twitter_ids), disable=os.environ.get("DISABLE_TQDM", False)):
             if options["num_cores"] > 1:
                 pool.apply_async(
                     call_command, ("django_twitter_get_profile", twitter_id), kwargs
