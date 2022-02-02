@@ -1,19 +1,16 @@
-import datetime
-import pytz
-import itertools
-import pandas as pd
-
 from collections import Counter
-
+from django.apps import apps
+from django.conf import settings
+from django.db.models import Count
+from django.db.models.functions import TruncMonth
+from pewanalytics.text import TextDataFrame
 from sklearn.metrics.pairwise import cosine_similarity
 from tqdm import tqdm
-
-from django.conf import settings
-from django.apps import apps
-from django.db.models.functions import TruncMonth
-from django.db.models import Count
-
-from pewanalytics.text import TextDataFrame
+import datetime
+import itertools
+import os
+import pandas as pd
+import pytz
 
 
 def get_concrete_model(abstract_model_name):
@@ -142,7 +139,7 @@ def identify_unusual_profiles_by_tweet_text(profiles, most_recent_n=10):
     TwitterProfile = get_concrete_model("AbstractTwitterProfile")
     profiles = pd.DataFrame.from_records(profiles.values("twitter_id"))
     profiles["tweet_text"] = ""
-    for twitter_id in tqdm(profiles["twitter_id"].values, desc="Gathering tweet text"):
+    for twitter_id in tqdm(profiles["twitter_id"].values, desc="Gathering tweet text", disable=os.environ.get("DISABLE_TQDM", False)):
         if twitter_id:
             tweets = (
                 TwitterProfile.objects.get(twitter_id=twitter_id)
@@ -268,7 +265,7 @@ def find_missing_date_ranges(
     if not max_date:
         max_date = datetime.datetime.now().date()
     _min_date = min_date
-    for profile in tqdm(profiles, desc="Scanning profiles for missing dates"):
+    for profile in tqdm(profiles, desc="Scanning profiles for missing dates", disable=os.environ.get("DISABLE_TQDM", False)):
 
         if profile.created_at:
             min_date = max([_min_date, profile.created_at.date()])
@@ -346,7 +343,7 @@ def get_twitter_profile_dataframe(
     """
 
     stats = []
-    for profile in tqdm(profiles, desc="Extracting Twitter profile snapshots"):
+    for profile in tqdm(profiles, desc="Extracting Twitter profile snapshots", disable=os.environ.get("DISABLE_TQDM", False)):
         stats.append(
             profile.get_snapshots(start_date, end_date, *extra_values, **kwargs)
         )

@@ -1,13 +1,11 @@
-import datetime
-
+from django import db
+from django.core.management import call_command
+from django.core.management.base import BaseCommand
+from django_twitter.utils import get_twitter_profile, get_twitter_profile_set
 from multiprocessing import Pool
 from tqdm import tqdm
-
-from django.core.management.base import BaseCommand
-from django.core.management import call_command
-from django import db
-
-from django_twitter.utils import get_twitter_profile, get_twitter_profile_set
+import datetime
+import os
 
 
 class Command(BaseCommand):
@@ -39,7 +37,7 @@ class Command(BaseCommand):
         pool = Pool(processes=options["num_cores"])
         profile_set = get_twitter_profile_set(options["profile_set"])
         twitter_ids = profile_set.profiles.values_list("twitter_id", flat=True)
-        for twitter_id in tqdm(twitter_ids, total=twitter_ids.count()):
+        for twitter_id in tqdm(twitter_ids, total=twitter_ids.count(), disable=os.environ.get("DISABLE_TQDM", False)):
             profile = get_twitter_profile(twitter_id, create=True)
             last_score = profile.most_recent_botometer_score()
             if not last_score or options["update_existing"]:
