@@ -1,9 +1,7 @@
+from django.apps import apps
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.apps import apps
-
 from pewhooks.twitter import TwitterAPIHandler
-
 from django_twitter.utils import (
     get_twitter_profile_json,
     get_twitter_profile,
