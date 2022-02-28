@@ -32,7 +32,6 @@ def safe_get_or_create(model_name, field, value, create=False):
     Helper function to get or create an existing object from an identifier, with error handling for
     mutiprocessing race conditions/collisions.
     """
-
     kwargs = {field: value}
     Model = get_concrete_model(model_name)  # AbstractTwitterProfile
     try:
@@ -40,7 +39,7 @@ def safe_get_or_create(model_name, field, value, create=False):
             try:
                 existing, created = Model.objects.get_or_create(**kwargs)
             except django.db.IntegrityError:
-                existing = TwitterProfile.objects.get(**kwargs)
+                existing = Model.objects.get(**kwargs)
         else:
             existing = Model.objects.get(**kwargs)
     except Model.DoesNotExist:
