@@ -73,7 +73,7 @@ class Command(BaseCommand):
         parser.add_argument("--access_token", type=str)
         parser.add_argument("--access_secret", type=str)
 
-        parser.add_argument("--num_cores", type=int, default=2)
+        parser.add_argument("--num_cores", type=int, default=None)
 
     def handle(self, *args, **options):
 
