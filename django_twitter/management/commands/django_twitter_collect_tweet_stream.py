@@ -1,14 +1,12 @@
 from __future__ import print_function
 import django, tweepy, json, datetime
 
+from django import db
+from django.apps import apps
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.apps import apps
-from django import db
-from multiprocessing import Pool
-from tqdm import tqdm
-
 from django_pewtils import reset_django_connection, reset_django_connection_wrapper
+from multiprocessing import Pool
 from pewhooks.twitter import TwitterAPIHandler
 
 from django_twitter.utils import get_concrete_model, safe_get_or_create

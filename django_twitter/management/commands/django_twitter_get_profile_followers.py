@@ -2,9 +2,9 @@ from __future__ import print_function
 
 import datetime
 
+from django.apps import apps
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.apps import apps
 
 from tqdm import tqdm
 
@@ -77,7 +77,7 @@ class Command(BaseCommand):
                         iterator,
                         desc="Retrieving followers for user {}".format(
                             profile.screen_name
-                        ),
+                        ), disable=os.environ.get("DISABLE_TQDM", False),
                     )
 
                 for follower_data in iterator:
