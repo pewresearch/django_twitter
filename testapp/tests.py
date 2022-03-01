@@ -1,8 +1,5 @@
 from __future__ import unicode_literals
-from builtins import str
 
-import unittest
-import copy
 import datetime
 import json
 
@@ -10,8 +7,6 @@ from multiprocessing import Pool
 
 from django.test import TransactionTestCase as DjangoTransactionTestCase
 from django.core.management import call_command
-from django.conf import settings
-from django.apps import apps
 
 
 class DjangoTwitterTests(DjangoTransactionTestCase):
@@ -526,7 +521,8 @@ class DjangoTwitterTests(DjangoTransactionTestCase):
 
     def tearDown(self):
         from django.conf import settings
-        import shutil, os
+        import shutil
+        import os
 
         cache_path = os.path.join(settings.BASE_DIR, settings.LOCAL_CACHE_ROOT)
         if os.path.exists(cache_path):

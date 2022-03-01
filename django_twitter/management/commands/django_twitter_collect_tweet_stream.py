@@ -1,5 +1,8 @@
 from __future__ import print_function
-import django, tweepy, json, datetime, os
+import django
+import tweepy
+import json
+import datetime
 
 from django import db
 from django.apps import apps
@@ -9,7 +12,7 @@ from django_pewtils import reset_django_connection, reset_django_connection_wrap
 from multiprocessing import Pool
 from pewhooks.twitter import TwitterAPIHandler
 
-from django_twitter.utils import get_concrete_model, safe_get_or_create
+from django_twitter.utils import safe_get_or_create
 
 
 allowable_limit_types = {

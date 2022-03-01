@@ -1,6 +1,7 @@
 from __future__ import print_function
 
-import datetime, os
+import datetime
+import os
 
 from django.apps import apps
 from django.conf import settings
