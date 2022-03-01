@@ -1,11 +1,11 @@
-import multiprocessing, os
+import multiprocessing
+import os
 
 from multiprocessing import Pool
 from tqdm import tqdm
 
 from django.core.management.base import BaseCommand
 from django.core.management import call_command
-from django import db
 
 from pewtils import is_null
 from django_pewtils import reset_django_connection
