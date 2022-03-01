@@ -101,7 +101,7 @@ class Command(BaseCommand):
             "AbstractTwitterProfileSet", "name", options["profile_set"], create=True
         )
         twitter_ids = profile_set.profiles.values_list("twitter_id", flat=True)
-        for twitter_id in tqdm(twitter_ids, total=len(twitter_ids)):
+        for twitter_id in tqdm(twitter_ids, total=len(twitter_ids), disable=os.environ.get("DISABLE_TQDM", False)):
             if options["num_cores"] > 1:
                 pool.apply_async(
                     call_command,

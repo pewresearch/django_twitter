@@ -23,7 +23,7 @@ class Command(BaseCommand):
 
     :param profile_set: The `name` of the profile set in the database
     :param add_to_profile_set: (Optional) The name of a profile set to add the profiles' followings to. Can be \
-    any arbitrary string you want to use; if the profile set doesn't already exist, it will be created. 
+    any arbitrary string you want to use; if the profile set doesn't already exist, it will be created.
     :param hydrate: (Optional) By default, this command will only download the Twitter IDs for the profiles' followings. \
     If you pass `hydrate=True`, the command will download the full profile data for each following, but this requires \
     heavy API usage and can take a long time.
@@ -94,7 +94,7 @@ class Command(BaseCommand):
             ).values_list("twitter_id", flat=True)
         else:
             twitter_ids = profile_set.profiles.values_list("twitter_id", flat=True)
-        for twitter_id in tqdm(twitter_ids, total=len(twitter_ids)):
+        for twitter_id in tqdm(twitter_ids, total=len(twitter_ids), disable=os.environ.get("DISABLE_TQDM", False)):
             if options["num_cores"] > 1:
                 pool.apply_async(
                     call_command,
