@@ -1,4 +1,4 @@
-import multiprocessing
+import multiprocessing, os
 
 from multiprocessing import Pool
 from tqdm import tqdm
