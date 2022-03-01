@@ -78,7 +78,7 @@ class Command(BaseCommand):
         else:
             profiles = profile_set.profiles.all()
         twitter_ids = profiles.values_list("twitter_id", flat=True)
-        for twitter_id in tqdm(twitter_ids, total=len(twitter_ids)):
+        for twitter_id in tqdm(twitter_ids, total=len(twitter_ids), disable=os.environ.get("DISABLE_TQDM", False)):
             if options["num_cores"] > 1:
                 pool.apply_async(
                     call_command, ("django_twitter_get_profile", twitter_id), kwargs
