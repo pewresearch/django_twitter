@@ -1,6 +1,7 @@
 from __future__ import print_function
 
-import datetime, os
+import datetime
+import os
 
 from builtins import str
 from tqdm import tqdm

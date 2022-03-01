@@ -1,6 +1,7 @@
 from __future__ import print_function
 
-import datetime, os
+import datetime
+import os
 
 from django.apps import apps
 from django.conf import settings
@@ -9,7 +10,6 @@ from django.core.management.base import BaseCommand
 from tqdm import tqdm
 
 from pewhooks.twitter import TwitterAPIHandler
-from django_pewtils import reset_django_connection
 
 from django_twitter.utils import (
     get_twitter_profile_json,
