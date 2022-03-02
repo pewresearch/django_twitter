@@ -1,12 +1,16 @@
-from django import db
-from django.core.management import call_command
-from django.core.management.base import BaseCommand
-from django.db.models import Count
-from django_twitter.utils import get_twitter_profile_set
-from multiprocessing import Pool
-from pewtils import is_null
-from tqdm import tqdm
+import multiprocessing
 import os
+
+from multiprocessing import Pool
+from tqdm import tqdm
+
+from django.core.management.base import BaseCommand
+from django.core.management import call_command
+
+from pewtils import is_null
+from django_pewtils import reset_django_connection
+
+from django_twitter.utils import safe_get_or_create
 
 
 class Command(BaseCommand):
@@ -69,9 +73,11 @@ class Command(BaseCommand):
         parser.add_argument("--access_token", type=str)
         parser.add_argument("--access_secret", type=str)
 
-        parser.add_argument("--num_cores", type=int, default=2)
+        parser.add_argument("--num_cores", type=int, default=None)
 
     def handle(self, *args, **options):
+
+        reset_django_connection()
 
         kwargs = {
             "add_to_profile_set": options["add_to_profile_set"],
@@ -88,8 +94,12 @@ class Command(BaseCommand):
             "access_secret": options["access_secret"],
         }
 
+        if is_null(options["num_cores"]):
+            options["num_cores"] = multiprocessing.cpu_count()
         pool = Pool(processes=options["num_cores"])
-        profile_set = get_twitter_profile_set(options["profile_set"])
+        profile_set = safe_get_or_create(
+            "AbstractTwitterProfileSet", "name", options["profile_set"], create=True
+        )
         twitter_ids = profile_set.profiles.values_list("twitter_id", flat=True)
         for twitter_id in tqdm(twitter_ids, total=len(twitter_ids), disable=os.environ.get("DISABLE_TQDM", False)):
             if options["num_cores"] > 1:
@@ -99,11 +109,13 @@ class Command(BaseCommand):
                     kwargs,
                 )
             else:
-                pool.apply(
-                    call_command,
-                    ("django_twitter_get_profile_tweets", twitter_id),
-                    kwargs,
-                )
+                call_command("django_twitter_get_profile_tweets", twitter_id, **kwargs)
+                # TODO: Latest version of Django is causing errors with multiprocessing; need to fix
+                # pool.apply(
+                #     call_command,
+                #     ("django_twitter_get_profile_tweets", twitter_id),
+                #     kwargs,
+                # )
 
         pool.close()
         pool.join()

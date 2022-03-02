@@ -1,57 +1,72 @@
 from django.db import models
 from django.conf import settings
 
-from django_twitter.models import *
+from django_twitter.models import (
+    AbstractTwitterProfile,
+    AbstractTwitterProfileSnapshot,
+    AbstractTweet,
+    AbstractTwitterFollowerList,
+    AbstractTwitterFollowingList,
+    AbstractTwitterHashtag,
+    AbstractTweetSet,
+    AbstractTwitterProfileSet,
+)
 
 
-class Politician(models.Model):
+class Person(models.Model):
+    name = models.CharField(max_length=250)
+
+
+class Organization(models.Model):
+    name = models.CharField(max_length=250)
+
+
+class TwitterProfile(AbstractTwitterProfile):
+
+    person = models.ForeignKey(
+        "testapp.Person",
+        related_name="twitter_profiles",
+        null=True,
+        on_delete=models.SET_NULL,
+    )
+    organization = models.ForeignKey(
+        "testapp.Organization",
+        related_name="twitter_profiles",
+        null=True,
+        on_delete=models.SET_NULL,
+    )
+
+
+class TwitterProfileSnapshot(AbstractTwitterProfileSnapshot):
 
     pass
 
 
-if settings.TWITTER_APP == "testapp":
+class Tweet(AbstractTweet):
 
-    class TwitterProfile(AbstractTwitterProfile):
+    pass
 
-        politician = models.ForeignKey(
-            "testapp.Politician",
-            related_name="twitter_profiles",
-            null=True,
-            on_delete=models.SET_NULL,
-        )
 
-    class TwitterProfileSnapshot(AbstractTwitterProfileSnapshot):
+class TwitterFollowerList(AbstractTwitterFollowerList):
 
-        pass
+    pass
 
-    class Tweet(AbstractTweet):
 
-        pass
+class TwitterFollowingList(AbstractTwitterFollowingList):
 
-    class BotometerScore(AbstractBotometerScore):
+    pass
 
-        pass
 
-    class TwitterFollowerList(AbstractTwitterFollowerList):
+class TwitterHashtag(AbstractTwitterHashtag):
 
-        pass
+    pass
 
-    class TwitterFollowingList(AbstractTwitterFollowingList):
 
-        pass
+class TweetSet(AbstractTweetSet):
 
-    class TwitterHashtag(AbstractTwitterHashtag):
+    pass
 
-        pass
 
-    class TwitterPlace(AbstractTwitterPlace):
+class TwitterProfileSet(AbstractTwitterProfileSet):
 
-        pass
-
-    class TweetSet(AbstractTweetSet):
-
-        pass
-
-    class TwitterProfileSet(AbstractTwitterProfileSet):
-
-        pass
+    pass

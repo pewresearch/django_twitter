@@ -1,13 +1,16 @@
+from __future__ import print_function
+
 from builtins import str
 from django.apps import apps
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from pewhooks.twitter import TwitterAPIHandler
+from django_pewtils import reset_django_connection
+
 from django_twitter.utils import (
     get_concrete_model,
     get_twitter_profile_json,
-    get_twitter_profile,
-    get_twitter_profile_set,
+    safe_get_or_create,
 )
 
 
@@ -24,6 +27,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
+        reset_django_connection()
+
         self.twitter = TwitterAPIHandler(
             api_key=options["api_key"],
             api_secret=options["api_secret"],
@@ -32,14 +37,21 @@ class Command(BaseCommand):
         )
 
         if options["add_to_profile_set"]:
-            profile_set = get_twitter_profile_set(options["add_to_profile_set"])
+            profile_set = safe_get_or_create(
+                "AbstractTwitterProfileSet",
+                "name",
+                options["add_to_profile_set"],
+                create=True,
+            )
         else:
             profile_set = None
 
         print("Collecting profile data for {}".format(options["twitter_id"]))
         twitter_json = get_twitter_profile_json(options["twitter_id"], self.twitter)
         if twitter_json:
-            twitter_profile = get_twitter_profile(twitter_json.id_str, create=True)
+            twitter_profile = safe_get_or_create(
+                "AbstractTwitterProfile", "twitter_id", twitter_json.id_str, create=True
+            )
             snapshot = get_concrete_model(
                 "AbstractTwitterProfileSnapshot"
             ).objects.create(profile=twitter_profile)

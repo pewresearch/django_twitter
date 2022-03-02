@@ -1,4 +1,4 @@
-import os, copy
+import copy
 from django.apps import AppConfig
 
 
