@@ -1,11 +1,16 @@
-from django import db
-from django.core.management import call_command
-from django.core.management.base import BaseCommand
-from django_twitter.utils import get_twitter_profile_set, get_concrete_model
-from multiprocessing import Pool
-from pewtils import is_null
-from tqdm import tqdm
+import multiprocessing
 import os
+
+from multiprocessing import Pool
+from tqdm import tqdm
+
+from django.core.management.base import BaseCommand
+from django.core.management import call_command
+
+from pewtils import is_null
+from django_pewtils import reset_django_connection
+
+from django_twitter.utils import safe_get_or_create, get_concrete_model
 
 
 class Command(BaseCommand):
@@ -46,29 +51,37 @@ class Command(BaseCommand):
         parser.add_argument("--add_to_profile_set", type=str)
         parser.add_argument("--hydrate", action="store_true", default=False)
         parser.add_argument("--limit", type=int)
+        parser.add_argument("--no_progress_bar", action="store_true", default=False)
 
         parser.add_argument("--api_key", type=str)
         parser.add_argument("--api_secret", type=str)
         parser.add_argument("--access_token", type=str)
         parser.add_argument("--access_secret", type=str)
 
-        parser.add_argument("--num_cores", type=int, default=2)
+        parser.add_argument("--num_cores", type=int, default=None)
         parser.add_argument("--collect_all_once", action="store_true", default=False)
 
     def handle(self, *args, **options):
+
+        reset_django_connection()
 
         kwargs = {
             "add_to_profile_set": options["add_to_profile_set"],
             "hydrate": options["hydrate"],
             "limit": options["limit"],
+            "no_progress_bar": options["no_progress_bar"],
             "api_key": options["api_key"],
             "api_secret": options["api_secret"],
             "access_token": options["access_token"],
             "access_secret": options["access_secret"],
         }
 
+        if is_null(options["num_cores"]):
+            options["num_cores"] = multiprocessing.cpu_count()
         pool = Pool(processes=options["num_cores"])
-        profile_set = get_twitter_profile_set(options["profile_set"])
+        profile_set = safe_get_or_create(
+            "AbstractTwitterProfileSet", "name", options["profile_set"], create=True
+        )
         if options["collect_all_once"]:
             exclude_profile_ids = (
                 get_concrete_model("AbstractTwitterFollowerList")
@@ -89,11 +102,15 @@ class Command(BaseCommand):
                     kwargs,
                 )
             else:
-                pool.apply(
-                    call_command,
-                    ("django_twitter_get_profile_followers", twitter_id),
-                    kwargs,
+                call_command(
+                    "django_twitter_get_profile_followers", twitter_id, **kwargs
                 )
+                # TODO: Latest version of Django is causing errors with multiprocessing; need to fix
+                # pool.apply(
+                #     call_command,
+                #     ("django_twitter_get_profile_followers", twitter_id),
+                #     kwargs,
+                # )
 
         pool.close()
         pool.join()
