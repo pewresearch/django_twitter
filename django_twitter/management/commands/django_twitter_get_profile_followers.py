@@ -36,7 +36,7 @@ class Command(BaseCommand):
     :param api_secret: (Optional) Twitter API secret, if you don't have the TWITTER_API_SECRET environment variable set
     :param access_token: (Optional) Twitter access token, if you don't have the TWITTER_API_ACCESS_TOKEN environment \
     variable set
-    :param api_secret: (Optional) Twitter API access secret, if you don't have the TWITTER_API_ACCESS_SECRET \
+    :param access_secret: (Optional) Twitter API access secret, if you don't have the TWITTER_API_ACCESS_SECRET \
     environment variable set
     """
 
