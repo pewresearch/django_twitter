@@ -1,0 +1,5 @@
+include README.md
+include requirements.txt
+include django_twitter/VERSION
+recursive-include django_twitter/templates *
+recursive-exclude django_twitter *.pyc
