@@ -19,6 +19,27 @@ from django_twitter.utils import (
 
 
 class Command(BaseCommand):
+    """
+    Download and save a Twitter account's followers.
+
+    :param twitter_id: The unique Twitter ID for the account
+    :param add_to_profile_set: (Optional) The name of a profile set to add the followers to. Can be \
+    any arbitrary string you want to use; if the profile set doesn't already exist, it will be created
+    :param hydrate: (Optional) By default, this command will only download the Twitter IDs for the profile's followers. \
+    If you pass `hydrate=True`, the command will download the full profile data for each follower, but this requires \
+    heavy API usage and can take a long time.
+    :param limit: (Optional) Set a limit for the number of followers to collect, for testing purposes. If a limit \
+    is passed, `finish_time` will not be set, because the data collection was forcibly aborted.
+    :param no_progress_bar: (Optional) Disables the default `tqdm` progress bar.
+
+    :param api_key: (Optional) Twitter API key, if you don't have the TWITTER_API_KEY environment variable set
+    :param api_secret: (Optional) Twitter API secret, if you don't have the TWITTER_API_SECRET environment variable set
+    :param access_token: (Optional) Twitter access token, if you don't have the TWITTER_API_ACCESS_TOKEN environment \
+    variable set
+    :param access_secret: (Optional) Twitter API access secret, if you don't have the TWITTER_API_ACCESS_SECRET \
+    environment variable set
+    """
+
     def add_arguments(self, parser):
 
         parser.add_argument("twitter_id", type=str)
@@ -33,6 +54,8 @@ class Command(BaseCommand):
         parser.add_argument("--access_secret", type=str)
 
     def handle(self, *args, **options):
+
+        reset_django_connection()
 
         self.twitter = TwitterAPIHandler(
             api_key=options["api_key"],
