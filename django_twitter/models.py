@@ -576,7 +576,6 @@ class AbstractTwitterProfile(
 
 
 class AbstractTwitterProfileSnapshot(with_metaclass(AbstractTwitterBase, models.Model)):
-    """
     Stores a representation of a Twitter profile as it existed in the API at the time of data collection.
 
     AUTO-CREATED RELATIONSHIPS:
