@@ -734,14 +734,6 @@ class AbstractTwitterProfileSnapshot(with_metaclass(AbstractTwitterBase, models.
             self.twitter_id
         )  # Can we verify this? Never seen it
 
-    def most_recent_botometer_score(self):
-
-        scores = self.botometer_scores.order_by("-timestamp")
-        if scores.count() > 0:
-            return scores[0]
-        else:
-            return None
-
 
 class AbstractTweet(with_metaclass(AbstractTwitterBase, AbstractTwitterObject)):
     """
