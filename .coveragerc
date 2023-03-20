@@ -1,0 +1,19 @@
+# .coveragerc to control coverage.py
+[run]
+branch = False
+cover_pylib = False
+source = django_twitter
+omit =
+    */site-packages/*
+    django_twitter/settings.py
+    django_twitter/management/commands/django_twitter_import_from_gnip.py
+
+[report]
+ignore_errors = True
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    except
+    \# IGNORE COVERAGE
+omit =
+    */site-packages/*
