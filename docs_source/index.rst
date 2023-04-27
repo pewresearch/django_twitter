@@ -14,7 +14,6 @@ API and storing the data you get back.
    Getting Started <getting_started>
    Abstract Models <models>
    Management Commands <commands>
-   Examples <examples>
 
 
 
